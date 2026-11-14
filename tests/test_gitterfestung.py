@@ -4,7 +4,7 @@ GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'doc
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 import json
-save={"v":2,"cur":{"s":500,"k":5,"p":0,"d":0},"nodes":{"root":1},"heroes":{"klinge":{"u":1,"l":3,"a":0},"schuetzin":{"u":0,"l":1,"a":0},"arkanist":{"u":0,"l":1,"a":0},"waechterin":{"u":0,"l":1,"a":0}},"team":["klinge"],"best":30,"cycleBest":30,"runs":5,"volMus":0,"volSfx":0}
+save={"v":2,"cur":{"s":500,"k":5,"p":0,"d":0},"nodes":{"root":1},"heroes":{"klinge":{"u":1,"l":3,"a":0},"schuetzin":{"u":0,"l":1,"a":0},"arkanist":{"u":0,"l":1,"a":0},"waechterin":{"u":0,"l":1,"a":0}},"team":["klinge"],"best":30,"cycleBest":30,"runs":5,"volMus":0,"volSfx":0,"dev":True}
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))

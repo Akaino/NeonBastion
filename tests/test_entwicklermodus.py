@@ -1,0 +1,43 @@
+"""Entwicklermodus: Test-Freischaltung ist versteckt, 7× Tippen auf die Version öffnet die Code-Abfrage,
+ein falscher Code schaltet nichts frei. Der richtige Code steht bewusst nicht im Test: der Modus wird direkt im Spielstand gesetzt."""
+import os,sys
+HERE=os.path.dirname(os.path.abspath(__file__))
+GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'docs','index.html'))
+os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
+from playwright.sync_api import sync_playwright
+def check(ok,msg):
+    print(('ok   ' if ok else 'Traceback FEHLER ')+msg)
+hid=lambda pg,s:pg.evaluate("s=>document.querySelector(s).hidden",s)
+with sync_playwright() as p:
+    b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
+    errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
+    pg.goto(GAME);pg.wait_for_timeout(300);pg.click('#bSet');pg.wait_for_timeout(150)
+    check(hid(pg,'#bW2Test') and hid(pg,'#bDevOff') and hid(pg,'#devCode'),'ohne Entwicklermodus: Testknopf, Beenden-Knopf und Code-Feld versteckt')
+    for i in range(6):pg.click('#setVer')
+    check(hid(pg,'#devCode'),'6× tippen: noch kein Code-Feld')
+    pg.wait_for_timeout(2300)
+    for i in range(6):pg.click('#setVer')
+    check(hid(pg,'#devCode'),'Pause setzt den Zähler zurück')
+    pg.click('#setVer');check(not hid(pg,'#devCode'),'7× tippen: Code-Feld erscheint')
+    pg.screenshot(path='d1_code.png')
+    pg.fill('#devIn','1234');pg.click('#bDevOk');pg.wait_for_timeout(600)
+    check(hid(pg,'#devCode') and hid(pg,'#bW2Test') and not pg.evaluate("()=>save.dev"),'falscher Code: Feld weg, nichts freigeschaltet')
+    for i in range(7):pg.click('#setVer')
+    pg.fill('#devIn','');pg.press('#devIn','Enter');pg.wait_for_timeout(600)
+    check(not pg.evaluate("()=>save.dev"),'leerer Code: nichts freigeschaltet')
+    pg.click('#bSetClose')
+    # Entwicklermodus direkt im Spielstand setzen
+    pg.evaluate("()=>{save.dev=true;persist()}");pg.reload();pg.wait_for_timeout(300);pg.click('#bSet');pg.wait_for_timeout(150)
+    check(not hid(pg,'#bW2Test') and not hid(pg,'#bDevOff'),'mit Entwicklermodus: Testknopf und Beenden-Knopf sichtbar')
+    for i in range(7):pg.click('#setVer')
+    check(hid(pg,'#devCode'),'mit Entwicklermodus: keine Code-Abfrage mehr')
+    pg.screenshot(path='d2_dev.png')
+    pg.click('#bW2Test');check(pg.evaluate("()=>save.w2test===true"),'Test-Freischaltung lässt sich einschalten')
+    pg.click('#bDevOff');pg.wait_for_timeout(100)
+    check(hid(pg,'#bW2Test') and hid(pg,'#bDevOff') and not pg.evaluate("()=>save.dev"),'Beenden: Knöpfe wieder versteckt')
+    check(pg.evaluate("()=>save.w2test===true&&w2Unlocked(save)"),'Beenden: bereits freigeschaltete Gitterfestung bleibt offen')
+    pg.reload();pg.wait_for_timeout(300);pg.click('#bSet');pg.wait_for_timeout(150)
+    check(hid(pg,'#bW2Test') and not pg.evaluate("()=>save.dev"),'nach Neuladen weiterhin aus')
+    pg.click('#bSetClose');pg.click('#bStart');pg.wait_for_timeout(800);pg.evaluate("()=>{save.dev=true}");pg.click('#bPause');pg.click('#bPSet');pg.wait_for_timeout(150)
+    check(hid(pg,'#bW2Test') and hid(pg,'#bDevOff'),'im Run: Entwickler-Knöpfe versteckt')
+    print('\n'.join(errs) or 'no errors');b.close()

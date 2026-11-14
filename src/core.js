@@ -1,4 +1,4 @@
-const VERSION='0.11.1';
+const VERSION='0.11.2';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -157,7 +157,7 @@ const heroAscCost=a=>['p',(a+1)*2];
 
 function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,cur:{s:0,k:0,p:0,d:0},nodes:{root:1},
   heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
-  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,q:0,pr:{},nova:0,cycleBest:0}}
+  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,q:0,pr:{},nova:0,cycleBest:0}}
 
 const Store={key:'neon-bastion-v1',
   load(){try{const t=localStorage.getItem(this.key);return t?JSON.parse(t):null}catch(e){return null}},
