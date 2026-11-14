@@ -17,7 +17,8 @@ Dieses Dokument ist die Übergabe aus der bisherigen Entwicklung in einem claude
 ```
 python3 build.py                 # baut docs/index.html (Website) aus src/
 python3 build.py --artifact      # zusätzlich dist/neon-bastion-artifact.html (Google Fonts statt lokaler Schrift)
-python3 tests/run_all.py         # alle Browser-Tests (Playwright, Chromium)
+python3 tests/run_all.py         # alle Browser-Tests (Playwright, Chromium), 4 gleichzeitig, ca. 30 s
+python3 tests/run_all.py --jobs 1  # nacheinander (ca. 90 s), um Wackler einzugrenzen
 node sim/sim.js --seeds 8        # Karriere-Simulation ohne Tippen, Auswertung in sim/ergebnisse/
 node sim/sim.js upgrades --at 25,50,75   # Wirkung einzelner Upgrades an Kontrollpunkten
 ```
