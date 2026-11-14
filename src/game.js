@@ -19,8 +19,8 @@ const ETYPES={
 const SHIELD_HITS=4,SHIELD_PER=30,MITE_HP=.15;   // Schildladungen: Grundwert + 1 je SHIELD_PER Wellen; Splitterling: Anteil am Leben des Spalters
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
-// Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (80 %) des normalen Bosslebens
-const TWIN_EVERY=25,TWIN_HP=.8,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
+// Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
+const TWIN_EVERY=25,TWIN_HP=.75,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
 const CELL=40,AIM_STICK=60,AUTO_R=30;   // AUTO_R: Trefferradius eines Autofeuer-Schusses   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}
