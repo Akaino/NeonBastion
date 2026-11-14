@@ -73,7 +73,7 @@ Wichtige Konzepte:
 - Feste Logik-Taktrate 1/60 s im Spiel, Geschwindigkeit 1×/2×/4×/8× über mehrere Schritte pro Frame. In der Simulation `dt=0.05`. **Nicht 0.1** – dann treffen Projektile nicht mehr zuverlässig.
 - Erweiterungspunkte in `Run`, die `Run2` überschreibt: `reward(e)`, `energyMul(e)`, `towerStats(type,l)`, `towerSlots()`, `hpScale(w)`, `dmgScale(w)`, `milestone(w)`, `updWaves(dt)`, `updTowers(dt)`.
 
-## 5. Gameplay-Systeme (Stand 0.14.0)
+## 5. Gameplay-Systeme (Stand 0.16.0, `/bottest/`)
 
 **Welt 1 „Neon-Sektor“:** Basis in der Mitte, Gegner (Schwärmer, Brecher, Fernkämpfer, Elite, Boss alle 10 Wellen, **Doppelboss alle 25 Wellen**) aus allen Richtungen. Drohnen spawnen aus der Basis. Vier Helden (Klinge, Schützin, Arkanist, Wächterin) agieren selbstständig, müssen freigeschaltet werden, haben Stufen (bis 60) und Aufstiege (bis 5). Der **Impuls** ersetzt das Tippen (siehe unten), „Autofeuer“ lässt zusätzlich die Basis selbst schießen. Nächste Welle startet nach 9 s auch mit lebenden Gegnern → Runs enden, wenn die Basis den Schaden gestauter Gegner nicht mehr aushält.
 
@@ -86,6 +86,8 @@ Wichtige Konzepte:
 - **Kombinationen** in Überschneidungen: Sturmfront, Vergiftung, Schwachstelle, Permafrost, Zersplittern, Nullpunkt (Welt 1) plus 9 Schaden×Unterstützung-Kombis (Welt 2).
 
 **Welt 2 „Gitterfestung“** (Freischaltung Welle 100 in Welt 1, Test-Freischaltung nur im Entwicklermodus): nur Türme, offene Arena. Vor jeder Welle Umbauphase mit Timer und „Bereit“-Knopf, Richtungsanzeige (Pfeile + Vorschau), Verschieben nur in der Umbauphase und nur mit Umbaupunkten. Schadenstürme Laser/Raketen/Tesla. Eigene Währungen (Schaltkreise, Matrixchips), eigener Skilltree (25 Knoten), Sturmregel nach 20 s ohne Nachschub. Weltenbonus: W2-Rekord ×(1+0,02/Welle) Schaden in W1, W1-Rekord ×(1+0,01/Welle) Turmschaden in W2.
+
+**Gegnertypen** (Tabelle `ETYPES` in `game.js`, Mischung über `WAVE_MIX`/`waveShare`): Schwärmer, Brecher (ab Welle 3), Fernkämpfer (5), seit 0.16.0 Sprinter (15, sehr schnell), Schildträger (30, Schild schluckt die ersten 5 + Welle/15 Treffer vollständig, `e.sh`), Spalter (45, zerfällt in drei Splitterlinge mit je 22 % Leben, verzögert über `run.pend`), Belagerer (60, bleibt am Feldrand stehen und schießt schwer). Jeder neue Typ wird bei seiner Einstiegswelle im Banner angekündigt. Ein neuer Typ braucht: Eintrag in `ETYPES` (mit `from`, `step`, `max`, `text`), Platz in `WAVE_MIX`, eine Form in `Renderer.enemySprite`, einen Fall in `tests/test_gegner.py`. Welt 2 nutzt eine eigene Wellenmischung und bekommt die neuen Typen noch nicht. Besiegte Gegner werden je Typ gezählt (`run.killsBy` → `save.kills`), als Grundlage für die Enzyklopädie.
 
 **Doppelboss** (seit 0.14.0, nur Welt 1): Auf jeder 25. Welle (25, 50, 75, 100, …) kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit 80 % des normalen Bosslebens (`TWIN_EVERY`, `TWIN_HP` in `game.js`; mit 65 % war das Spiel bis Welle 100 rund 13 % schneller als ohne Doppelbosse, vor allem durch den zusätzlichen Sternenstaub auf Welle 25 und 75 – der bleibt vorerst und wird später beim Balancing betrachtet). Welle 25 und 75 sind dadurch neue Bosswellen. Beide geben Prismen, Sternenstaub gibt es höchstens einmal pro Welle (`dustW`). Der Bossbalken im HUD zählt beide zusammen („Doppelboss · A & B“).
 
@@ -165,7 +167,15 @@ Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht
 2. **Welt 1 ausbauen** (Inhalte erst mit dem Nutzer besprechen):
    - Deutlich umfangreicherer Skilltree; bestehende Skills dürfen aufgeteilt werden, wo es sinnvoll ist (Kandidat: „Göttlicher Finger“ bringt bei Welle 25 allein +6 Wellen – ein Sprung).
    - Weitere Helden, weitere Türme.
-   - Größere Gegnervielfalt: mit höherer Wellenzahl neue, stärkere Gegnertypen (heute nur Schwärmer, Brecher, Fernkämpfer, Elite, Boss).
+   - **Gegnervielfalt: Ziel 25–30 Typen** (Vorgabe des Nutzers). Stand 0.16.0: 7 normale Typen plus Splitterling, Elite-Variante und Boss. Jeder Typ soll eine eigene Antwort verlangen, damit jeder Ast eine Aufgabe hat. Ideenvorrat für die nächsten Schübe (mit dem Nutzer auswählen, je Schub 3–5 Typen, danach Ast-Vergleich):
+     - Tempo und Masse: Schwarmkönigin (bringt laufend Schwärmer mit), Springer (überspringt Türme und Helden), Rammbock (wird immer schneller, je länger er lebt).
+     - Schutz: Heiler (repariert Gegner in der Nähe, muss zuerst weg), Spiegel (wirft einen Teil des Schadens auf Helden/Drohnen zurück), Panzer (nimmt pro Treffer höchstens einen festen Anteil seines Lebens – braucht viele Treffer), Phasenläufer (zeitweise unverwundbar), Tarner (erst nahe der Basis sichtbar und angreifbar).
+     - Störung: Störsender (schaltet Türme in seinem Radius ab), Dieb (stiehlt Energie statt Leben), Hacker (lähmt Drohnen), Schattenwerfer (verkleinert den Impulsradius in seiner Nähe), Magnet (zieht den Impuls-Zeiger an).
+     - Fernkampf: Mörser (Flächenschaden auf Helden), Scharfschütze (ein Ziel, sehr hoher Schaden, lange Ladezeit mit Anzeige), Bomber (explodiert an der Basis, vorher abfangen).
+     - Tod und Nachwirkung: Brüter (hinterlässt ein Ei, aus dem später Gegner schlüpfen), Giftwolke (hinterlässt ein Feld, das Verbündete schwächt), Wiedergänger (steht einmal mit halbem Leben wieder auf).
+     - Schwergewichte: Koloss (Mini-Boss, sehr langsam, sehr viel Leben), Zwilling (zwei Gegner, die sich gegenseitig heilen, solange beide leben), Kommandant (verstärkt alle Gegner in seinem Radius).
+   - **Gegner-Enzyklopädie** (Wunsch des Nutzers): eigene Seite zum Nachschlagen und Nachlesen, getrennt in normale Gegner und Bosse. Je Eintrag Form, Name, Beschreibung, erste Begegnung und Anzahl besiegt; noch nicht getroffene Typen verdeckt. Die Zählung läuft seit 0.16.0 mit (`save.kills`), Bosse werden bisher nur als ein Typ gezählt – mit benannten Boss-Arten (siehe unten) je Art zählen.
+   - **Achievement-Seite** (Wunsch des Nutzers): Erfolge mit Fortschrittsanzeige, z. B. Wellenrekorde, besiegte Gegner je Typ, Bosse, Supernovas, Runs ohne bestimmten Ast. Ob Erfolge Belohnungen geben, mit dem Nutzer klären.
    - Bosse mit Fähigkeiten und einer Anzeige, die bis zur Ausführung herunterzählt (heute beschwört der Boss nur alle 4 s Schwärmer, ohne Ankündigung).
    - **Balancing-Ziel: Der Zeiger (Impuls) soll nicht weniger wichtig sein als Einheiten, Türme und Helden** – und umgekehrt. Stand Upgrade-Messung 0.12.0: Der Fokus-Ast dominiert über das Autofeuer, Basis-Verteidigung (Panzerung, Schild, Reparatur, Geschütze) bringt bei Welle 25 +0,0 Wellen. Eher die anderen Äste aufwerten als den Fokus schwächen.
    - Turm-Menü (erledigt in 0.13.0): öffnet sich nur noch bei kurzem Antippen ohne Bewegung (`towerTap`, `TAP_MOVE`, `TAP_MS` in `ui.js`); aufsetzen und ziehen bewegt den Impuls-Zeiger. Beim Nutzer nachfragen, ob das versehentliche Öffnen damit weg ist.
