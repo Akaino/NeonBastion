@@ -57,12 +57,12 @@ Wichtige Konzepte:
 - Feste Logik-Taktrate 1/60 s im Spiel, Geschwindigkeit 1×/2×/4×/8× über mehrere Schritte pro Frame. In der Simulation `dt=0.05`. **Nicht 0.1** – dann treffen Projektile nicht mehr zuverlässig.
 - Erweiterungspunkte in `Run`, die `Run2` überschreibt: `reward(e)`, `energyMul(e)`, `towerStats(type,l)`, `towerSlots()`, `hpScale(w)`, `dmgScale(w)`, `milestone(w)`, `updWaves(dt)`, `updTowers(dt)`.
 
-## 5. Gameplay-Systeme (Stand 0.11.0)
+## 5. Gameplay-Systeme (Stand 0.12.0)
 
 **Welt 1 „Neon-Sektor“:** Basis in der Mitte, Gegner (Schwärmer, Brecher, Fernkämpfer, Elite, Boss alle 10 Wellen) aus allen Richtungen. Drohnen spawnen aus der Basis. Vier Helden (Klinge, Schützin, Arkanist, Wächterin) agieren selbstständig, müssen freigeschaltet werden, haben Stufen (bis 60) und Aufstiege (bis 5). Tippen macht Schaden, „Autofeuer“ tippt automatisch. Nächste Welle startet nach 9 s auch mit lebenden Gegnern → Runs enden, wenn die Basis den Schaden gestauter Gegner nicht mehr aushält.
 
 - **Währungen:** Splitter (jeder Gegner), Kerne (Elite, alle 5 Wellen), Prismen (Bosse, Meilenstein alle 10 Wellen, 0,6 % Elite-Drop), Sternenstaub (erster Bosssieg ab Welle 20 je Zyklus, ab Welle 30 jeder Bosssieg), Quanten (Supernova).
-- **Skilltree:** 68 Knoten, 5 Äste (Basis, Einheiten, Helden, Fokus, Ertrag), Tiefe bis 9, innen Splitter, außen Kerne/Prismen/Sternenstaub. Nicht freigeschaltete Knoten sind verdeckt („?“). „Schnellstart“ hat unendlich Stufen, Startwelle frei wählbar (Stepper im Hub).
+- **Skilltree:** 68 Knoten, 5 Äste (Basis, Einheiten, Helden, Fokus, Ertrag), Tiefe bis 9, innen Splitter, außen Kerne/Prismen/Sternenstaub. Fünf Splitter-Leitern und „Schnellstart“ haben keine Obergrenze (`max` 999 wird als ∞ angezeigt). Nicht freigeschaltete Knoten sind verdeckt („?“). „Schnellstart“ hat unendlich Stufen, Startwelle frei wählbar (Stepper im Hub).
 - **Supernova (Prestige):** ab Welle 25. Quanten = `2·1.1^(w−25)` × Boni. Setzt Baum, Währungen, Helden- und Turmstufen zurück. 9 Quanten-Upgrades (Urkraft ×1,25/Stufe usw.).
 - **Gegner-Skalierung:** Leben `1.15^(w−1)·1.08^max(0,w−35)·1.06^max(0,w−60)`, Schaden `1.06^(w−1)·1.07^max(0,w−35)·1.05^max(0,w−60)`.
 - **Türme (Unterstützung, kein Schaden):** Frost (verlangsamt), Zerfall (mehr Schaden genommen, weniger verursacht), Kryo (friert periodisch ein, danach 2 s Immunität). Bau mit Energie im Run, Antippen öffnet Turm-Menü (Aufwerten, Verschieben, Abbauen). Bauen pausiert das Spiel. Startstufe 1–25 im Turm-Menü.
@@ -75,31 +75,39 @@ Wichtige Konzepte:
 
 **Audio:** Effekte sind Analog-Synth-Stimmen (verstimmte Oszillatoren, Verzerrung, Bitcrusher, Sub-Kicks). Musik: generativer Synthwave-Komponist mit Abschnitten (Groove, Melodie, Breakdown, Drop), 8 Akkordfolgen, regelbasierter Melodie (Akkordtöne auf betonten Zählzeiten). Tempo 112→172 BPM **nur abhängig von der Welle**. Welt 2 eine Quarte höher.
 
-## 6. Balancing-Stand (Simulation 0.11.0, 8 Seeds, ohne Tippen)
+## 6. Balancing-Stand (Simulation 0.12.0, 8 Seeds, ohne Tippen)
 
 | Meilenstein | Runs | Supernovas | Spielzeit 1× | Mensch 8× |
 |---|---|---|---|---|
-| Welle 25 | 17 | 0 | 39 min | 11 min |
-| Welle 50 | 40 | 0 | 2 h 21 min | 31 min |
-| Welle 75 | 105 | 2 | 7 h 27 min | 1 h 31 min |
-| Welle 100 | 160 | 6 | 13 h 1 min | 2 h 31 min |
+| Welle 25 | 17 | 0 | 42 min | 11 min |
+| Welle 50 | 33 | 0 | 2 h 15 min | 28 min |
+| Welle 75 | 69 | 1 | 6 h 34 min | 1 h 12 min |
+| Welle 100 | 102 | 2 | 11 h 48 min | 2 h 3 min |
+
+Zum Vergleich 0.11.2 (gleicher Rechner, gleiche Seeds): Welle 100 nach 192 Runs, 8 Supernovas, 15 h 49 min. Rohdaten liegen lokal in `sim/ergebnisse/` (nicht im Repository).
+
+Änderungen in 0.12.0 und ihre Wirkung:
+- **Splitter-Leitern ohne Obergrenze** (Panzerung, Drohnenwaffen, Ausbildung, Fingerspitze, Sammler): bis Stufe 50 wie zuvor, darüber zusätzlich ×1,12 je Stufe (`LADDER` in `core.js`). Allein dadurch sinkt der Schnellstart-Anteil an den Ausgaben von 31 % auf 13 %; die fünf Leitern und Schnellstart liegen jetzt alle bei 13–16 %.
+- **Schnellstart** kostet ×1,40 statt ×1,30 je Stufe (`QUICK_G`). Wirkung in der Simulation: weniger Supernovas bis Welle 100 (2 statt 6), Seeds streuen viel weniger (11,3–12,6 h statt 10,4–22,5 h), weniger große Rekordsprünge (größter Sprung 7 statt 14 Wellen). Preis: Runs dauern spät etwa doppelt so lang (Median 9,9 statt 4,8 min bei 1×), weil früher gestartet wird.
+- **Helden behalten ihr Ziel** (`aim()` in `game.js`, `AIM_STICK=60`): Wechsel nur, wenn das Ziel tot/außer Reichweite ist oder ein anderer Gegner um mehr als 60 Einheiten bedrohlicher ist (Fernkämpfer in Schussposition zählen −150, das Patt aus Abschnitt 8 bleibt gelöst). Zielwechsel trotz lebendem Ziel: von 14–19 auf etwa 2 pro Minute, Stärke unverändert.
 
 Befunde:
-- **Splitter verlieren im späten Zyklus ihren Sinn.** 35 % aller Ausgaben gehen in Schnellstart, weil alle anderen Splitter-Knoten pro Zyklus schnell maximiert sind. Helden- und Turmstufen ebenfalls. Fortschritt kommt dann nur noch über die Supernova.
-- Jede Supernova bringt zwischen Welle 75 und 100 nur ~6 Wellen. Ob es danach abflacht, ist offen (Lauf mit `--ziel 150` steht aus).
-- „Fingerspitze“ wirkt auch auf Autofeuer, die Beschreibung sagt nur „Tippschaden“.
-- Einzelne Seeds streuen stark (Zufall schaukelt sich auf). Immer mehrere Seeds verwenden.
+- Einzelne Seeds streuen weiterhin (Zufall schaukelt sich auf). Immer mehrere Seeds verwenden.
+- Der Bot kauft stets die billigste Option. Der Ausgaben-Anteil sagt deshalb mehr über die Kostenkurven als über die Wirkung; für die Wirkung `node sim/sim.js upgrades` nutzen.
+- Ob es nach Welle 100 abflacht, ist offen (Lauf mit `--ziel 150` steht aus).
 
 ## 7. Offene Punkte (priorisiert)
 
-1. **Große Splitter-Leitern ohne Obergrenze** (Panzerung, Drohnenwaffen, Ausbildung, Fingerspitze, Sammler): ab Stufe 50 steilere Kosten, Wirkung gleich. Ziel: Splitter bleiben sinnvoll.
-2. **Schnellstart steiler verteuern**, damit es nicht alle Splitter schluckt.
-3. **Fingerspitze-Beschreibung**: „Tippschaden und Autofeuer“.
-4. Simulation mit `--ziel 150` und Upgrade-Messung bei 25/50/75 laufen lassen und auswerten.
-5. Welt 2: eigene Supernova, Balancing per Simulation (es gibt noch keinen Welt-2-Bot in `sim/`), Turmstufen jenseits der Wand bei ~Welle 80.
-6. Zahlen-Notation über 10^18 (aa, ab, …) für endloses Spiel.
-7. Rechtliches: Impressum und Datenschutzerklärung liegen als eigene Seiten in `assets/impressum.html` und `assets/datenschutz.html` (seit 0.11.1, verlinkt in den Einstellungen; `build.py` macht die Links für die Website relativ, im Artefakt bleiben sie absolut). **Das Impressum enthält bewusst keine Anschrift** (Entscheidung des Nutzers, rechtlich unvollständig). Vor einem Spenden-/Coffee-Link oder anderer Monetarisierung: Anschrift ergänzen (ggf. c/o-Dienst) und Datenschutzerklärung erweitern.
-8. Langfristig: weitere Welten, Verpackung für App Stores (Capacitor) und Steam (Tauri/Electron).
+Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht bis dahin.
+
+1. Simulation mit `--ziel 150` und Upgrade-Messung bei 25/50/75 auswerten (der Nutzer lässt sie selbst laufen).
+2. **Welt 1 ausbauen:** weitere Skilltree-Upgrades, mehr Helden, mehr Türme. Inhalte erst mit dem Nutzer besprechen.
+3. **Welten 3–10:** sind eingeplant (`WORLD_MAX`, `worldUnlockWave(id)=(id−1)·100` in `core2.js`, Karte „Weitere Welten“ im Welten-Menü), aber ohne Inhalt. Welt 2 ist der erste Test für das Prinzip „alle 100 Wellen in Welt 1 eine neue Welt“. Inhalte erst besprechen.
+4. Welt 2 (erst wenn Welt 1 dem Nutzer gefällt): eigene Supernova, Balancing per Simulation (es gibt noch keinen Welt-2-Bot in `sim/`), Turmstufen jenseits der Wand bei ~Welle 80.
+5. Rechtliches: Impressum und Datenschutzerklärung liegen als eigene Seiten in `assets/impressum.html` und `assets/datenschutz.html` (seit 0.11.1, verlinkt in den Einstellungen; `build.py` macht die Links für die Website relativ, im Artefakt bleiben sie absolut). **Das Impressum enthält bewusst keine Anschrift** (Entscheidung des Nutzers, rechtlich unvollständig). Vor einem Spenden-/Coffee-Link oder anderer Monetarisierung: Anschrift ergänzen (ggf. c/o-Dienst) und Datenschutzerklärung erweitern.
+6. Langfristig: Verpackung für App Stores (Capacitor) und Steam (Tauri/Electron).
+
+Erledigt in 0.12.0: Zahlen-Notation über 10^18 (`numUnit` in `core.js`: nach Qi folgen aa, ab, … zz), Fingerspitze-Beschreibung.
 
 ## 8. Fallstricke aus der bisherigen Entwicklung
 

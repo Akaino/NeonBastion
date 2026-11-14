@@ -67,7 +67,9 @@ for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx] of NODE_DEFS2){const a
   NODES2[id]={id,br,parent,depth,name,max,cur,base,g,fx,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L}}
 
 function freshW2(){return{cur:{c:0,m:0},nodes:{root:1},towers:{laser:{u:1,l:1},frost:{u:1,l:1},rocket:{u:0,l:1},tesla:{u:0,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},best:0,cycleBest:0,runs:0}}
-const w2Unlocked=save=>(save.best||0)>=100||!!save.w2test;
+// Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
+const WORLD_MAX=10,worldUnlockWave=id=>(id-1)*100;
+const w2Unlocked=save=>(save.best||0)>=worldUnlockWave(2)||!!save.w2test;
 
 function stats2(save){const w=save.w2,L=id=>w.nodes[id]||0;
   const S=stats({nodes:{root:1},pr:{},best:0});   // neutrale Grundwerte

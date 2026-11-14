@@ -73,13 +73,15 @@ $('#bReset').onclick=()=>{const b=$('#bReset');if(!b.dataset.arm){b.dataset.arm=
   save=freshSave();setWorld(1);persist();$('#settings').hidden=true;goHub();toast('Spielstand wurde zurückgesetzt')};
 $('#bNova').onclick=()=>{show('nova');renderNova()};
 $('#bWorlds').onclick=()=>{show('worlds');renderWorlds()};
+function futureWorlds(){let rows='';for(let id=3;id<=WORLD_MAX;id++){const w=worldUnlockWave(id);rows+=`<div><span>Welt ${id}</span><b>${(save.best||0)>=w?'erreicht · in Arbeit':`ab Welle ${w}`}</b></div>`}
+  return `<article class="hcard world lock" style="--c:#c7b8ff"><h3>Weitere Welten</h3><p>Alle 100 Wellen im Neon-Sektor öffnet sich eine neue Welt. Die Welten 3 bis ${WORLD_MAX} sind noch in Arbeit.</p><div class="cmp" style="--c:#c7b8ff">${rows}</div></article>`}
 function renderWorlds(){const un2=w2Unlocked(save),b1=w2BonusForW1(save),b2=1+.01*(save.best||0);
   $('#wlist').innerHTML=[1,2].map(id=>{const Wd=WORLDS[id],ok=id===1||un2,act=W.id===id,best=id===1?save.best:save.w2.best;
     const bonus=id===1?`Bonus aus der Gitterfestung: ×${fmtD(b1,2)} Schaden`:`Bonus aus dem Neon-Sektor: ×${fmtD(b2,2)} Turmschaden`;
     return `<article class="hcard world ${ok?'':'lock'}" style="--c:${Wd.col}"><h3>${Wd.name}</h3><p>${Wd.text}</p>
       <div class="cmp" style="--c:${Wd.col}"><div><span>Rekord</span><b>Welle ${best||0}</b></div><div><span>Weltenbonus</span><b>${bonus.split(': ')[1]}</b></div></div>
       <p class="trayinfo">${bonus.split(': ')[0]}. ${id===1?'Jede Welle Rekord in der Gitterfestung gibt hier +2 % Schaden.':'Jede Welle Rekord im Neon-Sektor gibt hier +1 % Turmschaden.'}</p>
-      ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):'<button class="btn poor" disabled>Freischaltung bei Welle 100 im Neon-Sektor</button>'}</article>`}).join('');
+      ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):`<button class="btn poor" disabled>Freischaltung bei Welle ${worldUnlockWave(id)} im Neon-Sektor</button>`}</article>`}).join('')+futureWorlds();
   $$('[data-world]').forEach(b=>b.onclick=()=>{setWorld(+b.dataset.world);Snd.play('nova');goHub();toast(`Willkommen in: ${W.name}`)})}
 $('#bTree').onclick=()=>{show('tree');renderTree();treeHome()};
 $('#bHeroes').onclick=()=>{show('heroes');renderHeroes()};
@@ -153,7 +155,7 @@ const PREV={
  u5:[['Schwere Kampfschiffe',S=>S.mother?'Ja':'Nein','t']],
  h1:[['Heldenschaden',S=>S.heroDmg,'x']],h2a:[['Heldenplätze',S=>S.slots,'i']],h2b:[['Heldenleben',S=>S.heroHp,'x']],h3a:[['Heldenplätze',S=>S.slots,'i']],
  h3b:[['Wiederbelebung',S=>S.revive,'s']],h4:[['Abklingzeit der Fähigkeiten',S=>S.abilityCd,'x']],h5:[['Heldenplätze',S=>S.slots,'i']],
- f1:[['Tippschaden',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
+ f1:[['Schaden pro Tipp und Autofeuer-Schuss',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
  f3a:[['Bonus pro Combo-Stufe',S=>S.combo*100,'pct'],['Schaden bei voller Combo',S=>S.tapDmg*(1+S.combo*25),'n']],
  f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Tippschaden',S=>S.tapDmg,'n']],
  e1:[['Splitter',S=>S.gS*S.gAll,'x']],e2a:[['Kerne',S=>S.gK*S.gAll,'x']],e2b:[['Startwelle',S=>S.startWave,'i']],e3a:[['Prismen',S=>S.gP*S.gAll,'x']],

@@ -5,7 +5,7 @@ const ETYPES={
   shooter:{hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1},
   boss:{hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
-const CELL=40;
+const CELL=40,AIM_STICK=60;   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}
 
@@ -40,6 +40,11 @@ nearest(x,y,R){let b=null,bd=R*R;for(const e of this.en){if(e.hp<=0)continue;con
 threat(R){let b=null,bs=Infinity;for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)-e.r;if(d>R)continue;
   // Fernkämpfer, die die Basis beschießen, zählen als besonders bedrohlich
   const s=d-(e.ranged&&d<e.stop+10?150:0);if(s<bs){bs=s;b=e}}return b}
+tscore(e){const d=hyp(e.x,e.y)-e.r;return d-(e.ranged&&d<e.stop+10?150:0)}
+// Ziel eines Helden: bleibt beim einmal gewählten Gegner, bis er tot oder außer Reichweite ist.
+// Gewechselt wird nur, wenn ein anderer deutlich bedrohlicher ist (z. B. ein Fernkämpfer, der die Basis beschießt).
+aim(h,R){let t=h.tg;if(t&&(t.hp<=0||hyp(t.x,t.y)-t.r>R+40))t=null;
+  const n=this.threat(R);if(!t||(n&&n!==t&&this.tscore(n)<this.tscore(t)-AIM_STICK))t=n;return h.tg=t}
 aoe(x,y,r,dmg,o={}){const hit=[];this.query(x,y,r+40,e=>{if(e===o.skip)return;if(hyp(e.x-x,e.y-y)<r+e.r)hit.push(e)});
   for(const e of hit){this.hitE(e,dmg,o);if(o.kb)this.knock(e,o.kb[0],o.kb[1],o.kb[2])}return hit}
 knock(e,fx,fy,d){if(e.boss||e.hp<=0)return;const dx=e.x-fx,dy=e.y-fy,L=hyp(dx,dy)||1;e.x+=dx/L*d;e.y+=dy/L*d}
@@ -175,7 +180,7 @@ kite(h,tg,dt){const dx=tg.x-h.x,dy=tg.y-h.y,dd=hyp(dx,dy);h.face=Math.atan2(dy,d
 cluster(){let best=null,bn=0;const list=this.en.length>30?Array.from({length:30},()=>this.en[Math.floor(Math.random()*this.en.length)]):this.en;
   for(const e of list){if(e.hp<=0||hyp(e.x,e.y)>320)continue;let n=0;this.query(e.x,e.y,60,o=>{if(hyp(o.x-e.x,o.y-e.y)<60)n++});if(n>bn){bn=n;best=e}}return best}
 ai_klinge(h,dt){h.lunge=Math.max(0,h.lunge-dt);h.spin=Math.max(0,h.spin-dt);
-  const tg=this.threat(300)||this.nearest(h.x,h.y,380);
+  const tg=this.aim(h,300)||this.nearest(h.x,h.y,380);
   if(h.abT<=0&&this.en.length){const c=this.cluster();if(c){const sx=h.x,sy=h.y,tx=c.x+rnd(-6,6),ty=c.y+rnd(-6,6),da=Math.atan2(ty-sy,tx-sx);
     for(let i=1;i<=6;i++){const k=i/7;this.headless||this.ghosts.push({id:h.id,col:h.col,x:sx+(tx-sx)*k,y:sy+(ty-sy)*k,a:da,l:-i*.025,m:.28})}
     this.headless||this.bolts.push({pts:[[sx,sy],[tx,ty]],l:0,m:.18,col:h.col,w:4});
@@ -194,7 +199,7 @@ ai_klinge(h,dt){h.lunge=Math.max(0,h.lunge-dt);h.spin=Math.max(0,h.spin-dt);
       const ix=tg.x-fx*tg.r,iy=tg.y-fy*tg.r;this.burst(ix,iy,heavy?12:6,'#ffffff',280,.22,2);this.burst(ix,iy,heavy?10:5,h.col,220,.35,2.6);
       if(heavy)this.shake=Math.max(this.shake,3.5);this.h.sfx&&this.h.sfx(heavy?'heavy':'slash')}}
   else this.idle(h,dt);this.leash(h,320)}
-ai_schuetzin(h,dt){const tg=this.threat(360);
+ai_schuetzin(h,dt){const tg=this.aim(h,360);
   if(h.abT<=0&&tg){const a0=Math.atan2(tg.y-h.y,tg.x-h.x);for(let i=0;i<12;i++)this.shoot(h.x,h.y,a0+(i-5.5)*.09,640,h.dmg*1.5*h.pow,h.col,{pierce:3,size:4,num:true});
     h.abT=h.cd;this.h.sfx&&this.h.sfx('abil');this.h.sfx&&this.h.sfx('turret')}
   if(tg){const dd=this.kite(h,tg,dt);if(dd<=h.range&&h.atkT<=0){h.atkT=1/h.rate;h.lunge=.1;const mx=h.x+Math.cos(h.face)*14,my=h.y+Math.sin(h.face)*14;{const hc=Math.random()<this.S.heroCrit;this.shootAt(mx,my,tg,660,h.dmg*(hc?2.5:1),h.col,{size:3.5,num:true})}this.h.sfx&&this.h.sfx('shoot');this.ring(mx,my,2,11,h.col,.14,2);this.burst(mx,my,3,'#ffffff',140,.15,1.6)}}
@@ -203,7 +208,7 @@ chain(from,first,dmg,n,col,o={}){const hit=new Set();let cur=first,fx=from[0],fy
   for(let i=0;i<=n&&cur;i++){this.headless||this.bolts.push({pts:jag(fx,fy,cur.x,cur.y,6,8),l:0,m:.22,col,w:3});hit.add(cur);this.hitE(cur,dmg,o);if(o.each)o.each(cur);
     fx=cur.x;fy=cur.y;dmg*=.8;let nx=null,nd=110*110;for(const e of this.en){if(e.hp<=0||hit.has(e))continue;const d=(e.x-fx)**2+(e.y-fy)**2;if(d<nd){nd=d;nx=e}}cur=nx}return hit}
 strike(x,y,dmg,col){this.headless||this.bolts.push({pts:jag(x+rnd(-30,30),y-240,x,y,9,14),l:0,m:.3,col,w:5});this.aoe(x,y,42,dmg,{col,big:true});this.ring(x,y,4,50,col,.3,6);this.burst(x,y,8,col,160,.4)}
-ai_arkanist(h,dt){const tg=this.threat(340);
+ai_arkanist(h,dt){const tg=this.aim(h,340);
   if(h.abT<=0&&this.en.length){const list=this.en.filter(e=>e.hp>0).sort((a,b)=>(a.x*a.x+a.y*a.y)-(b.x*b.x+b.y*b.y)).slice(0,14);
     for(let i=0;i<8&&list.length;i++){const e=list[Math.floor(Math.random()*list.length)];this.strike(e.x,e.y,h.dmg*4*h.pow,h.col)}
     h.abT=h.cd;this.shake=Math.max(this.shake,5);this.h.sfx&&this.h.sfx('abil')}

@@ -1,9 +1,12 @@
-const VERSION='0.11.2';
+const VERSION='0.12.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
-function fmtN(n){n=Math.floor(n);if(n<1000)return String(n);const u=['','K','M','B','T','Qa','Qi'];const e=Math.min(u.length-1,Math.floor(Math.log10(n)/3));const v=n/Math.pow(1000,e);return v.toFixed(v<10?2:v<100?1:0).replace('.',',')+u[e]}
+const NUM_UNITS=['','K','M','B','T','Qa','Qi'];
+// Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
+const numUnit=e=>e<NUM_UNITS.length?NUM_UNITS[e]:(k=>String.fromCharCode(97+Math.floor(k/26)%26)+String.fromCharCode(97+k%26))(e-NUM_UNITS.length);
+function fmtN(n){n=Math.floor(n);if(!isFinite(n))return n!==n?'0':'∞';if(n<1000)return String(n);let e=Math.floor(Math.log10(n)/3),v=n/Math.pow(1000,e);if(v>=999.5){v/=1000;e++}return v.toFixed(v<10?2:v<100?1:0).replace('.',',')+numUnit(e)}
 const fmtD=(v,d=1)=>v.toFixed(d).replace('.',',');
 
 const CUR={
@@ -38,10 +41,12 @@ const BR={
   e:{name:'Ertrag',col:'#ffe14f',a:198}
 };
 
-// id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text
+// Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
+const LADDER=[50,1.12],QUICK_G=1.4;
+// id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
 const NODE_DEFS=[
  // ---- Basis ----
- ['b1','b','root',1,0,'Panzerung',50,'s',8,1.25,l=>`+${l*20} % Leben der Basis`],
+ ['b1','b','root',1,0,'Panzerung',999,'s',8,1.25,l=>`+${l*20} % Leben der Basis`,LADDER],
  ['b2a','b','b1',2,-1,'Schildgenerator',10,'s',40,1.35,l=>l?`Schild mit ${25+(l-1)*8} % des Basislebens`:'Noch kein Schild'],
  ['b2b','b','b1',2,1,'Reparatur',10,'s',35,1.35,l=>l?`Repariert ${fmtD(l*.3)} % Leben pro Sekunde`:'Keine Reparatur'],
  ['b3a','b','b2a',3,-1.3,'Geschütze',4,'k',3,2.2,l=>l?`${l} Geschützt${l>1?'ürme':'urm'} an der Basis`:'Keine Geschütze'],
@@ -58,7 +63,7 @@ const NODE_DEFS=[
  ['b9','b','b8',9,0,'Unzerstörbar',10,'d',4,1.5,l=>`−${l*5} % erlittener Schaden`],
  // ---- Einheiten ----
  ['u1','u','root',1,0,'Drohnenbucht',10,'s',10,1.5,l=>`${2+l} Drohnen gleichzeitig`],
- ['u2a','u','u1',2,-1,'Drohnenwaffen',50,'s',25,1.25,l=>`+${l*25} % Drohnenschaden`],
+ ['u2a','u','u1',2,-1,'Drohnenwaffen',999,'s',25,1.25,l=>`+${l*25} % Drohnenschaden`,LADDER],
  ['u2b','u','u1',2,1,'Fertigung',10,'s',30,1.4,l=>`+${l*20} % Baugeschwindigkeit`],
  ['u3c','u','u2a',3,-1.8,'Zielcomputer',15,'s',200,1.3,l=>`+${l*8} % Feuerrate der Drohnen`],
  ['u3a','u','u2a',3,-.5,'Panzerplatten',20,'k',2,1.35,l=>`+${l*40} % Drohnenleben`],
@@ -72,7 +77,7 @@ const NODE_DEFS=[
  ['u8','u','u7b',8,0,'Admiral',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Drohnenschaden`],
  ['u9','u','u8',9,0,'Hyperflotte',3,'d',5,1.8,l=>`+${l*50} % Feuerrate der Drohnen`],
  // ---- Helden ----
- ['h1','h','root',1,0,'Ausbildung',50,'s',12,1.25,l=>`+${l*15} % Heldenschaden`],
+ ['h1','h','root',1,0,'Ausbildung',999,'s',12,1.25,l=>`+${l*15} % Heldenschaden`,LADDER],
  ['h2a','h','h1',2,-1,'Zweiter Platz',1,'s',120,1,l=>'Zweiter Heldenplatz'],
  ['h2b','h','h1',2,1,'Vitalität',30,'s',30,1.27,l=>`+${l*25} % Heldenleben`],
  ['h3a','h','h2a',3,-1.3,'Dritter Platz',1,'k',10,1,l=>'Dritter Heldenplatz'],
@@ -87,7 +92,7 @@ const NODE_DEFS=[
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
- ['f1','f','root',1,0,'Fingerspitze',50,'s',6,1.25,l=>`+${l*40} % Tippschaden`],
+ ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Tipps und Autofeuer`,LADDER],
  ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Tipps`],
  ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Tippradius ${26+l*12}`],
  ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Tipp-Schüsse pro Sekunde automatisch`:'Kein Autofeuer'],
@@ -101,9 +106,9 @@ const NODE_DEFS=[
  ['f7','f','f6',7,0,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
  ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Tipp trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
- ['e1','e','root',1,0,'Sammler',25,'s',10,1.3,l=>`+${l*12} % Splitter`],
+ ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
- ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,1.3,l=>`Start bis Welle ${1+l*2} wählbar, Meilensteine werden gutgeschrieben`],
+ ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,QUICK_G,l=>`Start bis Welle ${1+l*2} wählbar, Meilensteine werden gutgeschrieben`],
  ['e3c','e','e2a',3,-1.8,'Splitterflut',30,'s',400,1.32,l=>`×${fmtD(Math.pow(1.05,l),2)} Splitter`],
  ['e3a','e','e2a',3,-.5,'Prismenschliff',8,'k',5,1.45,l=>`+${l*25} % Prismen`],
  ['e3b','e','e2b',3,1.3,'Elitejäger',4,'k',4,1.7,l=>`+${l*25} % Elite-Gegner`],
@@ -115,11 +120,11 @@ const NODE_DEFS=[
  ['e7b','e','e6',7,1,'Quantenfeld',10,'d',3,1.6,l=>`+${l*10} % Quanten pro Supernova`]
 ];
 const NODES={root:{id:'root',br:null,parent:null,depth:0,name:'Kern',max:1,x:0,y:0}};
-for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx] of NODE_DEFS){
+for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx,steep] of NODE_DEFS){
   const a=BR[br].a*PI/180,R=118*depth,L=lat*68;
-  NODES[id]={id,br,parent,depth,name,max,cur,base,g,fx,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L};
+  NODES[id]={id,br,parent,depth,name,max,cur,base,g,fx,steep,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L};
 }
-const nodeCost=(n,l)=>Math.ceil(n.base*Math.pow(n.g,l));
+const nodeCost=(n,l)=>Math.ceil(n.base*Math.pow(n.g,l)*(n.steep&&l>n.steep[0]?Math.pow(n.steep[1],l-n.steep[0]):1));
 
 const HEROES={
   klinge:{name:'Klinge',role:'Nahkampf',col:'#ff4fd8',hp:120,dmg:14,rate:1.3,range:22,speed:150,

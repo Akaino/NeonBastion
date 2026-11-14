@@ -307,12 +307,15 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.11.2';
+const VERSION='0.12.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
-function fmtN(n){n=Math.floor(n);if(n<1000)return String(n);const u=['','K','M','B','T','Qa','Qi'];const e=Math.min(u.length-1,Math.floor(Math.log10(n)/3));const v=n/Math.pow(1000,e);return v.toFixed(v<10?2:v<100?1:0).replace('.',',')+u[e]}
+const NUM_UNITS=['','K','M','B','T','Qa','Qi'];
+// Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
+const numUnit=e=>e<NUM_UNITS.length?NUM_UNITS[e]:(k=>String.fromCharCode(97+Math.floor(k/26)%26)+String.fromCharCode(97+k%26))(e-NUM_UNITS.length);
+function fmtN(n){n=Math.floor(n);if(!isFinite(n))return n!==n?'0':'∞';if(n<1000)return String(n);let e=Math.floor(Math.log10(n)/3),v=n/Math.pow(1000,e);if(v>=999.5){v/=1000;e++}return v.toFixed(v<10?2:v<100?1:0).replace('.',',')+numUnit(e)}
 const fmtD=(v,d=1)=>v.toFixed(d).replace('.',',');
 
 const CUR={
@@ -347,10 +350,12 @@ const BR={
   e:{name:'Ertrag',col:'#ffe14f',a:198}
 };
 
-// id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text
+// Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
+const LADDER=[50,1.12],QUICK_G=1.4;
+// id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
 const NODE_DEFS=[
  // ---- Basis ----
- ['b1','b','root',1,0,'Panzerung',50,'s',8,1.25,l=>`+${l*20} % Leben der Basis`],
+ ['b1','b','root',1,0,'Panzerung',999,'s',8,1.25,l=>`+${l*20} % Leben der Basis`,LADDER],
  ['b2a','b','b1',2,-1,'Schildgenerator',10,'s',40,1.35,l=>l?`Schild mit ${25+(l-1)*8} % des Basislebens`:'Noch kein Schild'],
  ['b2b','b','b1',2,1,'Reparatur',10,'s',35,1.35,l=>l?`Repariert ${fmtD(l*.3)} % Leben pro Sekunde`:'Keine Reparatur'],
  ['b3a','b','b2a',3,-1.3,'Geschütze',4,'k',3,2.2,l=>l?`${l} Geschützt${l>1?'ürme':'urm'} an der Basis`:'Keine Geschütze'],
@@ -367,7 +372,7 @@ const NODE_DEFS=[
  ['b9','b','b8',9,0,'Unzerstörbar',10,'d',4,1.5,l=>`−${l*5} % erlittener Schaden`],
  // ---- Einheiten ----
  ['u1','u','root',1,0,'Drohnenbucht',10,'s',10,1.5,l=>`${2+l} Drohnen gleichzeitig`],
- ['u2a','u','u1',2,-1,'Drohnenwaffen',50,'s',25,1.25,l=>`+${l*25} % Drohnenschaden`],
+ ['u2a','u','u1',2,-1,'Drohnenwaffen',999,'s',25,1.25,l=>`+${l*25} % Drohnenschaden`,LADDER],
  ['u2b','u','u1',2,1,'Fertigung',10,'s',30,1.4,l=>`+${l*20} % Baugeschwindigkeit`],
  ['u3c','u','u2a',3,-1.8,'Zielcomputer',15,'s',200,1.3,l=>`+${l*8} % Feuerrate der Drohnen`],
  ['u3a','u','u2a',3,-.5,'Panzerplatten',20,'k',2,1.35,l=>`+${l*40} % Drohnenleben`],
@@ -381,7 +386,7 @@ const NODE_DEFS=[
  ['u8','u','u7b',8,0,'Admiral',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Drohnenschaden`],
  ['u9','u','u8',9,0,'Hyperflotte',3,'d',5,1.8,l=>`+${l*50} % Feuerrate der Drohnen`],
  // ---- Helden ----
- ['h1','h','root',1,0,'Ausbildung',50,'s',12,1.25,l=>`+${l*15} % Heldenschaden`],
+ ['h1','h','root',1,0,'Ausbildung',999,'s',12,1.25,l=>`+${l*15} % Heldenschaden`,LADDER],
  ['h2a','h','h1',2,-1,'Zweiter Platz',1,'s',120,1,l=>'Zweiter Heldenplatz'],
  ['h2b','h','h1',2,1,'Vitalität',30,'s',30,1.27,l=>`+${l*25} % Heldenleben`],
  ['h3a','h','h2a',3,-1.3,'Dritter Platz',1,'k',10,1,l=>'Dritter Heldenplatz'],
@@ -396,7 +401,7 @@ const NODE_DEFS=[
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
- ['f1','f','root',1,0,'Fingerspitze',50,'s',6,1.25,l=>`+${l*40} % Tippschaden`],
+ ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Tipps und Autofeuer`,LADDER],
  ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Tipps`],
  ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Tippradius ${26+l*12}`],
  ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Tipp-Schüsse pro Sekunde automatisch`:'Kein Autofeuer'],
@@ -410,9 +415,9 @@ const NODE_DEFS=[
  ['f7','f','f6',7,0,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
  ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Tipp trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
- ['e1','e','root',1,0,'Sammler',25,'s',10,1.3,l=>`+${l*12} % Splitter`],
+ ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
- ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,1.3,l=>`Start bis Welle ${1+l*2} wählbar, Meilensteine werden gutgeschrieben`],
+ ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,QUICK_G,l=>`Start bis Welle ${1+l*2} wählbar, Meilensteine werden gutgeschrieben`],
  ['e3c','e','e2a',3,-1.8,'Splitterflut',30,'s',400,1.32,l=>`×${fmtD(Math.pow(1.05,l),2)} Splitter`],
  ['e3a','e','e2a',3,-.5,'Prismenschliff',8,'k',5,1.45,l=>`+${l*25} % Prismen`],
  ['e3b','e','e2b',3,1.3,'Elitejäger',4,'k',4,1.7,l=>`+${l*25} % Elite-Gegner`],
@@ -424,11 +429,11 @@ const NODE_DEFS=[
  ['e7b','e','e6',7,1,'Quantenfeld',10,'d',3,1.6,l=>`+${l*10} % Quanten pro Supernova`]
 ];
 const NODES={root:{id:'root',br:null,parent:null,depth:0,name:'Kern',max:1,x:0,y:0}};
-for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx] of NODE_DEFS){
+for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx,steep] of NODE_DEFS){
   const a=BR[br].a*PI/180,R=118*depth,L=lat*68;
-  NODES[id]={id,br,parent,depth,name,max,cur,base,g,fx,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L};
+  NODES[id]={id,br,parent,depth,name,max,cur,base,g,fx,steep,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L};
 }
-const nodeCost=(n,l)=>Math.ceil(n.base*Math.pow(n.g,l));
+const nodeCost=(n,l)=>Math.ceil(n.base*Math.pow(n.g,l)*(n.steep&&l>n.steep[0]?Math.pow(n.steep[1],l-n.steep[0]):1));
 
 const HEROES={
   klinge:{name:'Klinge',role:'Nahkampf',col:'#ff4fd8',hp:120,dmg:14,rate:1.3,range:22,speed:150,
@@ -579,7 +584,9 @@ for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx] of NODE_DEFS2){const a
   NODES2[id]={id,br,parent,depth,name,max,cur,base,g,fx,x:Math.cos(a)*R-Math.sin(a)*L,y:Math.sin(a)*R+Math.cos(a)*L}}
 
 function freshW2(){return{cur:{c:0,m:0},nodes:{root:1},towers:{laser:{u:1,l:1},frost:{u:1,l:1},rocket:{u:0,l:1},tesla:{u:0,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},best:0,cycleBest:0,runs:0}}
-const w2Unlocked=save=>(save.best||0)>=100||!!save.w2test;
+// Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
+const WORLD_MAX=10,worldUnlockWave=id=>(id-1)*100;
+const w2Unlocked=save=>(save.best||0)>=worldUnlockWave(2)||!!save.w2test;
 
 function stats2(save){const w=save.w2,L=id=>w.nodes[id]||0;
   const S=stats({nodes:{root:1},pr:{},best:0});   // neutrale Grundwerte
@@ -601,7 +608,7 @@ const ETYPES={
   shooter:{hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1},
   boss:{hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
-const CELL=40;
+const CELL=40,AIM_STICK=60;   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}
 
@@ -636,6 +643,11 @@ nearest(x,y,R){let b=null,bd=R*R;for(const e of this.en){if(e.hp<=0)continue;con
 threat(R){let b=null,bs=Infinity;for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)-e.r;if(d>R)continue;
   // Fernkämpfer, die die Basis beschießen, zählen als besonders bedrohlich
   const s=d-(e.ranged&&d<e.stop+10?150:0);if(s<bs){bs=s;b=e}}return b}
+tscore(e){const d=hyp(e.x,e.y)-e.r;return d-(e.ranged&&d<e.stop+10?150:0)}
+// Ziel eines Helden: bleibt beim einmal gewählten Gegner, bis er tot oder außer Reichweite ist.
+// Gewechselt wird nur, wenn ein anderer deutlich bedrohlicher ist (z. B. ein Fernkämpfer, der die Basis beschießt).
+aim(h,R){let t=h.tg;if(t&&(t.hp<=0||hyp(t.x,t.y)-t.r>R+40))t=null;
+  const n=this.threat(R);if(!t||(n&&n!==t&&this.tscore(n)<this.tscore(t)-AIM_STICK))t=n;return h.tg=t}
 aoe(x,y,r,dmg,o={}){const hit=[];this.query(x,y,r+40,e=>{if(e===o.skip)return;if(hyp(e.x-x,e.y-y)<r+e.r)hit.push(e)});
   for(const e of hit){this.hitE(e,dmg,o);if(o.kb)this.knock(e,o.kb[0],o.kb[1],o.kb[2])}return hit}
 knock(e,fx,fy,d){if(e.boss||e.hp<=0)return;const dx=e.x-fx,dy=e.y-fy,L=hyp(dx,dy)||1;e.x+=dx/L*d;e.y+=dy/L*d}
@@ -771,7 +783,7 @@ kite(h,tg,dt){const dx=tg.x-h.x,dy=tg.y-h.y,dd=hyp(dx,dy);h.face=Math.atan2(dy,d
 cluster(){let best=null,bn=0;const list=this.en.length>30?Array.from({length:30},()=>this.en[Math.floor(Math.random()*this.en.length)]):this.en;
   for(const e of list){if(e.hp<=0||hyp(e.x,e.y)>320)continue;let n=0;this.query(e.x,e.y,60,o=>{if(hyp(o.x-e.x,o.y-e.y)<60)n++});if(n>bn){bn=n;best=e}}return best}
 ai_klinge(h,dt){h.lunge=Math.max(0,h.lunge-dt);h.spin=Math.max(0,h.spin-dt);
-  const tg=this.threat(300)||this.nearest(h.x,h.y,380);
+  const tg=this.aim(h,300)||this.nearest(h.x,h.y,380);
   if(h.abT<=0&&this.en.length){const c=this.cluster();if(c){const sx=h.x,sy=h.y,tx=c.x+rnd(-6,6),ty=c.y+rnd(-6,6),da=Math.atan2(ty-sy,tx-sx);
     for(let i=1;i<=6;i++){const k=i/7;this.headless||this.ghosts.push({id:h.id,col:h.col,x:sx+(tx-sx)*k,y:sy+(ty-sy)*k,a:da,l:-i*.025,m:.28})}
     this.headless||this.bolts.push({pts:[[sx,sy],[tx,ty]],l:0,m:.18,col:h.col,w:4});
@@ -790,7 +802,7 @@ ai_klinge(h,dt){h.lunge=Math.max(0,h.lunge-dt);h.spin=Math.max(0,h.spin-dt);
       const ix=tg.x-fx*tg.r,iy=tg.y-fy*tg.r;this.burst(ix,iy,heavy?12:6,'#ffffff',280,.22,2);this.burst(ix,iy,heavy?10:5,h.col,220,.35,2.6);
       if(heavy)this.shake=Math.max(this.shake,3.5);this.h.sfx&&this.h.sfx(heavy?'heavy':'slash')}}
   else this.idle(h,dt);this.leash(h,320)}
-ai_schuetzin(h,dt){const tg=this.threat(360);
+ai_schuetzin(h,dt){const tg=this.aim(h,360);
   if(h.abT<=0&&tg){const a0=Math.atan2(tg.y-h.y,tg.x-h.x);for(let i=0;i<12;i++)this.shoot(h.x,h.y,a0+(i-5.5)*.09,640,h.dmg*1.5*h.pow,h.col,{pierce:3,size:4,num:true});
     h.abT=h.cd;this.h.sfx&&this.h.sfx('abil');this.h.sfx&&this.h.sfx('turret')}
   if(tg){const dd=this.kite(h,tg,dt);if(dd<=h.range&&h.atkT<=0){h.atkT=1/h.rate;h.lunge=.1;const mx=h.x+Math.cos(h.face)*14,my=h.y+Math.sin(h.face)*14;{const hc=Math.random()<this.S.heroCrit;this.shootAt(mx,my,tg,660,h.dmg*(hc?2.5:1),h.col,{size:3.5,num:true})}this.h.sfx&&this.h.sfx('shoot');this.ring(mx,my,2,11,h.col,.14,2);this.burst(mx,my,3,'#ffffff',140,.15,1.6)}}
@@ -799,7 +811,7 @@ chain(from,first,dmg,n,col,o={}){const hit=new Set();let cur=first,fx=from[0],fy
   for(let i=0;i<=n&&cur;i++){this.headless||this.bolts.push({pts:jag(fx,fy,cur.x,cur.y,6,8),l:0,m:.22,col,w:3});hit.add(cur);this.hitE(cur,dmg,o);if(o.each)o.each(cur);
     fx=cur.x;fy=cur.y;dmg*=.8;let nx=null,nd=110*110;for(const e of this.en){if(e.hp<=0||hit.has(e))continue;const d=(e.x-fx)**2+(e.y-fy)**2;if(d<nd){nd=d;nx=e}}cur=nx}return hit}
 strike(x,y,dmg,col){this.headless||this.bolts.push({pts:jag(x+rnd(-30,30),y-240,x,y,9,14),l:0,m:.3,col,w:5});this.aoe(x,y,42,dmg,{col,big:true});this.ring(x,y,4,50,col,.3,6);this.burst(x,y,8,col,160,.4)}
-ai_arkanist(h,dt){const tg=this.threat(340);
+ai_arkanist(h,dt){const tg=this.aim(h,340);
   if(h.abT<=0&&this.en.length){const list=this.en.filter(e=>e.hp>0).sort((a,b)=>(a.x*a.x+a.y*a.y)-(b.x*b.x+b.y*b.y)).slice(0,14);
     for(let i=0;i<8&&list.length;i++){const e=list[Math.floor(Math.random()*list.length)];this.strike(e.x,e.y,h.dmg*4*h.pow,h.col)}
     h.abT=h.cd;this.shake=Math.max(this.shake,5);this.h.sfx&&this.h.sfx('abil')}
@@ -1424,13 +1436,15 @@ $('#bReset').onclick=()=>{const b=$('#bReset');if(!b.dataset.arm){b.dataset.arm=
   save=freshSave();setWorld(1);persist();$('#settings').hidden=true;goHub();toast('Spielstand wurde zurückgesetzt')};
 $('#bNova').onclick=()=>{show('nova');renderNova()};
 $('#bWorlds').onclick=()=>{show('worlds');renderWorlds()};
+function futureWorlds(){let rows='';for(let id=3;id<=WORLD_MAX;id++){const w=worldUnlockWave(id);rows+=`<div><span>Welt ${id}</span><b>${(save.best||0)>=w?'erreicht · in Arbeit':`ab Welle ${w}`}</b></div>`}
+  return `<article class="hcard world lock" style="--c:#c7b8ff"><h3>Weitere Welten</h3><p>Alle 100 Wellen im Neon-Sektor öffnet sich eine neue Welt. Die Welten 3 bis ${WORLD_MAX} sind noch in Arbeit.</p><div class="cmp" style="--c:#c7b8ff">${rows}</div></article>`}
 function renderWorlds(){const un2=w2Unlocked(save),b1=w2BonusForW1(save),b2=1+.01*(save.best||0);
   $('#wlist').innerHTML=[1,2].map(id=>{const Wd=WORLDS[id],ok=id===1||un2,act=W.id===id,best=id===1?save.best:save.w2.best;
     const bonus=id===1?`Bonus aus der Gitterfestung: ×${fmtD(b1,2)} Schaden`:`Bonus aus dem Neon-Sektor: ×${fmtD(b2,2)} Turmschaden`;
     return `<article class="hcard world ${ok?'':'lock'}" style="--c:${Wd.col}"><h3>${Wd.name}</h3><p>${Wd.text}</p>
       <div class="cmp" style="--c:${Wd.col}"><div><span>Rekord</span><b>Welle ${best||0}</b></div><div><span>Weltenbonus</span><b>${bonus.split(': ')[1]}</b></div></div>
       <p class="trayinfo">${bonus.split(': ')[0]}. ${id===1?'Jede Welle Rekord in der Gitterfestung gibt hier +2 % Schaden.':'Jede Welle Rekord im Neon-Sektor gibt hier +1 % Turmschaden.'}</p>
-      ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):'<button class="btn poor" disabled>Freischaltung bei Welle 100 im Neon-Sektor</button>'}</article>`}).join('');
+      ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):`<button class="btn poor" disabled>Freischaltung bei Welle ${worldUnlockWave(id)} im Neon-Sektor</button>`}</article>`}).join('')+futureWorlds();
   $$('[data-world]').forEach(b=>b.onclick=()=>{setWorld(+b.dataset.world);Snd.play('nova');goHub();toast(`Willkommen in: ${W.name}`)})}
 $('#bTree').onclick=()=>{show('tree');renderTree();treeHome()};
 $('#bHeroes').onclick=()=>{show('heroes');renderHeroes()};
@@ -1504,7 +1518,7 @@ const PREV={
  u5:[['Schwere Kampfschiffe',S=>S.mother?'Ja':'Nein','t']],
  h1:[['Heldenschaden',S=>S.heroDmg,'x']],h2a:[['Heldenplätze',S=>S.slots,'i']],h2b:[['Heldenleben',S=>S.heroHp,'x']],h3a:[['Heldenplätze',S=>S.slots,'i']],
  h3b:[['Wiederbelebung',S=>S.revive,'s']],h4:[['Abklingzeit der Fähigkeiten',S=>S.abilityCd,'x']],h5:[['Heldenplätze',S=>S.slots,'i']],
- f1:[['Tippschaden',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
+ f1:[['Schaden pro Tipp und Autofeuer-Schuss',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
  f3a:[['Bonus pro Combo-Stufe',S=>S.combo*100,'pct'],['Schaden bei voller Combo',S=>S.tapDmg*(1+S.combo*25),'n']],
  f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Tippschaden',S=>S.tapDmg,'n']],
  e1:[['Splitter',S=>S.gS*S.gAll,'x']],e2a:[['Kerne',S=>S.gK*S.gAll,'x']],e2b:[['Startwelle',S=>S.startWave,'i']],e3a:[['Prismen',S=>S.gP*S.gAll,'x']],
