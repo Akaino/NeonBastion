@@ -1,4 +1,4 @@
-const VERSION='0.17.1';
+const VERSION='0.17.2';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -33,12 +33,13 @@ const presCost=(p,l)=>Math.ceil(p.base*Math.pow(p.g,l));
 const NOVA_MIN=25;
 function quantaFor(w,save){if(w<NOVA_MIN)return 0;const qm=1+.1*((save.nodes&&save.nodes.e7b)||0);return Math.floor(2*Math.pow(1.1,w-NOVA_MIN)*(1+.25*((save.pr&&save.pr.qgain)||0))*qm)}
 
+// ls = an welcher Grenze seines Sektors der Astname im Skilltree steht: 1 = im Uhrzeigersinn, -1 = dagegen (vom Nutzer so festgelegt)
 const BR={
-  b:{name:'Basis',col:'#3df5ff',a:-90},
-  u:{name:'Flotte',col:'#8cff4f',a:-18},
-  h:{name:'Helden',col:'#ff4fd8',a:54},
-  f:{name:'Impuls',col:'#ff8a3d',a:126},
-  e:{name:'Ertrag',col:'#ffe14f',a:198}
+  b:{name:'Basis',col:'#3df5ff',a:-90,ls:1},
+  u:{name:'Flotte',col:'#8cff4f',a:-18,ls:1},
+  h:{name:'Helden',col:'#ff4fd8',a:54,ls:-1},
+  f:{name:'Impuls',col:'#ff8a3d',a:126,ls:1},
+  e:{name:'Ertrag',col:'#ffe14f',a:198,ls:1}
 };
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe

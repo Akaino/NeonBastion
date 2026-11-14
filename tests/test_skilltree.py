@@ -15,14 +15,15 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>Object.values(BR).map(b=>b.name)")==['Basis','Flotte','Helden','Impuls','Ertrag'],'Äste heißen Basis, Flotte, Helden, Impuls, Ertrag')
     pg.click('#bTree');pg.wait_for_timeout(300)
     t=pg.evaluate("()=>[...document.querySelectorAll('#tw svg text.brname')].map(e=>e.textContent)")
-    check(sorted(set(t))==['BASIS','ERTRAG','FLOTTE','HELDEN','IMPULS'] and len(t)==10,'jeder Astname steht zweimal im Baum: neben dem Ast und an seinem Ende')
-    v=pg.evaluate("""()=>{const r=document.querySelector('#tv').getBoundingClientRect();return [...document.querySelectorAll('#tw svg text.brname')].filter(e=>+e.getAttribute('font-size')>30).map(e=>{const b=e.getBoundingClientRect(),cx=b.left+b.width/2,cy=b.top+b.height/2;return cx>r.left&&cx<r.right&&cy>r.top&&cy<r.bottom}).filter(Boolean).length}""")
-    check(v>=3,f'in der Startansicht sind {v} der fünf großen Astnamen zu sehen')
-    # Jeder große Name liegt klar im eigenen Sektor und hält Abstand zu allen Knoten
-    g=pg.evaluate("""()=>{const ids=Object.keys(BR),half=180/ids.length;return [...document.querySelectorAll('#tw svg text.brname')].filter(e=>+e.getAttribute('font-size')>30).map(e=>{
-      const m=/translate\\(([-\\d.]+) ([-\\d.]+)\\)/.exec(e.getAttribute('transform')),x=+m[1],y=+m[2],id=ids.find(i=>BR[i].name.toUpperCase()===e.textContent);
-      let d=Math.atan2(y,x)*180/Math.PI-BR[id].a;d=((d+540)%360)-180;const near=Math.min(...Object.values(NODES).map(n=>Math.hypot(n.x-x,n.y-y)));return {name:e.textContent,winkel:Math.abs(d)/half,abstand:Math.round(near)}})}""")
-    check(len(g)==5 and all(x['winkel']<=.73 for x in g) and all(x['abstand']>=45 for x in g),'große Astnamen stehen im eigenen Sektor und abseits der Knoten: '+', '.join(f"{x['name']} {x['winkel']*100:.0f} % / {x['abstand']} px" for x in g))
+    check(sorted(t)==['BASIS','ERTRAG','FLOTTE','HELDEN','IMPULS'],'jeder Astname steht genau einmal im Baum')
+    # Jeder Name läuft parallel zur festgelegten Grenze seines Sektors und liegt knapp innerhalb davon
+    g=pg.evaluate("""()=>{const ids=Object.keys(BR),half=180/ids.length;return [...document.querySelectorAll('#tw svg text.brname')].map(e=>{
+      const m=/translate\\(([-\\d.]+) ([-\\d.]+)\\) rotate\\(([-\\d.]+)\\)/.exec(e.getAttribute('transform')),x=+m[1],y=+m[2],rot=+m[3],id=ids.find(i=>BR[i].name.toUpperCase()===e.textContent),B=BR[id];
+      const grenze=B.a+B.ls*half;let par=((rot-grenze)%180+180)%180;par=Math.min(par,180-par);let d=Math.atan2(y,x)*180/Math.PI-B.a;d=((d+540)%360)-180;
+      const near=Math.min(...Object.values(NODES).map(n=>Math.hypot(n.x-x,n.y-y)));return {name:B.name,grenze:((grenze%360)+360)%360,par,imSektor:Math.abs(d)<half,amRand:Math.abs(d)/half,abstand:Math.round(near)}})}""")
+    soll={'Basis':306,'Flotte':18,'Helden':18,'Impuls':162,'Ertrag':234}
+    check(all(abs(x['grenze']-soll[x['name']])<1e-6 for x in g),'Grenzen wie festgelegt: Basis rechts, Flotte unten, Helden oben, Impuls oben, Ertrag oben')
+    check(all(x['par']<.2 and x['imSektor'] and x['amRand']>.8 and x['abstand']>=60 for x in g),'Namen laufen parallel zur Grenze, liegen knapp im eigenen Sektor und abseits der Knoten: '+', '.join(f"{x['name']} {x['abstand']} px" for x in g))
     check(pg.evaluate("()=>document.querySelectorAll('#tw svg path[fill-opacity]').length")==5 and pg.evaluate("()=>document.querySelectorAll('#tw svg circle[stroke-dasharray]').length")>=9,'Hintergrund: fünf farbige Sektoren und Ringe für die Tiefe')
     # Knoten bleiben bedienbar: Antippen wählt aus, Karte nennt den neuen Astnamen
     pg.tap('[data-id="f1"]');pg.wait_for_timeout(200)
