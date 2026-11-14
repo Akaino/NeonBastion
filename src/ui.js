@@ -121,7 +121,11 @@ function updHud(){const b=run.base,f=b.hp/b.max;$('#hWave').textContent=`Welle $
   $$('#hHeroes .hchip').forEach(el=>{const h=run.heroes[+el.dataset.i];el.classList.toggle('dead',h.dead>0);
     el.querySelector('.ring').style.setProperty('--p',h.dead>0?0:Math.round(100*(1-Math.max(0,h.abT)/h.cd)));
     el.querySelector('b').textContent=h.dead>0?Math.ceil(h.dead):h.d.name[0];el.querySelector('.hb i').style.width=(h.hp/h.max*100)+'%'});
-  const bo=run.en.find(e=>e.boss),bb=$('#bossBar');bb.hidden=!bo;if(bo){bb.querySelector('b').textContent='Boss · '+bo.name;bb.querySelector('i').style.width=(Math.max(0,bo.hp/bo.max)*100).toFixed(1)+'%';bb.querySelector('span').textContent=fmtN(Math.max(0,bo.hp))}
+  const bs=run.en.filter(e=>e.boss&&e.hp>0),bb=$('#bossBar');bb.hidden=!bs.length;
+  if(bs.length){let hp=0,mx=0;for(const e of bs){hp+=Math.max(0,e.hp);mx+=e.max}
+    // beim Doppelboss zählt der Balken beide zusammen; ist einer besiegt, bleibt sein Anteil leer
+    if(run.twin)mx=Math.max(mx,run.twinMax=Math.max(run.twinMax||0,mx));
+    bb.querySelector('b').textContent=(run.twin?'Doppelboss · ':'Boss · ')+bs.map(e=>e.name).join(' & ');bb.querySelector('i').style.width=(hp/mx*100).toFixed(1)+'%';bb.querySelector('span').textContent=fmtN(hp)}
 }
 
 function musicState(){if(run.over){Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:0});return}

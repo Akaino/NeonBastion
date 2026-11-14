@@ -1,4 +1,4 @@
-const VERSION='0.13.2';
+const VERSION='0.14.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -16,7 +16,7 @@ const CUR={
   d:{name:'Sternenstaub',one:'Sternenstaub',col:'#ffe14f'}
 };
 const CUR_IDS=['s','k','p','d'];
-const CUR_SRC={s:'Jeder besiegte Gegner',k:'Elite-Gegner und alle 5 Wellen',p:'Bosse, Meilensteine alle 10 Wellen, selten Elite-Gegner',d:'Erster Bosssieg ab Welle 20 je Zyklus, ab Welle 30 jeder Bosssieg',q:'Supernova ab Welle 25'};
+const CUR_SRC={s:'Jeder besiegte Gegner',k:'Elite-Gegner und alle 5 Wellen',p:'Bosse (alle 10 Wellen, Doppelboss alle 25), Meilensteine alle 10 Wellen, selten Elite-Gegner',d:'Erster Bosssieg ab Welle 20 je Zyklus, ab Welle 30 jeder Bosssieg',q:'Supernova ab Welle 25'};
 CUR.q={name:'Quanten',one:'Quant',col:'#c7b8ff'};
 const PRESTIGE_DEFS=[
  ['dmg','Urkraft',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Schaden für Helden, Drohnen, Geschütze und Impulse`],
