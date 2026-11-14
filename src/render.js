@@ -78,6 +78,10 @@ frame(run,dt){this.t+=dt;
       c.globalAlpha=.8;c.strokeStyle='#ff3b5c';c.lineWidth=3;c.setLineDash([10,8]);c.lineDashOffset=-this.t*30;c.beginPath();c.arc(e.x,e.y,e.r*1.55,0,TAU);c.stroke();
       c.lineWidth=1.5;c.setLineDash([3,9]);c.lineDashOffset=this.t*20;c.beginPath();c.arc(e.x,e.y,e.r*1.85,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;c.globalCompositeOperation='source-over'}
     const s=this.enemySprite(e.type,e.r,e.col,e.flash>0);this.draw(s,e.x,e.y,e.boss?this.t*.4:e.ang);
+    // Boss lädt eine Fähigkeit auf: goldener Ring füllt sich bis zur Auslösung; Panzerung des Koloss als heller Ring
+    if(e.boss&&e.cast>0){const f=1-e.cast/e.cast0;c.globalAlpha=.35;c.strokeStyle='#ffe14f';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.r*2.15,0,TAU);c.stroke();
+      c.globalAlpha=1;c.lineWidth=5;c.lineCap='round';c.beginPath();c.arc(e.x,e.y,e.r*2.15,-PI/2,-PI/2+TAU*f);c.stroke();c.lineCap='butt'}
+    if(e.boss&&e.armorT>0){c.globalAlpha=.5+.3*Math.sin(this.t*10);c.strokeStyle='#ffffff';c.lineWidth=4;c.beginPath();c.arc(e.x,e.y,e.r*1.25,0,TAU);c.stroke();c.globalAlpha=1}
     // Schild: ein Ring aus Segmenten, jedes geschluckte Trefferchen löscht eines
     if(e.sh>0){c.strokeStyle='#9fd8ff';c.lineWidth=2.4;c.globalAlpha=.9;const n=e.sh0,g=TAU/n;for(let i=0;i<e.sh;i++){c.beginPath();c.arc(e.x,e.y,e.r*1.5,this.t*.8+i*g+.12,this.t*.8+(i+1)*g-.12);c.stroke()}c.globalAlpha=1}if(e.elite)this.draw(this.eliteRing(e.r),e.x,e.y,this.t*1.5);
     if(e.combo&2){c.globalCompositeOperation='lighter';for(let q=0;q<2;q++){const ph=(this.t*1.3+q*.5+e.wob)%1;c.globalAlpha=(1-ph)*.8;this.draw(this.dot('#8cff4f'),e.x+Math.sin(e.wob*3+q*2)*e.r*.6,e.y-e.r*.4-ph*e.r*1.4,0,.35+.2*(1-ph))}c.globalAlpha=1;c.globalCompositeOperation='source-over'}
@@ -133,7 +137,7 @@ frame(run,dt){this.t+=dt;
     for(let g=0;g<6&&placed.some(([px,py])=>Math.abs(px-x)<78&&Math.abs(py-y)<14);g++)y+=14;placed.push([x,y]);c.font='700 11px "Chakra Petch",system-ui,sans-serif';c.lineWidth=3;c.strokeStyle='rgba(4,3,18,.85)';c.strokeText(cb.name,x,y);c.fillStyle=cb.col;c.fillText(cb.name,x,y)}
   for(const e of run.en){if(!e.boss)continue;const x=this.w/2+(e.x+sx)*this.se,y=this.h/2+(e.y+sy)*this.se,m=34;
     if(x>m&&x<this.w-m&&y>m+90&&y<this.h-m-90){const ty=y-(e.r*1.9)*this.se-10;c.font='700 13px "Chakra Petch",system-ui,sans-serif';c.lineWidth=4;c.strokeStyle='rgba(4,3,18,.9)';
-      c.strokeText('BOSS · '+e.name,x,ty-10);c.fillStyle='#ff6b84';c.fillText('BOSS · '+e.name,x,ty-10);const w=70,f=Math.max(0,e.hp/e.max);c.fillStyle='rgba(5,5,26,.85)';c.fillRect(x-w/2-1,ty-1,w+2,7);c.fillStyle='#ff3b5c';c.fillRect(x-w/2,ty,w*f,5)}
+      c.strokeText(bossLabel(e),x,ty-10);c.fillStyle='#ff6b84';c.fillText(bossLabel(e),x,ty-10);const w=70,f=Math.max(0,e.hp/e.max);c.fillStyle='rgba(5,5,26,.85)';c.fillRect(x-w/2-1,ty-1,w+2,7);c.fillStyle='#ff3b5c';c.fillRect(x-w/2,ty,w*f,5)}
     else{const cx=this.w/2,cy=this.h/2,dx=x-cx,dy=y-cy,k=Math.min((this.w/2-m)/Math.abs(dx||1e-6),(this.h/2-m-90)/Math.abs(dy||1e-6)),ax=cx+dx*k,ay=cy+dy*k,a=Math.atan2(dy,dx),p=.6+.4*Math.sin(this.t*6);
       c.save();c.translate(ax,ay);c.rotate(a);c.globalAlpha=p;c.fillStyle='#ff3b5c';c.shadowColor='#ff3b5c';c.shadowBlur=14;c.beginPath();c.moveTo(16,0);c.lineTo(-8,-12);c.lineTo(-3,0);c.lineTo(-8,12);c.closePath();c.fill();c.restore();
       c.globalAlpha=1;c.font='700 11px "Chakra Petch",system-ui,sans-serif';c.lineWidth=3;c.strokeStyle='rgba(4,3,18,.9)';c.strokeText('BOSS',ax-Math.cos(a)*24,ay-Math.sin(a)*24);c.fillStyle='#ff6b84';c.fillText('BOSS',ax-Math.cos(a)*24,ay-Math.sin(a)*24)}}

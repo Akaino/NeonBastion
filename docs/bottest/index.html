@@ -634,7 +634,17 @@ const SHIELD_HITS=4,SHIELD_PER=30,MITE_HP=.15;   // Schildladungen: Grundwert + 
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
-const TWIN_EVERY=25,TWIN_HP=.75,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
+// Boss-Arten: jede hat eine Fähigkeit. Der Boss bleibt stehen und lädt sie charge Sekunden lang sichtbar auf (Ring + Name), danach cd Sekunden Pause.
+const BOSS_KINDS={
+  Titan:{abil:'Erdstoß',charge:2.5,cd:10,text:'Schleudert Helden und Drohnen in seiner Nähe zurück und verletzt sie.'},
+  Koloss:{abil:'Panzerung',charge:2,cd:11,text:'Nimmt vier Sekunden lang 80 % weniger Schaden.'},
+  Nemesis:{abil:'Vernichter',charge:3,cd:10,text:'Feuert ein schweres Geschoss auf die Basis.'},
+  Vortex:{abil:'Sog',charge:2.5,cd:10,text:'Zieht Helden und Drohnen zu sich heran und verletzt sie.'},
+  Hydra:{abil:'Brut',charge:2,cd:9,text:'Setzt auf einen Schlag acht Schwärmer frei.'},
+  Leviathan:{abil:'Flut',charge:2.5,cd:12,text:'Alle Gegner werden vier Sekunden lang 50 % schneller.'}};
+const BOSS_ABIL_RANGE=420,BOSS_SHOCK_R=170,BOSS_PULL_R=260;
+const bossLabel=e=>'BOSS · '+e.name+(e.cast>0?' · '+BOSS_KINDS[e.name].abil:'');
+const TWIN_EVERY=25,TWIN_HP=.75,BOSS_NAMES=Object.keys(BOSS_KINDS);
 const CELL=40,AIM_STICK=60,AUTO_R=30;   // AUTO_R: Trefferradius eines Autofeuer-Schusses   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}
@@ -650,7 +660,7 @@ constructor(save,hooks){
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
   this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
-  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.killsBy={};this.pend=[];this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
+  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.killsBy={};this.pend=[];this.rushT=0;this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
   for(let w=2;w<=this.w;w++)this.milestone(w);
   const team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
@@ -738,11 +748,11 @@ updTowers(dt){
 /* ---------- damage ---------- */
 hitE(e,dmg,o={}){if(e.hp<=0)return;
   if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
-  dmg*=e.vuln||1;if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+  dmg*=e.vuln||1;if(e.armorT>0)dmg*=.2;if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
   if(e.hp<=0)this.kill(e)}
 kill(e){this.kills++;this.energy+=e.val*this.energyMul(e);
-  const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;
+  const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss)kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;
   if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*MITE_HP])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);
@@ -791,7 +801,7 @@ spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
 spawnEnemy(type,elite,x,y){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
     // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
     spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
@@ -888,14 +898,28 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
   // Rechteck um alle Verbündeten: Gegner außerhalb können niemanden berühren und überspringen die teure Einzelprüfung
   let ax0=Infinity,ax1=-Infinity,ay0=Infinity,ay1=-Infinity,ar=0;for(const a of allies){if(a.x<ax0)ax0=a.x;if(a.x>ax1)ax1=a.x;if(a.y<ay0)ay0=a.y;if(a.y>ay1)ay1=a.y;if(a.r>ar)ar=a.r}
   const n0=this.en.length;
-  for(let i=0;i<n0;i++){const e=this.en[i];if(e.hp<=0)continue;e.flash-=dt;if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;const dm=e.dmg*(e.dmgMul||1),spd=e.sp*(e.spMul||1);
-    if(e.boss){e.sumT-=dt;if(e.sumT<=0){e.sumT=4;for(let j=0;j<3;j++)this.spawnEnemy('swarm',false,e.x+rnd(-30,30),e.y+rnd(-30,30))}}
+  for(let i=0;i<n0;i++){const e=this.en[i];if(e.hp<=0)continue;e.flash-=dt;if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;const dm=e.dmg*(e.dmgMul||1),spd=e.sp*(e.spMul||1)*(this.rushT>0?1.5:1);
+    if(e.boss){e.sumT-=dt;if(e.sumT<=0){e.sumT=4;for(let j=0;j<3;j++)this.spawnEnemy('swarm',false,e.x+rnd(-30,30),e.y+rnd(-30,30))}
+      if(e.armorT>0)e.armorT-=dt;
+      // Fähigkeit: erst in Reichweite der Basis, dann aufladen (Boss steht still), dann auslösen
+      if(e.cast>0){e.cast-=dt;if(e.cast<=0){e.cast=0;this.bossAbility(e,dm,allies)}continue}
+      e.abT-=dt;if(e.abT<=0&&d<BOSS_ABIL_RANGE){const K=BOSS_KINDS[e.name];e.cast=e.cast0=K.charge;e.abT=K.cd;this.h.sfx&&this.h.sfx('bosswave');continue}}
     let bl=null;const am=e.r+ar+3;if(!e.ranged&&e.x>ax0-am&&e.x<ax1+am&&e.y>ay0-am&&e.y<ay1+am)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
     if(bl){if(e.atkT<=0){this.hurtAlly(bl,dm);e.atkT=1}continue}
     if(e.ranged&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){const sg=e.type==='siege',v=sg?150:220;e.atkT=sg?3.6:1.8;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*v,vy:-e.y/d*v,dmg:dm,col:e.col,big:sg})}continue}
     if(d<b.r+e.r+2){if(e.atkT<=0){this.damageBase(dm);e.atkT=1}continue}
     e.wob+=dt*3;const ux=-e.x/d,uy=-e.y/d,lat=e.boss?0:Math.sin(e.wob)*.25;
     e.x+=(ux-uy*lat)*spd*dt;e.y+=(uy+ux*lat)*spd*dt;if(!this.headless)e.ang=Math.atan2(uy,ux)}}
+// Fähigkeit eines Bosses auslösen (dm = sein aktueller Schaden, allies = lebende Helden und Drohnen)
+bossAbility(e,dm,allies){const k=e.name;
+  if(k==='Titan'){for(const a of allies){const dx=a.x-e.x,dy=a.y-e.y,L=hyp(dx,dy)||1;if(L>BOSS_SHOCK_R)continue;this.hurtAlly(a,dm*1.5);a.x+=dx/L*60;a.y+=dy/L*60}
+    this.ring(e.x,e.y,e.r,BOSS_SHOCK_R,'#ff6b84',.5,10);this.shake=Math.max(this.shake,10);this.h.sfx&&this.h.sfx('pulse')}
+  else if(k==='Koloss'){e.armorT=4;this.ring(e.x,e.y,e.r*2,e.r*1.2,'#ffffff',.5,8);this.h.sfx&&this.h.sfx('shield')}
+  else if(k==='Nemesis'){const d=hyp(e.x,e.y)||1;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*170,vy:-e.y/d*170,dmg:dm*3,col:'#ff3b5c',big:true});this.h.sfx&&this.h.sfx('turret')}
+  else if(k==='Vortex'){for(const a of allies){const dx=e.x-a.x,dy=e.y-a.y,L=hyp(dx,dy)||1;if(L>BOSS_PULL_R)continue;const p=Math.min(70,Math.max(0,L-e.r));a.x+=dx/L*p;a.y+=dy/L*p;this.hurtAlly(a,dm*.5)}
+    this.ring(e.x,e.y,BOSS_PULL_R,e.r,'#b98cff',.6,8);this.h.sfx&&this.h.sfx('whirl')}
+  else if(k==='Hydra'){for(let j=0;j<8;j++){const a=j*TAU/8;this.spawnEnemy('swarm',false,e.x+Math.cos(a)*(e.r+14),e.y+Math.sin(a)*(e.r+14))}this.ring(e.x,e.y,e.r,e.r*2.6,'#ff8a3d',.5,8);this.h.sfx&&this.h.sfx('killbig')}
+  else if(k==='Leviathan'){this.rushT=4;this.ring(0,0,Math.max(this.hw,this.hh),40,'#3df5ff',.9,10);this.h.banner&&this.h.banner('Flut','Alle Gegner werden schneller');this.h.sfx&&this.h.sfx('wave')}}
 separate(){for(const e of this.en){if(e.boss)continue;this.query(e.x,e.y,e.r+36,o=>{if(o===e)return;const dx=e.x-o.x,dy=e.y-o.y,rr=e.r+o.r,dd=dx*dx+dy*dy;
     if(dd<rr*rr&&dd>.01){const d=Math.sqrt(dd),p=(rr-d)/d*(o.boss?.8:.5);e.x+=dx*p;e.y+=dy*p}});
   const d=hyp(e.x,e.y)||1,m=this.base.r+e.r;if(d<m){e.x*=m/d;e.y*=m/d}}}
@@ -939,7 +963,7 @@ fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3
   for(const s of this.ghosts)s.l+=dt;this.ghosts=this.ghosts.filter(s=>s.l<s.m);
   this.shake*=Math.exp(-dt*9)}
 step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
-  this.t+=dt;
+  this.t+=dt;if(this.rushT>0)this.rushT-=dt;
   this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
   this.updHeroes(dt);this.updDrones(dt);
   if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.autoShot(tg.x,tg.y);this.autoT=1/this.S.autoRate}}}
@@ -1092,6 +1116,10 @@ frame(run,dt){this.t+=dt;
       c.globalAlpha=.8;c.strokeStyle='#ff3b5c';c.lineWidth=3;c.setLineDash([10,8]);c.lineDashOffset=-this.t*30;c.beginPath();c.arc(e.x,e.y,e.r*1.55,0,TAU);c.stroke();
       c.lineWidth=1.5;c.setLineDash([3,9]);c.lineDashOffset=this.t*20;c.beginPath();c.arc(e.x,e.y,e.r*1.85,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;c.globalCompositeOperation='source-over'}
     const s=this.enemySprite(e.type,e.r,e.col,e.flash>0);this.draw(s,e.x,e.y,e.boss?this.t*.4:e.ang);
+    // Boss lädt eine Fähigkeit auf: goldener Ring füllt sich bis zur Auslösung; Panzerung des Koloss als heller Ring
+    if(e.boss&&e.cast>0){const f=1-e.cast/e.cast0;c.globalAlpha=.35;c.strokeStyle='#ffe14f';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.r*2.15,0,TAU);c.stroke();
+      c.globalAlpha=1;c.lineWidth=5;c.lineCap='round';c.beginPath();c.arc(e.x,e.y,e.r*2.15,-PI/2,-PI/2+TAU*f);c.stroke();c.lineCap='butt'}
+    if(e.boss&&e.armorT>0){c.globalAlpha=.5+.3*Math.sin(this.t*10);c.strokeStyle='#ffffff';c.lineWidth=4;c.beginPath();c.arc(e.x,e.y,e.r*1.25,0,TAU);c.stroke();c.globalAlpha=1}
     // Schild: ein Ring aus Segmenten, jedes geschluckte Trefferchen löscht eines
     if(e.sh>0){c.strokeStyle='#9fd8ff';c.lineWidth=2.4;c.globalAlpha=.9;const n=e.sh0,g=TAU/n;for(let i=0;i<e.sh;i++){c.beginPath();c.arc(e.x,e.y,e.r*1.5,this.t*.8+i*g+.12,this.t*.8+(i+1)*g-.12);c.stroke()}c.globalAlpha=1}if(e.elite)this.draw(this.eliteRing(e.r),e.x,e.y,this.t*1.5);
     if(e.combo&2){c.globalCompositeOperation='lighter';for(let q=0;q<2;q++){const ph=(this.t*1.3+q*.5+e.wob)%1;c.globalAlpha=(1-ph)*.8;this.draw(this.dot('#8cff4f'),e.x+Math.sin(e.wob*3+q*2)*e.r*.6,e.y-e.r*.4-ph*e.r*1.4,0,.35+.2*(1-ph))}c.globalAlpha=1;c.globalCompositeOperation='source-over'}
@@ -1147,7 +1175,7 @@ frame(run,dt){this.t+=dt;
     for(let g=0;g<6&&placed.some(([px,py])=>Math.abs(px-x)<78&&Math.abs(py-y)<14);g++)y+=14;placed.push([x,y]);c.font='700 11px "Chakra Petch",system-ui,sans-serif';c.lineWidth=3;c.strokeStyle='rgba(4,3,18,.85)';c.strokeText(cb.name,x,y);c.fillStyle=cb.col;c.fillText(cb.name,x,y)}
   for(const e of run.en){if(!e.boss)continue;const x=this.w/2+(e.x+sx)*this.se,y=this.h/2+(e.y+sy)*this.se,m=34;
     if(x>m&&x<this.w-m&&y>m+90&&y<this.h-m-90){const ty=y-(e.r*1.9)*this.se-10;c.font='700 13px "Chakra Petch",system-ui,sans-serif';c.lineWidth=4;c.strokeStyle='rgba(4,3,18,.9)';
-      c.strokeText('BOSS · '+e.name,x,ty-10);c.fillStyle='#ff6b84';c.fillText('BOSS · '+e.name,x,ty-10);const w=70,f=Math.max(0,e.hp/e.max);c.fillStyle='rgba(5,5,26,.85)';c.fillRect(x-w/2-1,ty-1,w+2,7);c.fillStyle='#ff3b5c';c.fillRect(x-w/2,ty,w*f,5)}
+      c.strokeText(bossLabel(e),x,ty-10);c.fillStyle='#ff6b84';c.fillText(bossLabel(e),x,ty-10);const w=70,f=Math.max(0,e.hp/e.max);c.fillStyle='rgba(5,5,26,.85)';c.fillRect(x-w/2-1,ty-1,w+2,7);c.fillStyle='#ff3b5c';c.fillRect(x-w/2,ty,w*f,5)}
     else{const cx=this.w/2,cy=this.h/2,dx=x-cx,dy=y-cy,k=Math.min((this.w/2-m)/Math.abs(dx||1e-6),(this.h/2-m-90)/Math.abs(dy||1e-6)),ax=cx+dx*k,ay=cy+dy*k,a=Math.atan2(dy,dx),p=.6+.4*Math.sin(this.t*6);
       c.save();c.translate(ax,ay);c.rotate(a);c.globalAlpha=p;c.fillStyle='#ff3b5c';c.shadowColor='#ff3b5c';c.shadowBlur=14;c.beginPath();c.moveTo(16,0);c.lineTo(-8,-12);c.lineTo(-3,0);c.lineTo(-8,12);c.closePath();c.fill();c.restore();
       c.globalAlpha=1;c.font='700 11px "Chakra Petch",system-ui,sans-serif';c.lineWidth=3;c.strokeStyle='rgba(4,3,18,.9)';c.strokeText('BOSS',ax-Math.cos(a)*24,ay-Math.sin(a)*24);c.fillStyle='#ff6b84';c.fillText('BOSS',ax-Math.cos(a)*24,ay-Math.sin(a)*24)}}
