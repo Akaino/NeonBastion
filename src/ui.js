@@ -264,10 +264,32 @@ function treeHome(){const r=tv.getBoundingClientRect();tz=clamp(Math.min(r.width
 function zoomAt(f,cx,cy){const nz=clamp(tz*f,.3,1.8);f=nz/tz;tx=cx-(cx-tx)*f;ty=cy-(cy-ty)*f;tz=nz;applyT()}
 function nodeState(n){if(n.id==='root')return{l:1,cls:'root max'};const N=W.s().nodes,l=N[n.id]||0,lock=!((N[n.parent]||0)>0)&&!l,max=l>=n.max;   // bereits gekaufte Knoten bleiben sichtbar, auch wenn sich ihr Vorgänger geändert hat
   const aff=!lock&&!max&&canPay(n.cur,nodeCost(n,l));return{l,lock,max,aff,cls:[lock?'locked':'',l>0?'owned':'',max?'max':'',aff?'afford':''].join(' ')}}
+// Hintergrund des Skilltrees: ein farbiger Sektor je Ast mit großem Astnamen, Ringe für die Tiefe, feines Punktraster.
+// Rein dekorativ und statisch (ein SVG, keine Animation pro Frame).
+function treeBackdrop(){const BRS=W.br,ids=Object.keys(BRS),half=PI/ids.length,ND=Object.values(W.nodes),maxD=Math.ceil(Math.max(...ND.map(n=>n.depth)))+1,RR=118*(maxD+.8),f=v=>v.toFixed(1);
+  let s=`<defs><pattern id="tdots" width="36" height="36" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.1" fill="#aab6ff" fill-opacity=".13"/><circle cx="21" cy="21" r=".8" fill="#aab6ff" fill-opacity=".08"/></pattern></defs><circle r="${f(RR)}" fill="url(#tdots)"/>`;
+  const placed=[];
+  for(const id of ids){const B=BRS[id],a=B.a*PI/180,a0=a-half,a1=a+half,x0=Math.cos(a0)*RR,y0=Math.sin(a0)*RR,x1=Math.cos(a1)*RR,y1=Math.sin(a1)*RR;
+    s+=`<path d="M0 0L${f(x0)} ${f(y0)}A${f(RR)} ${f(RR)} 0 0 1 ${f(x1)} ${f(y1)}Z" fill="${B.col}" fill-opacity=".05"/><line x1="0" y1="0" x2="${f(x0)}" y2="${f(y0)}" stroke="#ffffff" stroke-opacity=".07" stroke-dasharray="3 9"/>`;
+    // Astname groß im eigenen Sektor, in Astrichtung gedreht und immer lesbar herum. Die Stelle wird gesucht:
+    // deutlich innerhalb des Sektors (höchstens 72 % des halben Öffnungswinkels), abseits der schon gesetzten Namen und so weit wie möglich von allen Knoten und ihren Beschriftungen entfernt.
+    const FS=34,hw=B.name.length*FS*.4,ca=Math.cos(a),sa=Math.sin(a);let best=null;
+    for(const side of[1,-1])for(let off=.42;off<=.72;off+=.075)for(let R1=118*1.7;R1<=118*3.5;R1+=118*.15){const t=a+side*off*half,x=Math.cos(t)*R1,y=Math.sin(t)*R1;let dmin=Infinity;
+      for(let k=-2;k<=2;k++){const px=x+ca*hw*k/2,py=y+sa*hw*k/2;for(const n of ND){const d=Math.min(Math.hypot(px-n.x,py-n.y),Math.hypot(px-n.x,py-(n.y+42)));if(d<dmin)dmin=d}
+        for(const q of placed){const d=Math.hypot(px-q[0],py-q[1])-30;if(d<dmin)dmin=d}}
+      const score=Math.min(dmin,70)-R1*.03;if(!best||score>best.score)best={score,x,y}}
+    for(let k=-2;k<=2;k++)placed.push([best.x+ca*hw*k/2,best.y+sa*hw*k/2]);
+    const rot=ca<-1e-6?B.a+180:B.a;
+    s+=`<text class="brname" transform="translate(${f(best.x)} ${f(best.y)}) rotate(${f(rot)})" text-anchor="middle" dominant-baseline="middle" fill="${B.col}" fill-opacity=".42" font-size="${FS}">${B.name.toUpperCase()}</text>`;
+    // und noch einmal am äußeren Ende des Asts
+    const dEnd=Math.max(...ND.filter(n=>n.br===id).map(n=>n.depth))+.85;
+    s+=`<text class="brname" x="${f(Math.cos(a)*118*dEnd)}" y="${f(Math.sin(a)*118*dEnd)}" text-anchor="middle" dominant-baseline="middle" fill="${B.col}" fill-opacity=".8" font-size="22">${B.name.toUpperCase()}</text>`}
+  for(let d=1;d<=maxD;d++)s+=`<circle r="${118*d}" fill="none" stroke="#ffffff" stroke-opacity="${d%3===0?.09:.05}" stroke-dasharray="${d%3===0?'none':'2 10'}"/>`;
+  return s+`<circle r="58" fill="none" stroke="${W.col}" stroke-opacity=".35" stroke-width="1.5"/><circle r="74" fill="none" stroke="${W.col}" stroke-opacity=".15" stroke-dasharray="4 8"/>`}
 function renderTree(){renderCurs();let lines='';const NS=W.nodes,BRS=W.br,SN=W.s().nodes;
   for(const n of Object.values(NS)){if(!n.parent)continue;const p=NS[n.parent],on=(SN[n.id]||0)>0,col=BRS[n.br].col;
     lines+=`<line x1="${p.x}" y1="${p.y}" x2="${n.x}" y2="${n.y}" stroke="${col}" stroke-width="${on?3:2}" stroke-opacity="${on?.9:.22}" ${on?`style="filter:drop-shadow(0 0 4px ${col})"`:'stroke-dasharray="5 6"'}/>`}
-  let html=`<svg width="1600" height="1600" viewBox="-800 -800 1600 1600" aria-hidden="true">${lines}</svg>`;
+  let html=`<svg width="1600" height="1600" viewBox="-800 -800 1600 1600" aria-hidden="true">${treeBackdrop()}${lines}</svg>`;
   for(const n of Object.values(NS)){const st=nodeState(n),col=n.br?BRS[n.br].col:W.col;
     if(st.lock){html+=`<button class="node ${st.cls}${selNode===n.id?' sel':''}" data-id="${n.id}" style="left:${n.x}px;top:${n.y}px;--c:${col}" aria-label="Verborgener Knoten"><span class="q">?</span></button>`;continue}
     html+=`<button class="node ${st.cls}${selNode===n.id?' sel':''}" data-id="${n.id}" style="left:${n.x}px;top:${n.y}px;--c:${col}" aria-label="${n.name}">${glyph(W.id===2&&n.br?{k:'b',w:'f',u:'h',l:'e'}[n.br]:n.br||'root')}${n.id!=='root'?`<span class="lv">${st.l}/${n.max>=999?'∞':n.max}</span>`:''}<span class="nm">${n.name}</span></button>`}

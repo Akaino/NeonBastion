@@ -125,7 +125,7 @@ async function upgrades(){const at=String(arg('at','25,50')).split(',').map(Numb
 /* ---------- Ast-Vergleich ---------- */
 // Spielt die Karriere mit jeder Kombination erlaubter Skilltree-Äste und vergleicht, wie weit man in gleicher Spielzeit kommt.
 async function aeste(){const seeds=+arg('seeds',3),hours=+arg('stunden',2),sizes=String(arg('groesse','1,2,3,4,5')).split(',').map(Number),tuerme=arg('tuerme','an');
-  const BR={b:'Basis',u:'Einheiten',h:'Helden',f:'Fokus',e:'Ertrag'},ids=Object.keys(BR),combos=[''];
+  const BR={b:'Basis',u:'Flotte',h:'Helden',f:'Impuls',e:'Ertrag'},ids=Object.keys(BR),combos=[''];
   for(let m=1;m<32;m++){const c=ids.filter((_,i)=>m>>i&1);if(sizes.includes(c.length))combos.push(c.join(''))}
   combos.sort((a,b)=>a.length-b.length||ids.indexOf(a[0])-ids.indexOf(b[0])||a.localeCompare(b));
   const name=c=>c?[...c].map(x=>BR[x]).join(' + '):'kein Ast';
