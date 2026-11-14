@@ -1,4 +1,4 @@
-const VERSION='0.18.0';
+const VERSION='0.19.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -43,7 +43,7 @@ const BR={
 };
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
-const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012;   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
+const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=20,DRONE_DMG=4.5,MEGA_MUL=2;   // BASE_GUN: % Geschütz-/Autofeuer-Schaden je Stufe Panzerung; DRONE_DMG: Grundschaden einer Drohne; MEGA_MUL: Schadensfaktor des Weltenbrechers   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
 // Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
 // Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
@@ -51,7 +51,7 @@ const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
 const NODE_DEFS=[
  // ---- Basis ----
- ['b1','b','root',1,0,'Panzerung',999,'s',8,1.25,l=>`+${l*20} % Leben der Basis`,LADDER],
+ ['b1','b','root',1,0,'Panzerung',999,'s',8,1.25,l=>`+${l*20} % Leben der Basis, +${l*BASE_GUN} % Schaden für Geschütze und Autofeuer`,LADDER],
  ['b2a','b','b1',2,-1,'Schildgenerator',10,'s',40,1.35,l=>l?`Schild mit ${25+(l-1)*8} % des Basislebens`:'Noch kein Schild'],
  ['b2b','b','b1',2,1,'Reparatur',10,'s',35,1.35,l=>l?`Repariert ${fmtD(l*.3)} % Leben pro Sekunde`:'Keine Reparatur'],
  ['b3a','b','b2a',3,-1.3,'Geschütze',4,'k',3,2.2,l=>l?`${l} Geschützt${l>1?'ürme':'urm'} an der Basis`:'Keine Geschütze'],
@@ -110,7 +110,7 @@ const NODE_DEFS=[
  ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch deinen Impuls'],
  ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Impulsschaden`],
  ['f7','b','f3c',4.5,.6,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
- ['f8','f','f6',7,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Impuls trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
+ ['f8','f','f6',7,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Impuls trifft alle Gegner mit doppeltem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
@@ -192,9 +192,9 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   baseHp:200*(1+.2*L('b1'))*(L('b5')?2:1),
   shieldPct:L('b2a')?.25+.08*(L('b2a')-1):0,
   regen:.003*L('b2b'),
-  turrets:L('b3a'),turretDmg:6*(1+.4*L('b4a')),turretRange:200*(L('b5')?1.5:1),
+  turrets:L('b3a'),turretDmg:6*(1+.4*L('b4a'))*(1+BASE_GUN/100*L('b1')),turretRange:200*(L('b5')?1.5:1),
   pulse:L('b3b'),pulsePct:PULSE_PCT*L('b3b'),pulseDmg:15*(1+.6*Math.max(0,L('b3b')-1)),pulseCd:8*(1-.12*L('b4b')),
-  drones:2+L('u1')+2*L('u3b'),droneDmg:3*(1+.25*L('u2a')),droneHp:20*(1+.4*L('u3a')),
+  drones:2+L('u1')+2*L('u3b'),droneDmg:DRONE_DMG*(1+.25*L('u2a')),droneHp:20*(1+.4*L('u3a')),
   droneSpawn:3/(1+.2*L('u2b')),droneRange:90*(1+.5*L('u4')),droneBeam:L('u4')>0,mother:L('u5')>0,
   heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5'),
   revive:8*(1-.15*L('h3b')),abilityCd:1-.1*L('h4'),

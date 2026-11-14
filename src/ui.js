@@ -226,7 +226,7 @@ addEventListener('contextmenu',e=>e.preventDefault());
 const fv=v=>typeof v==='string'?v:v>=100?fmtN(v):fmtD(v,Math.abs(v-Math.round(v))<.005?0:1);
 const FMT={n:fv,i:v=>String(Math.round(v)),s:v=>v?fmtD(v,1)+' s':'–',x:v=>'×'+fmtD(v,2),pct:v=>fmtD(v,0)+' %',t:v=>v};
 const PREV={
- b1:[['Basisleben',S=>S.baseHp,'n']],b2a:[['Schild',S=>S.baseHp*S.shieldPct,'n']],b2b:[['Reparatur pro Sekunde',S=>S.baseHp*S.regen,'n']],
+ b1:[['Basisleben',S=>S.baseHp,'n'],['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n']],b2a:[['Schild',S=>S.baseHp*S.shieldPct,'n']],b2b:[['Reparatur pro Sekunde',S=>S.baseHp*S.regen,'n']],
  b3a:[['Geschütztürme',S=>S.turrets,'i'],['Schaden pro Schuss',S=>S.turrets?S.turretDmg:0,'n']],
  b3b:[['Schockwellen-Schaden',S=>S.pulse?S.pulseDmg:0,'n'],['Anteil am Gegnerleben',S=>fmtD(S.pulsePct*100,1)+' %','t'],['Abklingzeit',S=>S.pulse?S.pulseCd:0,'s']],
  b4a:[['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n']],b4b:[['Abklingzeit der Schockwelle',S=>S.pulseCd,'s']],
