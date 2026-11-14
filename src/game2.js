@@ -37,14 +37,14 @@ moveTower(T,x,y){if(this.phase!=='build'||this.moves<=0)return false;if(!super.m
 updTowers(dt){super.updTowers(dt);const S=this.S,cm=S.comboMul;
   for(const e of this.en){if(e.acid>0&&e.hp>0){e.acid-=dt;e.hp-=e.max*(e.boss?.004:.02)*S.poisonMul*cm*dt;if(e.hp<=0)this.kill(e)}}
   for(const T of this.towers){const D=TOWERS[T.type];if(!D.dmgTower)continue;const r2=T.r*T.r;
-    const inR=e=>e.hp>0&&(e.x-T.x)**2+(e.y-T.y)**2<r2+e.r*e.r;
+    const inR=e=>e.hp>0&&sq(e.x-T.x)+sq(e.y-T.y)<r2+e.r*e.r;
     const pick=()=>{let b=null,bd=Infinity;for(const e of this.en){if(!inR(e))continue;const d=e.x*e.x+e.y*e.y;if(d<bd){bd=d;b=e}}return b};
     if(T.type==='laser'){if(!(T.tg&&inR(T.tg)))T.tg=pick();const e=T.tg;T.beam=e||null;if(!e)continue;
       let m=1,crit=false;if(e.sF)m*=1+.6*cm;if(e.sZ){m*=1+.4*cm;crit=true}if(e.sK&&e.frozen>0)m*=1+2*cm;
       const d=T.fx.dps*S.tDmg*S.laserDmg*S.tRate*m*dt;this.hitE(e,d,{num:false});T.acc=(T.acc||0)+d;T.cd2-=dt;
       if(T.cd2<=0){T.cd2=.4;if(T.acc>0)this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,T.acc))+(crit?'!':''),crit?'#ffe14f':T.col,crit);T.acc=0;this.h.sfx&&this.h.sfx('beam')}}
     else if(T.type==='rocket'){T.cd2-=dt*S.tRate;if(T.cd2>0)continue;let best=null,bn=-1;const cand=this.en.filter(inR);if(!cand.length){T.cd2=.2;continue}
-      for(const e of cand.length>24?cand.slice(0,24):cand){let n=0;for(const o of cand)if((o.x-e.x)**2+(o.y-e.y)**2<T.fx.splash*T.fx.splash)n++;if(n>bn){bn=n;best=e}}
+      for(const e of cand.length>24?cand.slice(0,24):cand){let n=0;for(const o of cand)if(sq(o.x-e.x)+sq(o.y-e.y)<T.fx.splash*T.fx.splash)n++;if(n>bn){bn=n;best=e}}
       T.cd2=T.fx.cd;T.aim=Math.atan2(best.y-T.y,best.x-T.x);this.shootAt(T.x,T.y,best,380,T.fx.dmg*S.tDmg*S.rocketDmg,T.col,{size:5,splash:T.fx.splash,num:true});this.h.sfx&&this.h.sfx('turret')}
     else if(T.type==='tesla'){T.cd2-=dt*S.tRate;if(T.cd2>0)continue;const e=pick();if(!e){T.cd2=.15;continue}T.cd2=T.fx.cd;
       const n=T.fx.chain+(e.sF?Math.round(2*cm):0),d=T.fx.dmg*S.tDmg*S.teslaDmg*(e.sZ?1+.6*cm:1),stun=e.sK;

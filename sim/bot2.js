@@ -5,8 +5,10 @@ const fs=require('fs'),vm=require('vm'),path=require('path');
 function seededRandom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
 const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(__dirname,'..','src',f),'utf8')).join('\n');
 const SCRIPT=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX});');
-function loadGame(seed){const M=Object.create(Math);M.random=seededRandom(seed);
-  const ctx={console,Math:M,Set,Map,Array,Object,JSON,Number,String,Infinity,NaN,isFinite,parseInt,parseFloat};vm.createContext(ctx);SCRIPT.runInContext(ctx);return ctx}
+// Wichtig für die Geschwindigkeit: Der Spielcode bekommt die eigenen Bausteine seines Kontexts (Math, Map, Array, …).
+// Nur Math.random wird durch den festen Zufallsgenerator ersetzt. Ein von außen hereingereichtes Math-Objekt
+// würde jeden Aufruf von Math.sqrt & Co. über einen langsamen Umweg schicken (gemessen: 86 % der Rechenzeit).
+function loadGame(seed){const ctx={console,__rnd:seededRandom(seed)};vm.createContext(ctx);vm.runInContext('Math.random=__rnd;',ctx);SCRIPT.runInContext(ctx);return ctx}
 const clone=o=>JSON.parse(JSON.stringify(o));
 const WEIGHT={s:1,k:40,p:400,d:4000,q:1};
 

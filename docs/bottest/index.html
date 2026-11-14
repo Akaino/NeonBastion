@@ -612,7 +612,7 @@ function stats2(save){const w=save.w2,L=id=>w.nodes[id]||0;
 // Bonus, den die Gitterfestung dem Neon-Sektor gibt
 const w2BonusForW1=save=>1+.02*((save.w2&&save.w2.best)||0);
 
-const hyp=(a,b)=>Math.sqrt(a*a+b*b);
+const hyp=(a,b)=>Math.sqrt(a*a+b*b),sq=x=>x*x;   // sq statt **2: die Potenz ist in den innersten Schleifen spürbar langsamer
 // Gegnertypen. from = erste Welle, share = Anteil an der Welle (wächst ab from um step je Welle bis max), bar = Lebensbalken zeigen.
 // Die Reihenfolge in WAVE_MIX bestimmt, wer bei der Auswahl zuerst drankommt; der Rest der Welle sind Schwärmer.
 const ETYPES={
@@ -666,7 +666,7 @@ key(cx,cy){return (cx+500)*1000+(cy+500)}
 buildGrid(){const g=this.grid;for(const a of g.values())a.length=0;if(g.size>4000)g.clear();for(const e of this.en){if(e.hp<=0)continue;const k=this.key(Math.floor(e.x/CELL),Math.floor(e.y/CELL));let a=g.get(k);if(!a)g.set(k,a=[]);a.push(e)}}
 query(x,y,r,fn){const x0=Math.floor((x-r)/CELL),x1=Math.floor((x+r)/CELL),y0=Math.floor((y-r)/CELL),y1=Math.floor((y+r)/CELL);
   for(let cx=x0;cx<=x1;cx++)for(let cy=y0;cy<=y1;cy++){const a=this.grid.get(this.key(cx,cy));if(a)for(const e of a)if(e.hp>0)fn(e)}}
-nearest(x,y,R){let b=null,bd=R*R;for(const e of this.en){if(e.hp<=0)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;b=e}}return b}
+nearest(x,y,R){let b=null,bd=R*R;for(const e of this.en){if(e.hp<=0)continue;const d=sq(e.x-x)+sq(e.y-y);if(d<bd){bd=d;b=e}}return b}
 threat(R){let b=null,bs=Infinity;for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)-e.r;if(d>R)continue;
   // Fernkämpfer, die die Basis beschießen, zählen als besonders bedrohlich
   const s=d-(e.ranged&&d<e.stop+10?150:0);if(s<bs){bs=s;b=e}}return b}
@@ -708,7 +708,7 @@ updTowers(dt){
   for(const e of this.en){e.spMul=1;e.vuln=1;e.dmgMul=1;e.critB=0;e.combo=0;e.perma=false;e.shat=false;e.nullp=false;e.tw?e.tw.length=0:e.tw=[];
     if(e.frozen>0)e.frozen-=dt;if(e.chill>0)e.chill-=dt;if(e.frzImm>0)e.frzImm-=dt}
   for(const T of this.towers){T.pulse+=dt;T.born+=dt;const r2=T.r*T.r;
-    for(const e of this.en){if(e.hp<=0)continue;const d=(e.x-T.x)**2+(e.y-T.y)**2;if(d<r2+e.r*e.r)e.tw.push(T)}}
+    for(const e of this.en){if(e.hp<=0)continue;const d=sq(e.x-T.x)+sq(e.y-T.y);if(d<r2+e.r*e.r)e.tw.push(T)}}
   // 2) Effekte addieren (max. 3 Türme) und Kombinationen bestimmen
   for(const e of this.en){const tw=e.tw;e.sF=e.sZ=e.sK=false;if(!tw.length)continue;
     for(const T of tw){if(T.type==='frost')e.sF=true;else if(T.type==='weak')e.sZ=true;else if(T.type==='cryo')e.sK=true}
@@ -729,7 +729,7 @@ updTowers(dt){
     e.combo=cm}
   // 3) Kryo-Türme frieren ein (mit Kombinations-Boni)
   for(const T of this.towers){if(T.type!=='cryo')continue;T.cd-=dt;if(T.cd>0)continue;const r2=T.r*T.r;let any=false;const fm=this.S.freezeMul||1;
-    for(const e of this.en){if(e.hp<=0||e.frzImm>0)continue;const d=(e.x-T.x)**2+(e.y-T.y)**2;if(d>=r2+e.r*e.r)continue;any=true;const dur=T.fx.dur*(e.perma?1.5:1)*fm;
+    for(const e of this.en){if(e.hp<=0||e.frzImm>0)continue;const d=sq(e.x-T.x)+sq(e.y-T.y);if(d>=r2+e.r*e.r)continue;any=true;const dur=T.fx.dur*(e.perma?1.5:1)*fm;
       if(e.boss)e.chill=dur;else e.frozen=dur;e.frzImm=dur+2;
       if(e.nullp){this.hitE(e,e.max*(e.boss?.01:.04),{col:'#ffffff'});this.burst(e.x,e.y,5,'#ffffff',150,.3,2)}}
     if(any){T.cd=T.fx.cd;this.ring(T.x,T.y,8,T.r,'#bff4ff',.45,8);this.burst(T.x,T.y,18,'#bff4ff',T.r*2.2,.45,2.5);this.h.sfx&&this.h.sfx('freeze')}else T.cd=.25}
@@ -791,7 +791,9 @@ spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
 spawnEnemy(type,elite,x,y){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0});
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,
+    // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
+    spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
 updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Math.min(this.queue.length,1+Math.floor(Math.random()*3));
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
@@ -848,7 +850,7 @@ ai_schuetzin(h,dt){const tg=this.aim(h,360);
   else this.idle(h,dt);this.leash(h,250)}
 chain(from,first,dmg,n,col,o={}){const hit=new Set();let cur=first,fx=from[0],fy=from[1];
   for(let i=0;i<=n&&cur;i++){this.headless||this.bolts.push({pts:jag(fx,fy,cur.x,cur.y,6,8),l:0,m:.22,col,w:3});hit.add(cur);this.hitE(cur,dmg,o);if(o.each)o.each(cur);
-    fx=cur.x;fy=cur.y;dmg*=.8;let nx=null,nd=110*110;for(const e of this.en){if(e.hp<=0||hit.has(e))continue;const d=(e.x-fx)**2+(e.y-fy)**2;if(d<nd){nd=d;nx=e}}cur=nx}return hit}
+    fx=cur.x;fy=cur.y;dmg*=.8;let nx=null,nd=110*110;for(const e of this.en){if(e.hp<=0||hit.has(e))continue;const d=sq(e.x-fx)+sq(e.y-fy);if(d<nd){nd=d;nx=e}}cur=nx}return hit}
 strike(x,y,dmg,col){this.headless||this.bolts.push({pts:jag(x+rnd(-30,30),y-240,x,y,9,14),l:0,m:.3,col,w:5});this.aoe(x,y,42,dmg,{col,big:true});this.ring(x,y,4,50,col,.3,6);this.burst(x,y,8,col,160,.4)}
 ai_arkanist(h,dt){const tg=this.aim(h,340);
   if(h.abT<=0&&this.en.length){const list=this.en.filter(e=>e.hp>0).sort((a,b)=>(a.x*a.x+a.y*a.y)-(b.x*b.x+b.y*b.y)).slice(0,14);
@@ -869,9 +871,10 @@ ai_waechterin(h,dt){const b=this.base;h.healT-=dt;
 updDrones(dt){const S=this.S,leash=200+(S.droneRange-90);
   if(this.drones.length<S.drones){this.droneT-=dt;if(this.droneT<=0){this.droneT=S.droneSpawn;const idx=++this.droneIdx,big=S.mother&&idx%4===0,m=big?4:1;
     this.drones.push({x:0,y:0,r:big?9:5,max:S.droneHp*m,hp:S.droneHp*m,dmg:S.droneDmg*m,atkT:.5,big,orb:rnd(0,TAU),off:rnd(0,TAU),flash:0,col:'#3df5ff',face:0});this.ring(0,0,10,36,'#3df5ff',.3,3)}}
+  if(this.drones.length)for(const e of this.en)e.bd=hyp(e.x,e.y);   // einmal pro Schritt statt einmal pro Drohne
   for(const d of this.drones){d.flash-=dt;d.atkT-=dt;let tg=null,bd=Infinity;
-    for(const e of this.en){if(e.hp<=0)continue;const bdist=hyp(e.x,e.y);if(bdist>leash+S.droneRange*.9)continue;const dd=(e.x-d.x)**2+(e.y-d.y)**2*1-(e.ranged&&bdist<e.stop+10?9000:0);if(dd<bd){bd=dd;tg=e}}
-    if(tg){const dist=Math.sqrt(bd);d.face=Math.atan2(tg.y-d.y,tg.x-d.x);
+    for(const e of this.en){if(e.hp<=0)continue;const bdist=e.bd;if(bdist>leash+S.droneRange*.9)continue;const dd=sq(e.x-d.x)+sq(e.y-d.y)*1-(e.ranged&&bdist<e.stop+10?9000:0);if(dd<bd){bd=dd;tg=e}}
+    if(tg){const dist=Math.sqrt(bd);if(!this.headless)d.face=Math.atan2(tg.y-d.y,tg.x-d.x);
       if(dist>S.droneRange*.8)this.moveTo(d,tg.x+Math.cos(d.off)*14,tg.y+Math.sin(d.off)*14,dt,d.big?110:160);
       if(dist<=S.droneRange&&d.atkT<=0){d.atkT=1/(1.2*S.droneRate);const dd_=d.dmg*(1+S.swarmInt*this.drones.length);
         if(S.droneBeam){this.headless||this.bolts.push({pts:[[d.x,d.y],[tg.x,tg.y]],l:0,m:.12,col:'#3df5ff',w:d.big?4:2});this.hitE(tg,dd_,{num:false});this.h.sfx&&this.h.sfx('beam')}
@@ -882,15 +885,17 @@ updDrones(dt){const S=this.S,leash=200+(S.droneRange-90);
 
 /* ---------- enemies ---------- */
 updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dead>0))allies.push(h);for(const d of this.drones)allies.push(d);
+  // Rechteck um alle Verbündeten: Gegner außerhalb können niemanden berühren und überspringen die teure Einzelprüfung
+  let ax0=Infinity,ax1=-Infinity,ay0=Infinity,ay1=-Infinity,ar=0;for(const a of allies){if(a.x<ax0)ax0=a.x;if(a.x>ax1)ax1=a.x;if(a.y<ay0)ay0=a.y;if(a.y>ay1)ay1=a.y;if(a.r>ar)ar=a.r}
   const n0=this.en.length;
   for(let i=0;i<n0;i++){const e=this.en[i];if(e.hp<=0)continue;e.flash-=dt;if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;const dm=e.dmg*(e.dmgMul||1),spd=e.sp*(e.spMul||1);
     if(e.boss){e.sumT-=dt;if(e.sumT<=0){e.sumT=4;for(let j=0;j<3;j++)this.spawnEnemy('swarm',false,e.x+rnd(-30,30),e.y+rnd(-30,30))}}
-    let bl=null;if(!e.ranged)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
+    let bl=null;const am=e.r+ar+3;if(!e.ranged&&e.x>ax0-am&&e.x<ax1+am&&e.y>ay0-am&&e.y<ay1+am)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
     if(bl){if(e.atkT<=0){this.hurtAlly(bl,dm);e.atkT=1}continue}
     if(e.ranged&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){const sg=e.type==='siege',v=sg?150:220;e.atkT=sg?3.6:1.8;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*v,vy:-e.y/d*v,dmg:dm,col:e.col,big:sg})}continue}
     if(d<b.r+e.r+2){if(e.atkT<=0){this.damageBase(dm);e.atkT=1}continue}
     e.wob+=dt*3;const ux=-e.x/d,uy=-e.y/d,lat=e.boss?0:Math.sin(e.wob)*.25;
-    e.x+=(ux-uy*lat)*spd*dt;e.y+=(uy+ux*lat)*spd*dt;e.ang=Math.atan2(uy,ux)}}
+    e.x+=(ux-uy*lat)*spd*dt;e.y+=(uy+ux*lat)*spd*dt;if(!this.headless)e.ang=Math.atan2(uy,ux)}}
 separate(){for(const e of this.en){if(e.boss)continue;this.query(e.x,e.y,e.r+36,o=>{if(o===e)return;const dx=e.x-o.x,dy=e.y-o.y,rr=e.r+o.r,dd=dx*dx+dy*dy;
     if(dd<rr*rr&&dd>.01){const d=Math.sqrt(dd),p=(rr-d)/d*(o.boss?.8:.5);e.x+=dx*p;e.y+=dy*p}});
   const d=hyp(e.x,e.y)||1,m=this.base.r+e.r;if(d<m){e.x*=m/d;e.y*=m/d}}}
@@ -921,7 +926,7 @@ tap(x,y){if(this.over)return;const S=this.S,n=++this.imps;this.taps=n;
   const over=S.overload&&n%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
   const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});
   this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
-  if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=(e.x-f.x)**2+(e.y-f.y)**2;if(d<nd){nd=d;nx=e}}
+  if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=sq(e.x-f.x)+sq(e.y-f.y);if(d<nd){nd=d;nx=e}}
     if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d'})}
   if(hit.length&&this.h.sfx)this.h.sfx(crit||over||beat?'crit':'tap');return hit.length}
 
@@ -987,14 +992,14 @@ moveTower(T,x,y){if(this.phase!=='build'||this.moves<=0)return false;if(!super.m
 updTowers(dt){super.updTowers(dt);const S=this.S,cm=S.comboMul;
   for(const e of this.en){if(e.acid>0&&e.hp>0){e.acid-=dt;e.hp-=e.max*(e.boss?.004:.02)*S.poisonMul*cm*dt;if(e.hp<=0)this.kill(e)}}
   for(const T of this.towers){const D=TOWERS[T.type];if(!D.dmgTower)continue;const r2=T.r*T.r;
-    const inR=e=>e.hp>0&&(e.x-T.x)**2+(e.y-T.y)**2<r2+e.r*e.r;
+    const inR=e=>e.hp>0&&sq(e.x-T.x)+sq(e.y-T.y)<r2+e.r*e.r;
     const pick=()=>{let b=null,bd=Infinity;for(const e of this.en){if(!inR(e))continue;const d=e.x*e.x+e.y*e.y;if(d<bd){bd=d;b=e}}return b};
     if(T.type==='laser'){if(!(T.tg&&inR(T.tg)))T.tg=pick();const e=T.tg;T.beam=e||null;if(!e)continue;
       let m=1,crit=false;if(e.sF)m*=1+.6*cm;if(e.sZ){m*=1+.4*cm;crit=true}if(e.sK&&e.frozen>0)m*=1+2*cm;
       const d=T.fx.dps*S.tDmg*S.laserDmg*S.tRate*m*dt;this.hitE(e,d,{num:false});T.acc=(T.acc||0)+d;T.cd2-=dt;
       if(T.cd2<=0){T.cd2=.4;if(T.acc>0)this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,T.acc))+(crit?'!':''),crit?'#ffe14f':T.col,crit);T.acc=0;this.h.sfx&&this.h.sfx('beam')}}
     else if(T.type==='rocket'){T.cd2-=dt*S.tRate;if(T.cd2>0)continue;let best=null,bn=-1;const cand=this.en.filter(inR);if(!cand.length){T.cd2=.2;continue}
-      for(const e of cand.length>24?cand.slice(0,24):cand){let n=0;for(const o of cand)if((o.x-e.x)**2+(o.y-e.y)**2<T.fx.splash*T.fx.splash)n++;if(n>bn){bn=n;best=e}}
+      for(const e of cand.length>24?cand.slice(0,24):cand){let n=0;for(const o of cand)if(sq(o.x-e.x)+sq(o.y-e.y)<T.fx.splash*T.fx.splash)n++;if(n>bn){bn=n;best=e}}
       T.cd2=T.fx.cd;T.aim=Math.atan2(best.y-T.y,best.x-T.x);this.shootAt(T.x,T.y,best,380,T.fx.dmg*S.tDmg*S.rocketDmg,T.col,{size:5,splash:T.fx.splash,num:true});this.h.sfx&&this.h.sfx('turret')}
     else if(T.type==='tesla'){T.cd2-=dt*S.tRate;if(T.cd2>0)continue;const e=pick();if(!e){T.cd2=.15;continue}T.cd2=T.fx.cd;
       const n=T.fx.chain+(e.sF?Math.round(2*cm):0),d=T.fx.dmg*S.tDmg*S.teslaDmg*(e.sZ?1+.6*cm:1),stun=e.sK;
