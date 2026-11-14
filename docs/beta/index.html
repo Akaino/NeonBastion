@@ -308,7 +308,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.14.0';
+const VERSION='0.14.1';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -617,8 +617,8 @@ const ETYPES={
   shooter:{hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1},
   boss:{hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
-// Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP des normalen Bosslebens
-const TWIN_EVERY=25,TWIN_HP=.65,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
+// Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (80 %) des normalen Bosslebens
+const TWIN_EVERY=25,TWIN_HP=.8,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
 const CELL=40,AIM_STICK=60;   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}

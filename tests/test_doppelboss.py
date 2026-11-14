@@ -27,7 +27,7 @@ with sync_playwright() as p:
     check(r25['n']==2 and r25['twin'],'Welle 25: zwei Bosse')
     check(r25['gegenueber'],'die beiden kommen von gegenüberliegenden Seiten')
     check(r25['namen'][0]!=r25['namen'][1] and r25['balken']=='Doppelboss · '+' & '.join(r25['namen']),'verschiedene Namen, Balken „'+r25['balken']+'“')
-    check(r25['max'][0]==r25['max'][1] and abs(r25['max'][0]/ (r20['max'][0]*1.15**5*(1+25*.03)/(1+20*.03)) -.65)<.01,'jeder der beiden hat 65 % des normalen Bosslebens')
+    check(r25['max'][0]==r25['max'][1] and abs(r25['max'][0]/ (r20['max'][0]*1.15**5*(1+25*.03)/(1+20*.03)) -.8)<.01,'jeder der beiden hat 80 % des normalen Bosslebens')
     pg.screenshot(path='db1_doppelboss.png')
     # einen der beiden besiegen: Balken fällt auf die Hälfte, Sternenstaub nur einmal
     h=pg.evaluate("()=>{const bs=run.en.filter(e=>e.boss);const d0=run.gain.d,p0=run.gain.p;run.hitE(bs[0],bs[0].hp*2);updHud();const d1=run.gain.d;run.en=run.en.filter(e=>e.hp>0);updHud();const br=parseFloat(document.querySelector('#bossBar i').style.width),lab=document.querySelector('#bossBar b').textContent;run.hitE(bs[1],bs[1].hp*2);return {staub1:d1-d0,staub2:run.gain.d-d1,prismen:run.gain.p-p0,breite:br,lab,kills:run.bossKills}}")
