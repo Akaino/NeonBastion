@@ -37,22 +37,37 @@ const allowBr=(opt,br)=>!opt||opt.aeste==null||opt.aeste.includes(br);
 function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),towers=!opt||opt.tuerme!=='aus';
   for(const n of Object.values(X.NODES)){if(n.id==='root'||!allowBr(opt,n.br))continue;const l=save.nodes[n.id]||0;if(l>=n.max||!(save.nodes[n.parent]>0))continue;
     if(n.id==='e2b'&&l>=Math.floor((save.best||0)/2))continue;
-    o.push({id:n.id,name:n.name,cur:n.cur,cost:X.nodeCost(n,l),apply:()=>save.nodes[n.id]=l+1})}
-  if(heroes)for(const id of save.team){const h=save.heroes[id];if(h.a<5)o.push({id:'aufstieg:'+id,name:'Aufstieg '+X.HEROES[id].name,cur:'p',cost:(h.a+1)*2,apply:()=>h.a++});
-    if(h.l<X.HERO_MAX){const [cu,a]=X.heroLvlCost(h.l);o.push({id:'held:'+id,name:'Stufe '+X.HEROES[id].name,cur:cu,cost:a,apply:()=>h.l++})}}
-  if(towers)for(const id of X.TOWER_IDS){const t=save.towers[id];if(t.u&&t.l<X.TOWER_MAX){const [cu,a]=X.towerLvlCost(t.l);o.push({id:'turm:'+id,name:'Startstufe '+X.TOWERS[id].name,cur:cu,cost:a,apply:()=>t.l++})}}
-  if(towers&&(save.tslots||0)<X.SLOT_EXTRA){const [cu,a]=X.slotCost(save.tslots||0);o.push({id:'bauplatz',name:'Bauplatz',cur:cu,cost:a,apply:()=>save.tslots=(save.tslots||0)+1})}
+    o.push({id:n.id,name:n.name,cur:n.cur,cost:X.nodeCost(n,l),apply:()=>save.nodes[n.id]=l+1,undo:()=>save.nodes[n.id]=l})}
+  if(heroes)for(const id of save.team){const h=save.heroes[id];if(h.a<5)o.push({id:'aufstieg:'+id,name:'Aufstieg '+X.HEROES[id].name,cur:'p',cost:(h.a+1)*2,apply:()=>h.a++,undo:()=>h.a--});
+    if(h.l<X.HERO_MAX){const [cu,a]=X.heroLvlCost(h.l);o.push({id:'held:'+id,name:'Stufe '+X.HEROES[id].name,cur:cu,cost:a,apply:()=>h.l++,undo:()=>h.l--})}}
+  if(towers)for(const id of X.TOWER_IDS){const t=save.towers[id];if(t.u&&t.l<X.TOWER_MAX){const [cu,a]=X.towerLvlCost(t.l);o.push({id:'turm:'+id,name:'Startstufe '+X.TOWERS[id].name,cur:cu,cost:a,apply:()=>t.l++,undo:()=>t.l--,fix:.01})}}
+  if(towers&&(save.tslots||0)<X.SLOT_EXTRA){const [cu,a]=X.slotCost(save.tslots||0);o.push({id:'bauplatz',name:'Bauplatz',cur:cu,cost:a,apply:()=>save.tslots=(save.tslots||0)+1,undo:()=>save.tslots--,fix:.05})}
   return o}
 function unlocks(X,save,spend,opt){
   if(allowBr(opt,'h'))for(const id in X.HEROES){const h=save.heroes[id];if(!h.u){const [cu,a]=X.HEROES[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;h.u=1;track(spend,'frei:'+id,'Held '+X.HEROES[id].name,cu,a)}}}
   if(!opt||opt.tuerme!=='aus')for(const id of X.TOWER_IDS){const t=save.towers[id];if(!t.u&&X.TOWERS[id].unlock){const [cu,a]=X.TOWERS[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;t.u=1;track(spend,'frei:'+id,X.TOWERS[id].name,cu,a)}}}}
 function track(spend,id,name,cur,cost){const e=spend[id]||(spend[id]={id,name,levels:0,s:0,k:0,p:0,d:0,q:0});e.levels++;e[cur]+=cost}
 
-function buy(X,save,spend,opt){for(let c=0;c<20000;c++){unlocks(X,save,spend,opt);const S=X.stats(save);
+// Grobe Stärkeschätzung für die Kaufregel „nutzen“: Schaden pro Sekunde aller Quellen, Standfestigkeit der Basis und Einkommen, jeweils logarithmisch.
+// Das ist eine Faustformel, kein Messwert. Sie soll den Bot nur davon abhalten, seltene Währungen in Knoten zu stecken, die fast nichts bewirken.
+function power(X,save,opt){const S=X.stats(save),w=Math.max(1,save.best||1),ref=8*Math.pow(1.15,w-1)*Math.pow(1.08,Math.max(0,w-35))*Math.pow(1.06,Math.max(0,w-60));
+  let dps=0;for(const id of save.team){const d=X.HEROES[id],h=save.heroes[id],lm=1+.12*(h.l-1),dm=d.dmg*lm*S.heroDmg;
+    dps+=dm*d.rate*S.heroRate*(1+1.5*S.heroCrit)+dm*3*(1+.35*h.a)*S.abilPow/(d.cd*S.abilityCd*(1-.08*h.a))}
+  dps+=S.drones*S.droneDmg*1.2*S.droneRate*(1+S.swarmInt*S.drones)*(S.mother?1.75:1)*Math.min(1,.3+S.droneHp/(ref*.05+1))
+     +S.turrets*S.turretDmg*1.5*S.turretRate+S.autoRate*S.turretDmg*S.autoDmg*(S.autoAim?1.5:1)
+     +(S.pulse?(S.pulseDmg+(S.pulsePct||0)*ref*4)*3/S.pulseCd:0);
+  const zf=opt&&opt.zeiger==='zielt'?1:opt&&opt.zeiger==='aus'?0:.12;
+  dps+=zf*S.tapDmg*S.impMul/S.impInt*(1+1.5*S.tapCrit)*(S.tapR/26)*(1+(S.beat||0)/5)*(1+.3*(S.overload||0))*(1+.4*(S.chain||0))*(S.megaTap?1.3:1);
+  const ehp=S.baseHp*(1+S.shieldPct*S.shRegen)*(1+S.regen*25)/S.dmgTaken;
+  return Math.log(dps+1)+.5*Math.log(ehp)+.6*Math.log(S.gS*S.gAll)+.25*Math.log(S.gK*S.gAll)+.2*Math.log(S.gP*S.gAll)+.1*Math.log(1+S.gD)+.1*Math.log(S.elite)+.05*Math.log(S.qMul||1)+.03*(save.nodes.e2b||0)}
+// Kaufregel: opt.kauf==='nutzen' wählt unter den bezahlbaren Optionen die mit dem größten geschätzten Nutzen je Kosten, sonst wie bisher die billigste.
+function buy(X,save,spend,opt){const smart=opt&&opt.kauf==='nutzen';for(let c=0;c<20000;c++){unlocks(X,save,spend,opt);const S=X.stats(save);
   save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
-  const o=options(X,save,opt).sort((a,b)=>a.cost*WEIGHT[a.cur]-b.cost*WEIGHT[b.cur]);let done=false;
-  for(const op of o){const c=Math.ceil(op.cost);if(save.cur[op.cur]>=c){save.cur[op.cur]-=c;op.apply();track(spend,op.id,op.name,op.cur,c);done=true;break}}
-  if(!done)break}}
+  let o=options(X,save,opt).filter(op=>save.cur[op.cur]>=Math.ceil(op.cost));if(!o.length)break;let pick;
+  if(smart){const p0=power(X,save,opt);let best=-1;for(const op of o){let g=op.fix||0;if(!op.fix){op.apply();g=power(X,save,opt)-p0;op.undo()}
+      const v=(Math.max(g,0)+1e-6)/(op.cost*WEIGHT[op.cur]);if(v>best){best=v;pick=op}}}
+  else pick=o.sort((a,b)=>a.cost*WEIGHT[a.cur]-b.cost*WEIGHT[b.cur])[0];
+  const cst=Math.ceil(pick.cost);save.cur[pick.cur]-=cst;pick.apply();track(spend,pick.id,pick.name,pick.cur,cst)}}
 function buyPrestige(X,save,spend){for(let c=0;c<2000;c++){const o=Object.values(X.PRES).filter(p=>(save.pr[p.id]||0)<p.max).map(p=>[X.presCost(p,save.pr[p.id]||0)*(p.id==='dmg'||p.id==='hp'?.6:1),p]);
   if(!o.length)break;o.sort((a,b)=>a[0]-b[0]);const p=o[0][1],real=X.presCost(p,save.pr[p.id]||0);if(save.q<real)break;save.q-=real;save.pr[p.id]=(save.pr[p.id]||0)+1;track(spend,'nova:'+p.id,'Supernova: '+p.name,'q',real)}}
 function supernova(X,save){const g=X.quantaFor(save.cycleBest,save);save.q+=g;save.nova=(save.nova||0)+1;save.cur={s:0,k:0,p:0,d:0};save.nodes={root:1};

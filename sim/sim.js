@@ -30,6 +30,7 @@ Karriere (Standard): komplette Spielerkarriere, bis Welle --ziel
   --maxruns 600      Abbruch nach so vielen Runs
   --stunden 300      Abbruch nach so vielen Stunden Spielzeit (1x)
   --zeiger ruht      Zeiger für den Impuls: ruht (liegt knapp über der Basis, Idle-Spieler), zielt (folgt alle 0,25 s der dichtesten Gruppe, aktiver Spieler), aus (kein Impuls)
+  --kauf billig      Kaufregel des Bots: billig (immer das Günstigste) oder nutzen (größter geschätzter Nutzen je Kosten, näher an einem Menschen)
   --pause 20         Sekunden, die ein Mensch zwischen zwei Runs in Menüs verbringt
   --stall 4          Supernova, wenn der Rekord so viele Runs nicht steigt
 
@@ -57,7 +58,7 @@ Allgemein
 `);process.exit(0)}
 const CORES=Math.max(1,+arg('kerne',Math.max(1,os.cpus().length-1)));
 const OUT=arg('ausgabe',path.join(__dirname,'ergebnisse'));fs.mkdirSync(OUT,{recursive:true});
-const base={zeiger:arg('zeiger','ruht'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
+const base={zeiger:arg('zeiger','ruht'),kauf:arg('kauf','billig'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
 const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h} h ${m} min`:`${m} min`};
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[Math.floor((b.length-1)/2)]:NaN};
 const t0=Date.now(),wall=()=>fmtT((Date.now()-t0)/1000);
