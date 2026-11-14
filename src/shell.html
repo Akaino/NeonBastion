@@ -81,7 +81,16 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .head h2{margin:0;font-size:20px;font-weight:700;flex:none}
 .head .curs{flex:1;justify-content:flex-end;gap:4px 10px;font-size:14px}
 .head .curs svg{width:14px;height:14px}
-#tree,#heroes{background:var(--bg)}
+#tree,#heroes,#codex,#achv{background:var(--bg)}
+/* Enzyklopädie und Erfolge */
+.sect{grid-column:1/-1;margin:8px 0 -4px;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.unk{width:56px;height:56px;flex:none;border-radius:50%;border:2px dashed var(--dim);display:grid;place-items:center;font-size:24px;font-weight:700;color:var(--dim)}
+.shiny{margin-top:2px;font-size:12px;font-weight:600;color:#fff;text-shadow:0 0 8px #ff4fd8,0 0 14px #3df5ff}
+.medals{display:flex;gap:8px;margin-left:auto}
+.medal{width:30px;height:30px;border-radius:50%;border:2px solid var(--m);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--m);opacity:.22}
+.medal.on{opacity:1;background:color-mix(in srgb,var(--m) 24%,transparent);box-shadow:0 0 12px -2px var(--m)}
+.prog{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}.prog i{display:block;height:100%;border-radius:4px;background:var(--c)}
+.progt{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.progt b{color:var(--ink);font-weight:600}
 #tv{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:grab;background:radial-gradient(circle at 50% 50%,#10103a,#05051a 70%)}
 #tw{position:absolute;left:0;top:0;transform-origin:0 0}
 #tw>svg{position:absolute;left:-800px;top:-800px;overflow:visible;pointer-events:none}
@@ -224,6 +233,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
     <div class="hubrow"><button class="btn" id="bTree" style="--c:var(--mag)">Skilltree</button><button class="btn" id="bHeroes" style="--c:var(--lime)">Helden</button><button class="btn" id="bTowers" style="--c:#5ab8ff">Türme</button></div>
     <button class="btn nova" id="bNova" hidden style="--c:#c7b8ff"></button>
     <button class="btn" id="bWorlds" hidden style="--c:#ff8a3d">Welten</button>
+    <div class="hubrow"><button class="btn" id="bCodex" style="--c:#9fd8ff">Enzyklopädie</button><button class="btn" id="bAchv" style="--c:#ffe14f">Erfolge</button></div>
     <div class="hubfoot"><span><b class="ver"></b> · Fortschritt wird auf diesem Gerät gespeichert</span><button id="bSet" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Einstellungen</button></div>
   </div>
 </section>
@@ -263,6 +273,16 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Helden</h2><div class="curs" data-cur></div></div>
   <div class="slots" id="slots"></div>
   <div class="hlist" id="hlist"></div>
+</section>
+
+<section id="codex" class="screen" hidden>
+  <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Enzyklopädie</h2></div>
+  <div class="hlist" id="clist"></div>
+</section>
+
+<section id="achv" class="screen" hidden>
+  <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Erfolge</h2></div>
+  <div class="hlist" id="alist"></div>
 </section>
 
 <section id="worlds" class="screen" hidden>

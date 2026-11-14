@@ -31,7 +31,7 @@ function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);docume
 const persist=()=>Store.save(save);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
-function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
+function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
 function renderCurs(){const ws=W.s(),h=W.curIds.map(c=>curHTML(c,ws.cur[c])).join('')+(W.id===1&&(save.nova||save.q)?curHTML('q',save.q):'');$('#hubCur').innerHTML=h;$$('[data-cur]').forEach(e=>e.innerHTML=h)}
 function canPay(c,a){return (W.s().cur[c]||0)>=a}
 function pay(c,a,btn){if(!canPay(c,a)){Snd.play('no');if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake')}
@@ -89,6 +89,56 @@ function renderWorlds(){const un2=w2Unlocked(save),b1=w2BonusForW1(save),b2=1+.0
       <p class="trayinfo">${bonus.split(': ')[0]}. ${id===1?'Jede Welle Rekord in der Gitterfestung gibt hier +2 % Schaden.':'Jede Welle Rekord im Neon-Sektor gibt hier +1 % Turmschaden.'}</p>
       ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):`<button class="btn poor" disabled>Freischaltung bei Welle ${worldUnlockWave(id)} im Neon-Sektor</button>`}</article>`}).join('')+futureWorlds();
   $$('[data-world]').forEach(b=>b.onclick=()=>{setWorld(+b.dataset.world);Snd.play('nova');goHub();toast(`Willkommen in: ${W.name}`)})}
+/* ---------- Enzyklopädie: was man besiegt hat, getrennt nach Gegnern und Bossen ---------- */
+const CODEX_TYPES=['swarm','brute','shooter','sprinter','shield','splitter','mite','siege'];
+function renderCodex(){const K=save.kills||{},n=t=>K[t]||0;let h='<h3 class="sect">Gegner</h3>';
+  const card=(known,col,cv,name,sub,text,count,extra)=>`<article class="hcard ${known?'':'lock'}" style="--c:${known?col:'#5f5c8c'}"><div class="hc-top">${known?cv:'<div class="unk">?</div>'}<div><h3>${known?name:'Unbekannt'}</h3><small>${sub}</small>${extra||''}</div>${known?`<div class="lvl"><small>Besiegt</small><br>${fmtN(count)}</div>`:''}</div><p style="margin:0;color:var(--muted);font-size:13px">${known?text:'Noch nicht besiegt.'}</p></article>`;
+  for(const t of CODEX_TYPES){const T=ETYPES[t],k=n(t),sh=n('shiny:'+t);
+    h+=card(k>0,T.col,`<canvas data-e="${t}" width="112" height="112"></canvas>`,T.name,t==='mite'?(k?'entsteht aus Spaltern':'Herkunft unbekannt'):`ab Welle ${T.from||1}`,T.text,k,sh?`<div class="shiny">✦ Schillernd besiegt${sh>1?' ×'+fmtN(sh):''}</div>`:'')}
+  h+=card(n('elite')>0,'#ffe14f','<canvas data-e="elite" width="112" height="112"></canvas>','Elite','jede Art, ab Welle 1','Jeder Gegner kann als Elite erscheinen: fünffaches Leben, doppelter Schaden, mehr Beute.',n('elite'));
+  h+='<h3 class="sect">Bosse</h3>';
+  for(const name of BOSS_NAMES){const B=BOSS_KINDS[name],k=n('boss:'+name);
+    h+=card(k>0,ETYPES.boss.col,`<canvas data-e="boss" width="112" height="112"></canvas>`,name,'Boss · alle 10 Wellen',`<b style="color:var(--ink);font-weight:600">${B.abil}:</b> ${B.text}`,k)}
+  h+=card(n('twin')>0,'#ff6b84','<canvas data-e="twin" width="112" height="112"></canvas>','Doppelboss','alle 25 Wellen','Zwei Bosse verschiedener Art greifen von gegenüberliegenden Seiten an.',n('twin'));
+  $('#clist').innerHTML=h;
+  $$('#clist canvas[data-e]').forEach(cv=>{const t=cv.dataset.e,c=cv.getContext('2d'),dr=(type,r,col,x,y,w)=>{const s=R.enemySprite(type,r,col);c.drawImage(s,x,y,w,w)};
+    if(t==='elite'){dr('brute',20,ETYPES.brute.col,14,14,84);const s=R.eliteRing(20);c.drawImage(s,6,6,100,100)}
+    else if(t==='twin'){dr('boss',24,ETYPES.boss.col,0,18,72);dr('boss',24,ETYPES.boss.col,40,22,72)}
+    else if(t==='boss')dr('boss',24,ETYPES.boss.col,4,4,104);
+    else dr(t,20,ETYPES[t].col,6,6,100)})}
+$('#bCodex').onclick=()=>{show('codex');renderCodex()};
+
+/* ---------- Erfolge: jeweils Bronze, Silber, Gold. Rein zum Sammeln, ohne Belohnung. ---------- */
+const achKills=s=>{const K=s.kills||{};let n=K.boss||0;for(const t of CODEX_TYPES)n+=K[t]||0;return n};
+const achK=t=>s=>(s.kills&&s.kills[t])||0;
+const ACH=[
+ {id:'welle',name:'Verteidiger',text:'Höchste erreichte Welle im Neon-Sektor',val:s=>s.best||0,tiers:[25,100,300]},
+ {id:'kills',name:'Jäger',text:'Besiegte Gegner insgesamt',val:achKills,tiers:[1000,100000,10000000]},
+ {id:'boss',name:'Bossjäger',text:'Besiegte Bosse',val:achK('boss'),tiers:[10,100,1000]},
+ {id:'twin',name:'Zwillingstöter',text:'Besiegte Doppelbosse',val:achK('twin'),tiers:[1,25,250]},
+ {id:'elite',name:'Elitejäger',text:'Besiegte Elite-Gegner',val:achK('elite'),tiers:[50,2000,50000]},
+ {id:'arten',name:'Artenkenner',text:'Verschiedene Gegnerarten besiegt',val:s=>CODEX_TYPES.filter(t=>achK(t)(s)>0).length,tiers:[3,6,CODEX_TYPES.length]},
+ {id:'bossarten',name:'Bosskenner',text:'Verschiedene Boss-Arten besiegt',val:s=>BOSS_NAMES.filter(b=>achK('boss:'+b)(s)>0).length,tiers:[2,4,BOSS_NAMES.length]},
+ {id:'sprinter',name:'Sprinterfänger',text:'Besiegte Sprinter',val:achK('sprinter'),tiers:[100,5000,100000]},
+ {id:'schild',name:'Schildbrecher',text:'Besiegte Schildträger',val:achK('shield'),tiers:[25,1000,25000]},
+ {id:'spalter',name:'Kernspalter',text:'Besiegte Spalter',val:achK('splitter'),tiers:[25,1000,25000]},
+ {id:'belagerer',name:'Belagerungsbrecher',text:'Besiegte Belagerer',val:achK('siege'),tiers:[10,500,10000]},
+ {id:'runs',name:'Ausdauer',text:'Gespielte Runs',val:s=>s.runs||0,tiers:[25,500,5000]},
+ {id:'nova',name:'Sternentod',text:'Gezündete Supernovas',val:s=>s.nova||0,tiers:[1,25,250]},
+ {id:'gitter',name:'Weltenwanderer',text:'Höchste erreichte Welle in der Gitterfestung',val:s=>(s.w2&&s.w2.best)||0,tiers:[10,50,150]},
+ {id:'shiny',name:'Erstes Schillern',text:'Einen schillernden Gegner besiegt',val:s=>{const K=s.kills||{};return Object.keys(K).some(k=>k.startsWith('shiny:')&&K[k]>0)?1:0},tiers:[1]}];
+const MEDALS=[['Bronze','#d08a4e'],['Silber','#c8d2e6'],['Gold','#ffe14f']];
+const achTier=a=>{const v=a.val(save);return a.tiers.filter(t=>v>=t).length};
+// Einzel-Erfolge mit nur einer Stufe zählen als Gold
+const achMedal=(a,i)=>MEDALS[a.tiers.length===1?2:i];
+function achCheck(){const A=save.ach||(save.ach={});let msg=null,n=0;for(const a of ACH){const t=achTier(a);if(t>(A[a.id]||0)){A[a.id]=t;n++;msg=`Erfolg: ${a.name} (${achMedal(a,t-1)[0]})`}}if(n){persist();toast(n>1?`${n} neue Erfolge`:msg);Snd.play('abil')}}
+function renderAchv(){let got=0,all=0;const cards=ACH.map(a=>{const v=a.val(save),t=achTier(a),next=a.tiers[t],prev=t?a.tiers[t-1]:0;got+=t;all+=a.tiers.length;
+    const meds=a.tiers.map((_,i)=>{const [nm,col]=achMedal(a,i);return `<span class="medal ${i<t?'on':''}" style="--m:${col}" title="${nm}: ${fmtN(a.tiers[i])}" aria-label="${nm} ${i<t?'erreicht':'offen'}">${nm[0]}</span>`}).join('');
+    const col=t?achMedal(a,t-1)[1]:'#5f5c8c',pct=next?clamp((v-prev)/(next-prev),0,1)*100:100;
+    return `<article class="hcard" style="--c:${col}"><div class="hc-top"><div><h3>${a.name}</h3><small>${a.text}</small></div><div class="medals">${meds}</div></div>
+      <div class="prog"><i style="width:${pct.toFixed(1)}%"></i></div><div class="progt"><span>${next?`Nächste Stufe: ${achMedal(a,t)[0]}`:'Alle Stufen erreicht'}</span><b>${fmtN(v)}${next?' / '+fmtN(next):''}</b></div></article>`}).join('');
+  $('#alist').innerHTML=`<article class="hcard" style="--c:#ffe14f"><div class="hc-top"><div><h3>${got} von ${all} Medaillen</h3><small>Erfolge sind zum Sammeln da und bringen keinen Vorteil im Spiel.</small></div></div><div class="prog"><i style="width:${(got/all*100).toFixed(1)}%"></i></div></article>`+cards}
+$('#bAchv').onclick=()=>{show('achv');renderAchv()};
 $('#bTree').onclick=()=>{show('tree');renderTree();treeHome()};
 $('#bHeroes').onclick=()=>{show('heroes');renderHeroes()};
 $$('[data-back]').forEach(b=>b.onclick=goHub);
@@ -106,7 +156,7 @@ $('#bResume').onclick=()=>{paused=false;$('#pause').hidden=true};
 $('#bQuit').onclick=()=>{paused=false;$('#pause').hidden=true;if(run&&!run.over){run.quit=true;run.end()}};
 $('#bSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:speed===4?8:1;save.speed=speed;persist();$('#bSpeed').textContent=speed+'×'};
 $('#bBack').onclick=goHub;
-function showEnd(){endShown=true;if(W.id===1){const K=save.kills||(save.kills={});for(const t in run.killsBy)K[t]=(K[t]||0)+run.killsBy[t]}$('#eTitle').textContent=run.quit?'Run beendet':'Basis zerstört';const g=run.gain,ws=W.s(),prev=ws.best||0;for(const c of W.curIds)ws.cur[c]+=Math.floor(g[c]||0);
+function showEnd(){endShown=true;if(W.id===1){const K=save.kills||(save.kills={});for(const t in run.killsBy)K[t]=(K[t]||0)+run.killsBy[t]}setTimeout(achCheck,1200);$('#eTitle').textContent=run.quit?'Run beendet':'Basis zerstört';const g=run.gain,ws=W.s(),prev=ws.best||0;for(const c of W.curIds)ws.cur[c]+=Math.floor(g[c]||0);
   ws.best=Math.max(prev,run.w);ws.cycleBest=Math.max(ws.cycleBest||0,run.w);save.pending=null;persist();
   if(W.id===1&&prev<100&&run.w>=100)setTimeout(()=>toast('Neue Welt freigeschaltet: Gitterfestung'),800);
   $('#eWave').innerHTML=`<p style="margin:0;font-size:18px">Welle <b>${run.w}</b> erreicht</p>`+(run.w>prev&&prev>0?'<p class="rec" style="margin:4px 0 0">Neuer Rekord</p>':'')+`<p style="margin:4px 0 0;color:var(--muted);font-size:13px">${fmtN(run.kills)} Gegner besiegt</p>`;
@@ -398,6 +448,7 @@ if(save.pending&&save.pending.g){const ps=save.pending.world===2?save.w2:save;fo
   setTimeout(()=>toast('Belohnungen aus deinem letzten Run wurden gutgeschrieben'),600)}
 R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
 $$('.ver').forEach(e=>e.textContent='Version '+VERSION+(STAGE?' '+STAGE:''));save.ver=VERSION;
+if(!save.ach){save.ach={};for(const a of ACH)save.ach[a.id]=achTier(a);persist()}
 goHub();
 let last=performance.now(),acc=0,hudT=0,pendT=0;
 function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
@@ -408,6 +459,6 @@ function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
     pendT+=dt;if(pendT>2&&!run.over){pendT=0;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w};persist()}
     hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}
   else if(!run)Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:W.id===2?5:0});
-  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
+  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
   requestAnimationFrame(loop)}
 requestAnimationFrame(loop);

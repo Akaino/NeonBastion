@@ -2,21 +2,23 @@ const hyp=(a,b)=>Math.sqrt(a*a+b*b),sq=x=>x*x;   // sq statt **2: die Potenz ist
 // Gegnertypen. from = erste Welle, share = Anteil an der Welle (wächst ab from um step je Welle bis max), bar = Lebensbalken zeigen.
 // Die Reihenfolge in WAVE_MIX bestimmt, wer bei der Auswahl zuerst drankommt; der Rest der Welle sind Schwärmer.
 const ETYPES={
-  swarm:{name:'Schwärmer',hp:8,sp:72,r:7,dmg:3,val:1,col:'#ff8a3d'},
-  brute:{name:'Brecher',hp:55,sp:30,r:15,dmg:12,val:4,col:'#ff4f6d',bar:1,from:3,step:.04,max:.25},
-  shooter:{name:'Fernkämpfer',hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1,from:5,step:.04,max:.2},
+  swarm:{name:'Schwärmer',hp:8,sp:72,r:7,dmg:3,val:1,col:'#ff8a3d',text:'Klein, schnell und immer in der Überzahl.'},
+  brute:{name:'Brecher',hp:55,sp:30,r:15,dmg:12,val:4,col:'#ff4f6d',bar:1,from:3,step:.04,max:.25,text:'Langsam, zäh und schlägt hart zu.'},
+  shooter:{name:'Fernkämpfer',hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1,from:5,step:.04,max:.2,text:'Bleibt auf Abstand stehen und beschießt die Basis.'},
   // Sprinter: sehr schnell, wenig Leben
   sprinter:{name:'Sprinter',hp:5,sp:150,r:6,dmg:2,val:1,col:'#fff34f',from:15,step:.03,max:.15,text:'Sehr schnell, aber zerbrechlich.'},
   // Schildträger: der Schild schluckt die ersten Treffer vollständig, egal wie stark sie sind
   shield:{name:'Schildträger',hp:40,sp:34,r:13,dmg:9,val:5,col:'#5ab8ff',bar:1,from:30,step:.02,max:.1,text:'Sein Schild schluckt die ersten Treffer vollständig. Viele kleine Treffer brechen ihn am schnellsten.'},
   // Spalter: zerfällt beim Tod in drei Splitterlinge
   splitter:{name:'Spalter',hp:30,sp:40,r:12,dmg:6,val:3,col:'#b98cff',bar:1,from:45,step:.02,max:.1,text:'Zerfällt beim Tod in drei Splitterlinge.'},
-  mite:{name:'Splitterling',hp:7,sp:80,r:6,dmg:2,val:1,col:'#d6b8ff'},
+  mite:{name:'Splitterling',hp:7,sp:80,r:6,dmg:2,val:1,col:'#d6b8ff',text:'Bruchstück eines Spalters. Flink, aber schwach.'},
   // Belagerer: bleibt am Rand stehen und beschießt die Basis mit schweren Geschossen
   siege:{name:'Belagerer',hp:35,sp:26,r:13,dmg:15,val:6,col:'#ff6b3d',ranged:1,bar:1,from:60,step:.01,max:.05,text:'Bleibt weit draußen stehen und beschießt die Basis mit schweren Geschossen.'},
   boss:{name:'Boss',hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
 const SHIELD_HITS=4,SHIELD_PER=30,MITE_HP=.15;   // Schildladungen: Grundwert + 1 je SHIELD_PER Wellen; Splitterling: Anteil am Leben des Spalters
+// Schillernde Gegner: sehr selten (etwa einer je zwei bis drei Runs bis Welle 50), deutlich zäher, sonst ohne Wirkung aufs Spiel. Nie Bosse oder Splitterlinge.
+const SHINY_P=1/5000,SHINY_HP=3.5;
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
@@ -138,7 +140,8 @@ hitE(e,dmg,o={}){if(e.hp<=0)return;
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
   if(e.hp<=0)this.kill(e)}
 kill(e){this.kills++;this.energy+=e.val*this.energyMul(e);
-  const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss)kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;
+  const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss){kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;if(this.twin&&++this.twinDown===2)kb.twin=(kb.twin||0)+1}
+  if(e.shiny){kb['shiny:'+e.type]=(kb['shiny:'+e.type]||0)+1;this.ring(e.x,e.y,e.r,e.r*5,'#ffffff',.7,8);this.h.banner&&this.h.banner('Schillernd!',ETYPES[e.type].name+' besiegt');this.h.sfx&&this.h.sfx('abil')}
   if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*MITE_HP])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);
@@ -169,9 +172,9 @@ milestone(w){const S=this.S,r={k:0,p:0};if(w>1&&(w-1)%5===0){r.k=Math.floor((w-1
   if(w>=10&&w%10===0){r.p=S.gP;this.gain.p+=r.p}return r}
 nextWave(){const w=++this.w,S=this.S;
   const n=Math.round(Math.min(8+w*2.4,50+w*.6)),bS=w>=3?Math.min(.25,.04*(w-2)):0,sS=w>=5?Math.min(.2,.04*(w-4)):0;
-  const eC=Math.min(.08,.03+.003*w)*S.elite,twin=w%TWIN_EVERY===0,boss=w%10===0||twin,cnt=boss?Math.round(n*.5):n,q=[];this.twin=twin;this.bossPt=null;this.twinMax=0;
+  const eC=Math.min(.08,.03+.003*w)*S.elite,twin=w%TWIN_EVERY===0,boss=w%10===0||twin,cnt=boss?Math.round(n*.5):n,q=[];this.twin=twin;this.bossPt=null;this.twinMax=0;this.twinDown=0;
   const mix=WAVE_MIX.map(t=>[t,waveShare(t,w)]);
-  for(let i=0;i<cnt;i++){let r=Math.random(),type='swarm';for(const [t,s] of mix){if(r<s){type=t;break}r-=s}q.push({type,elite:Math.random()<eC})}
+  for(let i=0;i<cnt;i++){let r=Math.random(),type='swarm';for(const [t,s] of mix){if(r<s){type=t;break}r-=s}q.push({type,elite:Math.random()<eC,shiny:Math.random()<SHINY_P})}
   if(boss)q.splice(Math.floor(q.length/3),0,{type:'boss',elite:false});
   if(twin)q.splice(Math.floor(q.length*2/3),0,{type:'boss',elite:false,twin:true});
   if(w>1)this.energy+=10;
@@ -184,10 +187,10 @@ nextWave(){const w=++this.w,S=this.S;
 bossName(){const used=this.en.filter(e=>e.boss&&e.hp>0).map(e=>e.name),free=BOSS_NAMES.filter(n=>!used.includes(n)),l=free.length?free:BOSS_NAMES;return l[Math.floor(Math.random()*l.length)]}
 spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
   if(u<2*W)return[-W+u,-H];u-=2*W;if(u<2*H)return[W,-H+u];u-=2*H;if(u<2*W)return[W-u,H];u-=2*W;return[-W,H-u]}
-spawnEnemy(type,elite,x,y){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
-  let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}
+spawnEnemy(type,elite,x,y,shiny){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
+  let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}if(shiny)hp*=SHINY_HP;
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
     // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
     spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
@@ -195,7 +198,7 @@ updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Ma
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
       // der zweite Boss eines Doppelbosses kommt von der gegenüberliegenden Seite
       if(q.type==='boss'){if(q.twin&&this.bossPt){px=-this.bossPt[0];py=-this.bossPt[1]}else this.bossPt=[x,y]}
-      this.spawnEnemy(q.type,q.elite,px+rnd(-22,22),py+rnd(-22,22))}
+      this.spawnEnemy(q.type,q.elite,px+rnd(-22,22),py+rnd(-22,22),q.shiny)}
     this.spawnT=this.spawnI*k*rnd(.7,1.3)}}
   else{this.waveEndT+=dt;if(this.en.length<=3||this.waveEndT>9){this.waveGap-=dt;if(this.waveGap<=0){this.nextWave();this.waveGap=1.5}}}}
 
