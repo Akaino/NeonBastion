@@ -31,7 +31,8 @@ with sync_playwright() as p:
     pg.mouse.click(pos3[0],pos3[1]);pg.wait_for_timeout(200);print('moves left',pg.evaluate("()=>run.moves"));pg.click('#tpClose')
     pg.screenshot(path='w2f.png')
     pg.click('#bReady');pg.wait_for_timeout(200);print('phase after ready',pg.evaluate("()=>run.phase"))
-    pg.wait_for_timeout(7000);pg.screenshot(path='w2g.png')
+    pg.wait_for_timeout(3000);pg.screenshot(path='w2g.png')  # kurz genug, dass Welle 1 auch aus der nahen Richtung noch läuft
+    print('still fighting',pg.evaluate("()=>run.phase"))
     # try moving during fight
     tp=pg.evaluate("()=>{const T=run.towers[0],r=document.querySelector('#cv').getBoundingClientRect();return [r.left+R.w/2+T.x*R.se,r.top+R.h/2+T.y*R.se]}")
     pg.mouse.click(tp[0],tp[1]);pg.wait_for_timeout(150);pg.click('#tpMove');pg.wait_for_timeout(100);print('move during fight blocked',pg.evaluate("()=>moveT===null"));pg.click('#tpClose')

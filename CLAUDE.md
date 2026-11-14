@@ -95,7 +95,7 @@ Befunde:
 4. Simulation mit `--ziel 150` und Upgrade-Messung bei 25/50/75 laufen lassen und auswerten.
 5. Welt 2: eigene Supernova, Balancing per Simulation (es gibt noch keinen Welt-2-Bot in `sim/`), Turmstufen jenseits der Wand bei ~Welle 80.
 6. Zahlen-Notation über 10^18 (aa, ab, …) für endloses Spiel.
-7. Rechtliches für die Website prüfen: Impressum, Datenschutzerklärung (Hinweis: GitHub verarbeitet IP-Adressen).
+7. Rechtliches: Impressum und Datenschutzerklärung liegen als eigene Seiten in `assets/impressum.html` und `assets/datenschutz.html` (seit 0.11.1, verlinkt in den Einstellungen; `build.py` macht die Links für die Website relativ, im Artefakt bleiben sie absolut). **Das Impressum enthält bewusst keine Anschrift** (Entscheidung des Nutzers, rechtlich unvollständig). Vor einem Spenden-/Coffee-Link oder anderer Monetarisierung: Anschrift ergänzen (ggf. c/o-Dienst) und Datenschutzerklärung erweitern.
 8. Langfristig: weitere Welten, Verpackung für App Stores (Capacitor) und Steam (Tauri/Electron).
 
 ## 8. Fallstricke aus der bisherigen Entwicklung

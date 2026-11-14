@@ -120,6 +120,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .btn.nova{display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(180deg,rgba(199,184,255,.18),rgba(199,184,255,.04))}
 .btn small{font-size:12px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
 #settings{z-index:6}#settings .mbox{background:#100e30}
+.legal{margin:0;font-size:13px;color:var(--dim)}.legal a{display:inline-block;padding:6px 8px;color:var(--muted)}.legal a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
 .vol{display:flex;flex-direction:column;gap:8px;text-align:left;padding:4px 2px}
 .vol span{display:flex;align-items:center;gap:8px;font-weight:600}.vol span svg{width:18px;height:18px;color:var(--cyan)}.vol b{margin-left:auto;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
 .vol input{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;touch-action:pan-y}
@@ -287,7 +288,8 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>Effekte<b id="volSfxV"></b></span><input type="range" id="volSfx" min="0" max="100" step="5"></label>
     <p id="resetInfo" style="margin:6px 0 0;color:var(--muted);font-size:13px">Zurücksetzen löscht deinen gesamten Fortschritt auf diesem Gerät, auch Quanten und Rekorde.</p>
     <button class="btn" id="bW2Test" style="--c:#ff8a3d"></button>
-    <button class="btn" id="bReset" style="--c:#ff4f6d">Spielstand zurücksetzen</button><button class="btn big" id="bSetClose">Fertig</button></div>
+    <button class="btn" id="bReset" style="--c:#ff4f6d">Spielstand zurücksetzen</button><button class="btn big" id="bSetClose">Fertig</button>
+    <p class="legal"><a href="https://neonbastion.de/impressum.html" target="_blank" rel="noopener">Impressum</a> · <a href="https://neonbastion.de/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p></div>
 </section>
 
 <section id="pause" class="screen modal" hidden>

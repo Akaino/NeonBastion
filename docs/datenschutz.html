@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#05051a">
+<title>Neon Bastion Datenschutz</title>
+<link rel="icon" type="image/png" href="icon-32.png">
+<style>
+/* Layout: eine schmale Lesespalte auf dunklem Grund, Kurzfassung als einziger hervorgehobener Kasten */
+:root{--bg:#05051a;--panel:#0d0b2c;--ink:#eaf0ff;--muted:#a9a6d4;--cyan:#3df5ff;--mag:#ff4fd8;--line:rgba(61,245,255,.22);
+  --font:"Chakra Petch",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/chakra-petch-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/chakra-petch-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/chakra-petch-latin-700-normal.woff2) format('woff2')}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--font);
+  padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.back{align-self:flex-start;color:var(--cyan);text-decoration:none;font-weight:600;border:1.5px solid var(--cyan);border-radius:10px;padding:8px 14px;box-shadow:0 0 12px -4px var(--cyan)}
+.back:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+h1{margin:0;font-size:clamp(30px,8vw,42px);line-height:1.05;letter-spacing:.03em;text-wrap:balance;color:#fff;text-shadow:0 0 6px var(--cyan),0 0 22px rgba(61,245,255,.55)}
+h2{margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:.04em;color:var(--mag);text-wrap:balance}
+section{border-top:1px solid var(--line);padding-top:18px}
+p{margin:0 0 10px}p:last-child{margin-bottom:0}
+ul{margin:0 0 10px;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.muted{color:var(--muted)}
+a{color:var(--cyan);overflow-wrap:anywhere}
+.mail{user-select:all;-webkit-user-select:all;font-weight:600}
+.short{background:var(--panel);border:1.5px solid var(--cyan);border-radius:14px;padding:16px 18px;box-shadow:0 0 24px -10px var(--cyan)}
+.short h2{color:var(--cyan)}
+footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:14px;display:flex;gap:6px 16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">Zurück zum Spiel</a>
+  <h1>Datenschutz&shy;erklärung</h1>
+
+  <div class="short">
+    <h2>Kurzfassung</h2>
+    <p>Neon Bastion braucht kein Konto und setzt keine Cookies. Es gibt kein Tracking, keine Analyse und keine Werbung. Dein Spielstand bleibt auf deinem Gerät und wird nirgendwohin übertragen.</p>
+  </div>
+
+  <section>
+    <h2>Verantwortlicher</h2>
+    <p>Kai Roth<br>E-Mail: <a class="mail" href="mailto:kontakt@neonbastion.de">kontakt@neonbastion.de</a></p>
+  </section>
+
+  <section>
+    <h2>Aufruf der Website</h2>
+    <p>Die Website wird über GitHub Pages ausgeliefert, einen Dienst der GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA.</p>
+    <p>Wenn du die Seite aufrufst, verarbeitet GitHub technisch notwendige Daten, um sie auszuliefern und den Dienst abzusichern. Dazu gehören:</p>
+    <ul>
+      <li>deine IP-Adresse</li>
+      <li>Datum und Uhrzeit des Abrufs</li>
+      <li>die abgerufene Datei</li>
+      <li>Angaben deines Browsers, etwa Typ und Version</li>
+    </ul>
+    <p>Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO. Das berechtigte Interesse liegt darin, die Website sicher und zuverlässig bereitzustellen.</p>
+    <p>Dabei können Daten in die USA übermittelt werden. GitHub ist nach eigenen Angaben unter dem EU-U.S. Data Privacy Framework zertifiziert. Auf die Protokolle von GitHub habe ich keinen Zugriff. Einzelheiten stehen in der <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">Datenschutzerklärung von GitHub</a>.</p>
+  </section>
+
+  <section>
+    <h2>Spielstand</h2>
+    <p>Dein Fortschritt und deine Einstellungen, zum Beispiel die Lautstärke, werden im lokalen Speicher deines Browsers abgelegt („localStorage“, Eintrag „neon-bastion-v1“). Diese Daten verlassen dein Gerät nicht. Weder ich noch GitHub können sie einsehen.</p>
+    <p>Die Speicherung ist nötig, damit das Spiel deinen Fortschritt behält. Sie ist nach §&nbsp;25 Abs.&nbsp;2 Nr.&nbsp;2 TDDDG ohne Einwilligung zulässig.</p>
+    <p>Du kannst den Spielstand jederzeit löschen: im Spiel unter „Einstellungen“ mit „Spielstand zurücksetzen“ oder über die Website-Daten in deinem Browser.</p>
+  </section>
+
+  <section>
+    <h2>Cookies, Tracking und fremde Inhalte</h2>
+    <p>Die Website setzt keine Cookies und verwendet keine Analyse- oder Werbedienste. Schriften, Grafiken und Töne kommen direkt von dieser Website. Es werden keine Inhalte von anderen Anbietern nachgeladen.</p>
+  </section>
+
+  <section>
+    <h2>Kontakt per E-Mail</h2>
+    <p>Wenn du mir schreibst, verarbeite ich deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO. Das Postfach liegt beim deutschen Anbieter Strato. Ich lösche die Nachrichten, sobald dein Anliegen erledigt ist.</p>
+  </section>
+
+  <section>
+    <h2>Deine Rechte</h2>
+    <p>Du hast nach der DSGVO das Recht auf:</p>
+    <ul>
+      <li>Auskunft über deine Daten (Art.&nbsp;15)</li>
+      <li>Berichtigung (Art.&nbsp;16)</li>
+      <li>Löschung (Art.&nbsp;17)</li>
+      <li>Einschränkung der Verarbeitung (Art.&nbsp;18)</li>
+      <li>Datenübertragbarkeit (Art.&nbsp;20)</li>
+      <li>Widerspruch gegen die Verarbeitung (Art.&nbsp;21)</li>
+    </ul>
+    <p>Schreib mir dazu an die oben genannte Adresse. Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel bei der Behörde deines Wohnorts (Art.&nbsp;77 DSGVO).</p>
+  </section>
+
+  <footer><a href="impressum.html">Impressum</a><span>Stand: November 2026</span></footer>
+</main>
+</body>
+</html>

@@ -17,6 +17,8 @@ version = re.search(r"const VERSION='([^']+)'", js).group(1)
 fonts = ''.join("@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:%d;font-display:swap;src:url(fonts/chakra-petch-latin-%d-normal.woff2) format('woff2')}" % (w, w) for w in (400, 500, 600, 700))
 web = re.sub(r'<link rel="preconnect"[^>]*>\n?', '', html)
 web = re.sub(r'<link href="https://fonts.googleapis.com[^>]*>\n?', '', web)
+# Impressum und Datenschutz liegen als eigene Seiten in assets/; die Website verlinkt sie relativ, das Artefakt absolut
+web = web.replace('href="https://neonbastion.de/impressum.html"', 'href="impressum.html"').replace('href="https://neonbastion.de/datenschutz.html"', 'href="datenschutz.html"')
 web = web.replace('<style>', '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" type="image/png" href="icon-32.png">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<style>' + fonts, 1)
 
 DOCS = os.path.join(ROOT, 'docs')
