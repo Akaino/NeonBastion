@@ -92,7 +92,7 @@ function startRun(){Snd.init();const S=stats(save);save.team=save.team.filter(id
   $('#bBuild').dataset.init='';$('#phaseBar').dataset.key='';
   run=new W.Run(save,{banner,sfx:n=>Snd.play(n)});if(W.id===2)save.w2.runs=(save.w2.runs||0)+1;run.hw=R.hwe;run.hh=R.hhe;if(aimPos){run.cx=clamp(aimPos[0],-run.hw,run.hw);run.cy=clamp(aimPos[1],-run.hh,run.hh)}aimDown=false;paused=false;endShown=false;endBuild();
   save.runs++;persist();show('hud');buildChips();$('#bSpeed').textContent=speed+'×';
-  if(save.runs===1)setTimeout(()=>toast('Dein Impuls trifft alles im Kreis. Zieh ihn auf die Gegner.'),2400);
+  if(save.runs===1)setTimeout(()=>toast(matchMedia('(pointer:coarse)').matches?'Wische irgendwo über das Feld, um den Kreis zu schieben. Tippen setzt ihn direkt.':'Dein Impuls trifft alles im Kreis. Führe ihn mit der Maus auf die Gegner.'),2400);
   else if(W.id===1&&!save.team.length&&HERO_IDS.some(id=>save.heroes[id].u))toast('Kein Held eingesetzt. Das geht im Heldenmenü.')}
 $('#bStart').onclick=startRun;
 $('#bPause').onclick=()=>{if(run&&!run.over){endBuild();paused=true;$('#pause').hidden=false}};
@@ -135,15 +135,23 @@ function updPhase(){const pb=$('#phaseBar');if(!run||run.world!==2||run.over){pb
   else set('.pf',`Welle ${p.w} läuft · ${run.en.length+run.queue.length} Gegner übrig`)}
 /* ---------- input ---------- */
 $('#cv').addEventListener('pointerdown',e=>{if(!run||paused||run.over||$('#hud').hidden)return;e.preventDefault();
-  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);aimDown=true;
+  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);aimDown=true;aimDrag=false;aimStart=aimLast=[e.clientX,e.clientY];
   // Auf einem Turm: erst beim Loslassen entscheiden. Kurzes Antippen ohne Bewegung öffnet das Menü, Ziehen bewegt den Impuls-Zeiger.
-  if(T){towerTap={T,x:e.clientX,y:e.clientY,t:performance.now()};return}towerTap=null;aimAt(e)});
-/* Zeiger für den Impuls: Maus bewegt ihn immer, der Finger zieht ihn mit und lässt ihn beim Loslassen liegen. Klicken macht keinen Schaden mehr. */
-let aimDown=false,aimPos=null,towerTap=null;const TAP_MOVE=8,TAP_MS=400;
+  if(T){towerTap={T,x:e.clientX,y:e.clientY,t:performance.now()};return}towerTap=null;if(e.pointerType==='mouse')aimAt(e)});
+/* Zeiger für den Impuls. Klicken macht keinen Schaden mehr.
+   Maus: der Zeiger folgt ihr direkt.
+   Finger: wie ein Trackpad – Wischen irgendwo auf dem Feld schiebt den Zeiger um die gewischte Strecke × AIM_GAIN, damit der Finger nichts verdeckt.
+   Kurzes Antippen ohne Bewegung setzt ihn direkt an die Stelle. Beim Loslassen bleibt er liegen. */
+let aimDown=false,aimDrag=false,aimStart=null,aimLast=null,aimPos=null,towerTap=null;const TAP_MOVE=8,TAP_MS=400,AIM_GAIN=1.5;
+function aimBy(dx,dy){if(!run||run.over)return;run.cx=clamp(run.cx+dx/R.se*AIM_GAIN,-run.hw,run.hw);run.cy=clamp(run.cy+dy/R.se*AIM_GAIN,-run.hh,run.hh);aimPos=[run.cx,run.cy]}
 function aimAt(e){if(!run||run.over)return;const [x,y]=screenToWorld(e);run.cx=clamp(x,-run.hw,run.hw);run.cy=clamp(y,-run.hh,run.hh);aimPos=[run.cx,run.cy]}
 $('#cv').addEventListener('pointermove',e=>{if(!run||paused||buildSel||moveT||trayOpen||towerSel||$('#hud').hidden)return;if(towerTap){if(Math.abs(e.clientX-towerTap.x)+Math.abs(e.clientY-towerTap.y)<=TAP_MOVE)return;towerTap=null}
-  if(e.pointerType==='mouse'||aimDown)aimAt(e)});
-$('#cv').addEventListener('pointerup',()=>{const tt=towerTap;towerTap=null;if(tt&&run&&!run.over&&!paused&&performance.now()-tt.t<=TAP_MS&&run.towers.includes(tt.T))openTower(tt.T)});
+  if(e.pointerType==='mouse'){aimAt(e);return}if(!aimDown)return;
+  if(!aimDrag){if(Math.abs(e.clientX-aimStart[0])+Math.abs(e.clientY-aimStart[1])<=TAP_MOVE)return;aimDrag=true;aimLast=[e.clientX,e.clientY];return}
+  aimBy(e.clientX-aimLast[0],e.clientY-aimLast[1]);aimLast=[e.clientX,e.clientY]});
+$('#cv').addEventListener('pointerup',e=>{const tt=towerTap;towerTap=null;
+  if(tt){if(run&&!run.over&&!paused&&performance.now()-tt.t<=TAP_MS&&run.towers.includes(tt.T))openTower(tt.T);return}
+  if(aimDown&&!aimDrag&&e.pointerType!=='mouse'&&run&&!paused&&!buildSel&&!moveT&&!trayOpen&&!towerSel)aimAt(e)});
 for(const ev of['pointerup','pointercancel'])addEventListener(ev,()=>{aimDown=false;towerTap=null});
 addEventListener('resize',()=>{R.resize();if(run){run.hw=R.hwe;run.hh=R.hhe}if(!$('#tree').hidden)treeHome()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(Snd.ctx)Snd.ctx.resume().catch(()=>{});return}Snd.suspend();{if(run&&!run.over){paused=true;$('#pause').hidden=false;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w}}persist()}});

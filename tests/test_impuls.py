@@ -33,11 +33,17 @@ with sync_playwright() as p:
     check(abs(dn-dt/2)<=1 and dn>=2,f'Impulse im 2-s-Takt: {dn} Impulse in {dt:.1f} s Spielzeit')
     pg.screenshot(path='i3_impuls.png')
     # Finger: zieht den Zeiger mit, beim Loslassen bleibt er liegen
-    pg.evaluate(TOUCH,['pointerdown',120,500]);pg.evaluate(TOUCH,['pointermove',150,560]);pg.wait_for_timeout(50)
+    pg.evaluate(TOUCH,['pointerdown',120,500]);pg.evaluate(TOUCH,['pointerup',120,500]);pg.wait_for_timeout(50)
     w=lambda:pg.evaluate("()=>{const r=document.querySelector('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+run.cx*R.se),Math.round(r.top+R.h/2+run.cy*R.se)]}")
-    a=w();check(abs(a[0]-150)<=1 and abs(a[1]-560)<=1,'Finger zieht den Zeiger mit: '+str(a))
-    pg.evaluate(TOUCH,['pointerup',150,560]);pg.evaluate(TOUCH,['pointermove',300,300]);pg.wait_for_timeout(50)
-    a=w();check(abs(a[0]-150)<=1 and abs(a[1]-560)<=1,'nach dem Loslassen bleibt der Zeiger liegen: '+str(a))
+    a=w();check(abs(a[0]-120)<=1 and abs(a[1]-500)<=1,'kurzes Antippen setzt den Zeiger direkt: '+str(a))
+    # Trackpad: Wischen weit weg vom Zeiger schiebt ihn um die Strecke × 1,5; der Zeiger springt nicht unter den Finger
+    pg.evaluate(TOUCH,['pointerdown',300,700]);pg.evaluate(TOUCH,['pointermove',320,700]);pg.evaluate(TOUCH,['pointermove',360,660]);pg.wait_for_timeout(50)
+    a=w();check(abs(a[0]-180)<=1 and abs(a[1]-440)<=1,'Wischen schiebt den Zeiger um die Strecke × 1,5: '+str(a))
+    pg.evaluate(TOUCH,['pointerup',360,660]);pg.evaluate(TOUCH,['pointermove',300,300]);pg.wait_for_timeout(50)
+    a=w();check(abs(a[0]-180)<=1 and abs(a[1]-440)<=1,'nach dem Loslassen bleibt der Zeiger liegen: '+str(a))
+    pg.evaluate(TOUCH,['pointerdown',40,760]);[pg.evaluate(TOUCH,['pointermove',40-i*40,760]) for i in range(1,12)];pg.evaluate(TOUCH,['pointerup',-400,760]);pg.wait_for_timeout(50)
+    e=pg.evaluate("()=>[run.cx>=-run.hw-1e-6,run.cy]");check(e[0],'Zeiger bleibt im Spielfeld')
+    pg.evaluate(TOUCH,['pointerdown',180,440]);pg.evaluate(TOUCH,['pointerup',180,440]);pg.wait_for_timeout(50)
     # Impuls trifft Gegner im Kreis; Taktschlag verstärkt jeden 5. Impuls; Zähler läuft auch ohne Treffer weiter
     r=pg.evaluate("""()=>{paused=true;const mk=()=>{run.en.length=0;run.spawnEnemy('brute',false,run.cx,run.cy);const e=run.en[0];e.hp=e.max=1e9;run.buildGrid();return e};
       run.S.beat=3;run.S.tapCrit=0;run.S.overload=0;run.S.megaTap=0;run.imps=0;const d=[];
@@ -47,11 +53,11 @@ with sync_playwright() as p:
     check(r['leer']==6,'Zähler läuft auch ohne Treffer weiter')
     # Zeiger bleibt über den Run hinaus erhalten
     pg.click('#bPause');pg.click('#bQuit');pg.wait_for_timeout(2200);pg.click('#bBack');pg.click('#bStart');pg.wait_for_timeout(300)
-    a=w();check(abs(a[0]-150)<=1 and abs(a[1]-560)<=1,'Zeiger steht im nächsten Run wieder an derselben Stelle: '+str(a))
+    a=w();check(abs(a[0]-180)<=1 and abs(a[1]-440)<=1,'Zeiger steht im nächsten Run wieder an derselben Stelle: '+str(a))
     # Turm-Menü: nur kurzes Antippen ohne Bewegung öffnet es; aufsetzen und ziehen bewegt den Zeiger
     tp=pg.evaluate("()=>{run.energy=999;run.place('frost',-90,150);const T=run.towers[0],r=document.querySelector('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+T.x*R.se),Math.round(r.top+R.h/2+T.y*R.se)]}")
-    pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.evaluate(TOUCH,['pointermove',tp[0]+60,tp[1]-40]);pg.evaluate(TOUCH,['pointerup',tp[0]+60,tp[1]-40]);pg.wait_for_timeout(80)
-    a=w();check(pg.evaluate("()=>document.querySelector('#tpanel').hidden&&towerSel===null") and abs(a[0]-tp[0]-60)<=1 and abs(a[1]-tp[1]+40)<=1,'auf Turm aufsetzen und ziehen: kein Menü, Zeiger folgt: '+str(a))
+    a0=w();pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.evaluate(TOUCH,['pointermove',tp[0]+60,tp[1]-40]);pg.evaluate(TOUCH,['pointermove',tp[0]+80,tp[1]-40]);pg.evaluate(TOUCH,['pointerup',tp[0]+80,tp[1]-40]);pg.wait_for_timeout(80)
+    a=w();check(pg.evaluate("()=>document.querySelector('#tpanel').hidden&&towerSel===null") and abs(a[0]-a0[0]-30)<=1 and abs(a[1]-a0[1])<=1,'auf Turm aufsetzen und wischen: kein Menü, Zeiger wird geschoben: '+str(a0)+' → '+str(a))
     pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.wait_for_timeout(600);pg.evaluate(TOUCH,['pointerup',tp[0],tp[1]]);pg.wait_for_timeout(80)
     check(pg.evaluate("()=>document.querySelector('#tpanel').hidden"),'langes Halten auf dem Turm: kein Menü')
     pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.evaluate(TOUCH,['pointerup',tp[0],tp[1]]);pg.wait_for_timeout(80)
