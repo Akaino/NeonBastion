@@ -36,7 +36,7 @@ moveTower(T,x,y){if(this.phase!=='build'||this.moves<=0)return false;if(!super.m
 /* ---- Schadenstürme ---- */
 updTowers(dt){super.updTowers(dt);const S=this.S,cm=S.comboMul;
   for(const e of this.en){if(e.acid>0&&e.hp>0){e.acid-=dt;e.hp-=e.max*(e.boss?.004:.02)*S.poisonMul*cm*dt;if(e.hp<=0)this.kill(e)}}
-  for(const T of this.towers){const D=TOWERS[T.type];if(!D.dmgTower)continue;const r2=T.r*T.r;
+  for(const T of this.towers){const D=TOWERS[T.type];if(!D.dmgTower||T.jam)continue;const r2=T.r*T.r;
     const inR=e=>e.hp>0&&sq(e.x-T.x)+sq(e.y-T.y)<r2+e.r*e.r;
     const pick=()=>{let b=null,bd=Infinity;for(const e of this.en){if(!inR(e))continue;const d=e.x*e.x+e.y*e.y;if(d<bd){bd=d;b=e}}return b};
     if(T.type==='laser'){if(!(T.tg&&inR(T.tg)))T.tg=pick();const e=T.tg;T.beam=e||null;if(!e)continue;

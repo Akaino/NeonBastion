@@ -30,7 +30,7 @@ with sync_playwright() as p:
     check(r25['max'][0]==r25['max'][1] and abs(r25['max'][0]/ (r20['max'][0]*1.15**5*(1+25*.03)/(1+20*.03)) -.75)<.01,'jeder der beiden hat 75 % des normalen Bosslebens')
     pg.screenshot(path='db1_doppelboss.png')
     # einen der beiden besiegen: Balken fällt auf die Hälfte, Sternenstaub nur einmal
-    h=pg.evaluate("()=>{const bs=run.en.filter(e=>e.boss);const d0=run.gain.d,p0=run.gain.p;run.hitE(bs[0],bs[0].hp*2);updHud();const d1=run.gain.d;run.en=run.en.filter(e=>e.hp>0);updHud();const br=parseFloat(document.querySelector('#bossBar i').style.width),lab=document.querySelector('#bossBar b').textContent;run.hitE(bs[1],bs[1].hp*2);return {staub1:d1-d0,staub2:run.gain.d-d1,prismen:run.gain.p-p0,breite:br,lab,kills:run.bossKills}}")
+    h=pg.evaluate("()=>{const bs=run.en.filter(e=>e.boss);for(const b of bs){b.armorT=0;b.hp=b.max}run.twinMax=0;updHud();const d0=run.gain.d,p0=run.gain.p;run.hitE(bs[0],bs[0].hp*2);updHud();const d1=run.gain.d;run.en=run.en.filter(e=>e.hp>0);updHud();const br=parseFloat(document.querySelector('#bossBar i').style.width),lab=document.querySelector('#bossBar b').textContent;run.hitE(bs[1],bs[1].hp*2);return {staub1:d1-d0,staub2:run.gain.d-d1,prismen:run.gain.p-p0,breite:br,lab,kills:run.bossKills}}")
     check(48<=h['breite']<=52 and h['lab'].startswith('Doppelboss · ') and ' & ' not in h['lab'],f"nach dem ersten Sieg zeigt der Balken die Hälfte: {h['breite']} %, „{h['lab']}“")
     check(h['staub1']>0 and h['staub2']==0,f"Sternenstaub nur einmal pro Welle: {h['staub1']} + {h['staub2']}")
     check(h['prismen']>=2 and h['kills']>=2,'beide Bosse geben Prismen')

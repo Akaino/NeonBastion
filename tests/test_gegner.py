@@ -15,7 +15,7 @@ with sync_playwright() as p:
     # Einstiegswellen und Anteile
     sh=pg.evaluate("()=>Object.fromEntries([14,15,29,30,44,45,59,60,90].map(w=>[w,WAVE_MIX.filter(t=>waveShare(t,w)>0)]))")
     check('sprinter' not in sh['14'] and 'sprinter' in sh['15'] and 'shield' not in sh['29'] and 'shield' in sh['30'] and 'splitter' not in sh['44'] and 'splitter' in sh['45'] and 'siege' not in sh['59'] and 'siege' in sh['60'],'Einstieg: Sprinter 15, Schildträger 30, Spalter 45, Belagerer 60')
-    check(pg.evaluate("()=>WAVE_MIX.reduce((s,t)=>s+waveShare(t,200),0)")<1,'es bleiben immer Schwärmer übrig')
+    check(all(pg.evaluate("w=>waveMix(w).reduce((s,x)=>s+x[1],0)",w)<=.8501 for w in (40,90,200,900)),'es bleiben immer mindestens 15 % Schwärmer übrig')
     old=pg.evaluate("()=>[3,4,9,40].map(w=>[waveShare('brute',w),waveShare('shooter',w)])")
     check(all(abs(a-min(.25,.04*(w-2)))<1e-9 and abs(s-(min(.2,.04*(w-4)) if w>=5 else 0))<1e-9 for (a,s),w in zip(old,[3,4,9,40])),'Brecher und Fernkämpfer kommen so häufig wie zuvor')
     pg.evaluate("()=>{save.startPick=70;persist()}");pg.click('#bStart');pg.wait_for_timeout(300)

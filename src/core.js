@@ -1,4 +1,4 @@
-const VERSION='0.17.3';
+const VERSION='0.18.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
