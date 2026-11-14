@@ -21,8 +21,8 @@ with sync_playwright() as p:
       const m=/translate\\(([-\\d.]+) ([-\\d.]+)\\) rotate\\(([-\\d.]+)\\)/.exec(e.getAttribute('transform')),x=+m[1],y=+m[2],rot=+m[3],id=ids.find(i=>BR[i].name.toUpperCase()===e.textContent),B=BR[id];
       const grenze=B.a+B.ls*half;let par=((rot-grenze)%180+180)%180;par=Math.min(par,180-par);let d=Math.atan2(y,x)*180/Math.PI-B.a;d=((d+540)%360)-180;
       const near=Math.min(...Object.values(NODES).map(n=>Math.hypot(n.x-x,n.y-y)));return {name:B.name,grenze:((grenze%360)+360)%360,par,imSektor:Math.abs(d)<half,amRand:Math.abs(d)/half,abstand:Math.round(near)}})}""")
-    soll={'Basis':306,'Flotte':18,'Helden':18,'Impuls':162,'Ertrag':234}
-    check(all(abs(x['grenze']-soll[x['name']])<1e-6 for x in g),'Grenzen wie festgelegt: Basis rechts, Flotte unten, Helden oben, Impuls oben, Ertrag oben')
+    soll={'Basis':306,'Flotte':18,'Helden':90,'Impuls':162,'Ertrag':234}
+    check(all(abs(x['grenze']-soll[x['name']])<1e-6 for x in g),'Grenzen wie festgelegt: Basis rechts, Flotte unten, Helden unten, Impuls oben, Ertrag oben')
     check(all(x['par']<.2 and x['imSektor'] and x['amRand']>.8 and x['abstand']>=60 for x in g),'Namen laufen parallel zur Grenze, liegen knapp im eigenen Sektor und abseits der Knoten: '+', '.join(f"{x['name']} {x['abstand']} px" for x in g))
     check(pg.evaluate("()=>document.querySelectorAll('#tw svg path[fill-opacity]').length")==5 and pg.evaluate("()=>document.querySelectorAll('#tw svg circle[stroke-dasharray]').length")>=9,'Hintergrund: fünf farbige Sektoren und Ringe für die Tiefe')
     # Knoten bleiben bedienbar: Antippen wählt aus, Karte nennt den neuen Astnamen

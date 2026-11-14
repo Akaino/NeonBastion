@@ -1,4 +1,4 @@
-const VERSION='0.17.2';
+const VERSION='0.17.3';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -37,7 +37,7 @@ function quantaFor(w,save){if(w<NOVA_MIN)return 0;const qm=1+.1*((save.nodes&&sa
 const BR={
   b:{name:'Basis',col:'#3df5ff',a:-90,ls:1},
   u:{name:'Flotte',col:'#8cff4f',a:-18,ls:1},
-  h:{name:'Helden',col:'#ff4fd8',a:54,ls:-1},
+  h:{name:'Helden',col:'#ff4fd8',a:54,ls:1},
   f:{name:'Impuls',col:'#ff8a3d',a:126,ls:1},
   e:{name:'Ertrag',col:'#ffe14f',a:198,ls:1}
 };

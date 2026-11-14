@@ -132,12 +132,14 @@ const achTier=a=>{const v=a.val(save);return a.tiers.filter(t=>v>=t).length};
 // Einzel-Erfolge mit nur einer Stufe zählen als Gold
 const achMedal=(a,i)=>MEDALS[a.tiers.length===1?2:i];
 function achCheck(){const A=save.ach||(save.ach={});let msg=null,n=0;for(const a of ACH){const t=achTier(a);if(t>(A[a.id]||0)){A[a.id]=t;n++;msg=`Erfolg: ${a.name} (${achMedal(a,t-1)[0]})`}}if(n){persist();toast(n>1?`${n} neue Erfolge`:msg);Snd.play('abil')}}
-function renderAchv(){let got=0,all=0;const cards=ACH.map(a=>{const v=a.val(save),t=achTier(a),next=a.tiers[t],prev=t?a.tiers[t-1]:0;got+=t;all+=a.tiers.length;
+// Ein Erfolg bleibt verdeckt (kein Name, keine Beschreibung, keine Schwellen), bis seine erste Stufe erreicht ist. Danach sind auch die weiteren Stufen sichtbar.
+function renderAchv(){let got=0,all=0,open=0;const cards=ACH.map(a=>{const v=a.val(save),t=achTier(a),next=a.tiers[t],prev=t?a.tiers[t-1]:0;got+=t;all+=a.tiers.length;
+    if(!t)return '<article class="hcard lock" style="--c:#5f5c8c"><div class="hc-top"><div class="unk">?</div><div><h3>Verborgener Erfolg</h3><small>Noch nicht freigeschaltet</small></div></div></article>';open++;
     const meds=a.tiers.map((_,i)=>{const [nm,col]=achMedal(a,i);return `<span class="medal ${i<t?'on':''}" style="--m:${col}" title="${nm}: ${fmtN(a.tiers[i])}" aria-label="${nm} ${i<t?'erreicht':'offen'}">${nm[0]}</span>`}).join('');
     const col=t?achMedal(a,t-1)[1]:'#5f5c8c',pct=next?clamp((v-prev)/(next-prev),0,1)*100:100;
     return `<article class="hcard" style="--c:${col}"><div class="hc-top"><div><h3>${a.name}</h3><small>${a.text}</small></div><div class="medals">${meds}</div></div>
       <div class="prog"><i style="width:${pct.toFixed(1)}%"></i></div><div class="progt"><span>${next?`Nächste Stufe: ${achMedal(a,t)[0]}`:'Alle Stufen erreicht'}</span><b>${fmtN(v)}${next?' / '+fmtN(next):''}</b></div></article>`}).join('');
-  $('#alist').innerHTML=`<article class="hcard" style="--c:#ffe14f"><div class="hc-top"><div><h3>${got} von ${all} Medaillen</h3><small>Erfolge sind zum Sammeln da und bringen keinen Vorteil im Spiel.</small></div></div><div class="prog"><i style="width:${(got/all*100).toFixed(1)}%"></i></div></article>`+cards}
+  $('#alist').innerHTML=`<article class="hcard" style="--c:#ffe14f"><div class="hc-top"><div><h3>${got} von ${all} Medaillen</h3><small>${open} von ${ACH.length} Erfolgen entdeckt. Erfolge sind zum Sammeln da und bringen keinen Vorteil im Spiel.</small></div></div><div class="prog"><i style="width:${(got/all*100).toFixed(1)}%"></i></div></article>`+cards}
 $('#bAchv').onclick=()=>{show('achv');renderAchv()};
 $('#bTree').onclick=()=>{show('tree');renderTree();treeHome()};
 $('#bHeroes').onclick=()=>{show('heroes');renderHeroes()};

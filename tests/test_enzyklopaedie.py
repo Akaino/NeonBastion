@@ -19,6 +19,9 @@ with sync_playwright() as p:
     check(c['abschnitte']==['Gegner','Bosse'] and c['karten']==8+1+6+1 and c['verdeckt']==c['karten'],f"frischer Spielstand: {c['karten']} Einträge in „Gegner“ und „Bosse“, alle verdeckt")
     check('Sprinter' not in pg.inner_text('#clist') and 'Titan' not in pg.inner_text('#clist'),'verdeckte Einträge verraten keinen Namen')
     pg.click('#codex [data-back]')
+    pg.click('#bAchv');pg.wait_for_timeout(150)
+    check(pg.evaluate("()=>document.querySelectorAll('#alist .hcard.lock').length")==15 and pg.evaluate("()=>document.querySelectorAll('#alist .medal').length")==0 and 'Jäger' not in pg.inner_text('#alist'),'frischer Spielstand: alle 15 Erfolge verdeckt')
+    pg.click('#achv [data-back]')
     # --- mit Zählständen ---
     pg.evaluate("""()=>{save.kills={swarm:5200,brute:800,shooter:400,sprinter:120,shield:30,elite:60,boss:14,'boss:Titan':9,'boss:Hydra':5,twin:2,'shiny:sprinter':1,'shiny:swarm':3};save.best=104;save.runs=30;save.nova=1;save.ach=null;persist()}""")
     pg.reload();pg.wait_for_timeout(300)   # beim Start wird bereits Erreichtes still übernommen
@@ -38,9 +41,13 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>ACH.find(a=>a.id==='kills').tiers[2]>=1e7&&ACH.find(a=>a.id==='welle').tiers[2]>=300&&ACH.find(a=>a.id==='nova').tiers[2]>=250"),'es gibt sehr schwer erreichbare Gold-Stufen')
     check(not pg.evaluate("()=>ACH.some(a=>/alle.*(shin|schill)/i.test(a.name+a.text))") and pg.evaluate("()=>ACH.filter(a=>/schill/i.test(a.name+a.text)).length")==1,'kein Erfolg „alle Schillernden“, nur „Erstes Schillern“')
     pg.click('#bAchv');pg.wait_for_timeout(200)
-    m=pg.evaluate("()=>({karten:document.querySelectorAll('#alist .hcard').length,an:document.querySelectorAll('#alist .medal.on').length,alle:document.querySelectorAll('#alist .medal').length,kopf:document.querySelector('#alist h3').textContent})")
-    check(m['karten']==16 and m['alle']==14*3+1 and m['an']==sum(st.values()) and m['kopf']==f"{sum(st.values())} von {14*3+1} Medaillen",f"Erfolge-Seite: {m['kopf']}")
-    check('keinen Vorteil' in pg.inner_text('#alist'),'Hinweis: Erfolge bringen keinen Vorteil')
+    m=pg.evaluate("()=>({karten:document.querySelectorAll('#alist .hcard').length,verdeckt:document.querySelectorAll('#alist .hcard.lock').length,an:document.querySelectorAll('#alist .medal.on').length,alle:document.querySelectorAll('#alist .medal').length,kopf:document.querySelector('#alist h3').textContent,text:document.querySelector('#alist').innerText})")
+    offen=[i for i,_,t in a if t>0];zu=[i for i,_,t in a if t==0]
+    check(m['karten']==16 and m['verdeckt']==len(zu) and m['an']==sum(st.values()) and m['kopf']==f"{sum(st.values())} von {14*3+1} Medaillen",f"Erfolge-Seite: {m['kopf']}, {m['verdeckt']} verdeckt")
+    namen=dict(pg.evaluate("()=>ACH.map(a=>[a.id,[a.name,a.text]])"))
+    check(all(namen[i][0] not in m['text'] and namen[i][1] not in m['text'] for i in zu) and all(namen[i][0] in m['text'] for i in offen),'nicht freigeschaltete Erfolge verraten weder Namen noch Beschreibung, freigeschaltete sind lesbar')
+    check(m['alle']==sum(n for i,n,t in a if t>0) and 'Nächste Stufe: Silber' in m['text'] and 'Nächste Stufe: Gold' in m['text'],'bei freigeschalteten Erfolgen sind die weiteren Stufen samt Schwelle sichtbar')
+    check('keinen Vorteil' in m['text'] and f"{len(offen)} von 15 Erfolgen entdeckt" in m['text'],'Kopfzeile nennt entdeckte Erfolge und den Hinweis „kein Vorteil“')
     pg.screenshot(path='e3_erfolge.png');pg.click('#achv [data-back]')
     # --- schillernde Gegner im Run ---
     check(abs(pg.evaluate("()=>SHINY_P")-1/5000)<1e-12 and pg.evaluate("()=>SHINY_HP")==3.5,'Schillernd: Wahrscheinlichkeit 1 zu 5.000, 3,5-faches Leben')
