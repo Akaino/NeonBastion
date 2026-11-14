@@ -25,6 +25,7 @@ node sim/sim.js --seeds 8        # Karriere-Simulation, Zeiger ruht (Idle-Spiele
 node sim/sim.js --seeds 8 --zeiger zielt   # Bot zieht den Impuls alle 0,25 s auf die dichteste Gruppe (Idealspieler); --zeiger aus = kein Impuls
 node sim/sim.js upgrades --at 25,50,75   # Wirkung einzelner Upgrades an Kontrollpunkten
 node sim/sim.js aeste --seeds 3 --stunden 4 --zeiger zielt   # Ast-Vergleich: Karriere mit jeder Kombination der fünf Skilltree-Äste
+node sim/sim.js probe --at 25,45,70 --runs 10              # Probe am festen Spielstand: Sekunden statt Minuten; --gegen <src-Ordner> vergleicht zwei Fassungen
 ```
 
 Voraussetzungen: Python 3, Node.js ab 18, `pip install playwright && playwright install chromium`.
@@ -160,6 +161,13 @@ Neue Gegner und die Kante bei Welle 50 (0.16.0, `/bottest/`, 8 Seeds, Zeiger ruh
 - Bei Welle 47–50 steht der Bot auf der Kippe: Entweder er kommt direkt über Welle 50 (2,4–2,9 h) oder er bleibt hängen, zündet nach vier Runs ohne Rekord eine Supernova und braucht rund 4 h. Seeds mit Supernova kurz vor Welle 50: ohne neue Gegner 2 von 8, mit neuen Gegnern und Doppelboss 80 % 6 von 8, mit neuen Gegnern und Doppelboss 65 % 3 von 8. Daraus entsteht der gemessene Zeitverlust (Welle 100: 12 h 15 min ohne, 15 h 46 min mit neuen Gegnern), nicht aus den Gegnern selbst.
 - Folgerung: Die Kante gehört zur Bosswelle 50 und wird durch das Doppelboss-Leben und jede zusätzliche Erschwernis verschärft. Karriere-Zeiten reagieren dort sprunghaft; kleine Änderungen nicht an der Gesamtzeit beurteilen, sondern am Anteil der Seeds, die hängen bleiben, und mit der Probe am festen Spielstand. Die Entscheidung, ob der Doppelboss eine Hürde sein soll (80 %) oder nicht, liegt beim Nutzer.
 - Der Stand nach Autofeuer-Umzug und Doppelboss 80 % ist ohne neue Gegner langsamer als 0.14.0 (Welle 100: 12 h 15 min statt 10 h 12 min, Welle 25: 50 statt 38 min). Anteile nicht getrennt gemessen.
+
+Messwerkzeuge und Rechenzeit (Stand 14.11.2026):
+
+- **Zuerst die Probe, dann die Karriere.** `node sim/sim.js probe` nimmt aufbewahrte Spielstände (`sim/ergebnisse/staende/stand_<Rekord>.json`, einmal erspielt, `--neu` erspielt sie neu) und spielt wenige Runs. Zwei Spielstände mit je 10 Runs gegen zwei Fassungen: 20 s. Für „ist diese Änderung an dieser Stelle schwerer oder leichter?“ ist das genauer und viel schneller als ein Karriere-Lauf. Vergleich mit einem älteren Stand: `git worktree add <Ordner> <Tag>` und `--gegen <Ordner>/src`.
+- Karriere-Läufe nur für Fragen zum Gesamtverlauf (Zeit bis Welle X, Supernovas, Ausgaben) und nie mehrere gleichzeitig; zwei Varianten lieber mit je 4 Seeds und `--kerne 4`.
+- Der Rechenkern ist seit 0.16.0 gut doppelt so schnell (Karriere bis Welle 62: 30 statt 65 s, identisches Ergebnis). Gemessen mit `node --cpu-prof`: 62 % der Zeit steckten in der Abstandsberechnung Drohne × Gegner und der Prüfung Gegner × Verbündete. Jetzt liegen `buildGrid` (22 %) und `hyp` (22 %) vorn. Drei Vermutungen ohne Messung waren falsch (fremdes Math-Objekt im vm-Kontext, wechselnde Objektform der Gegner, `**2`) – erst messen, dann optimieren.
+- Größere Rechenschritte (`dt`) bleiben tabu, siehe Abschnitt 4.
 
 Befunde:
 - Einzelne Seeds streuen weiterhin (Zufall schaukelt sich auf). Immer mehrere Seeds verwenden.

@@ -3,6 +3,7 @@
 //   node sim.js                       Karriere-Simulation (Zeit bis Welle 25/50/75/100)
 //   node sim.js upgrades --at 25,50   Upgrade-Messung an Kontrollpunkten
 //   node sim.js aeste                 Ast-Vergleich: jede Kombination der fünf Skilltree-Äste
+//   node sim.js probe --at 45,70      Probe am festen Spielstand: wenige Runs statt ganzer Karriere
 // Alle Optionen: node sim.js --hilfe
 const {Worker,isMainThread,parentPort,workerData}=require('worker_threads');
 const os=require('os'),fs=require('fs'),path=require('path');
@@ -11,7 +12,8 @@ const bot=require('./bot2.js');
 if(!isMainThread){
   parentPort.on('message',msg=>{
     if(msg.type==='career'){const res=bot.simulate(msg.opt,row=>parentPort.postMessage({type:'row',row}));parentPort.postMessage({type:'done',res})}
-    else if(msg.type==='bench'){parentPort.postMessage({type:'bench',id:msg.id,res:bot.benchmark(msg.job)})}});
+    else if(msg.type==='bench'){parentPort.postMessage({type:'bench',id:msg.id,res:bot.benchmark(msg.job)})}
+    else if(msg.type==='probe'){parentPort.postMessage({type:'probe',res:bot.probe(msg.job)})}});
   return}
 
 /* ---------- Optionen ---------- */
@@ -20,7 +22,7 @@ const arg=(k,d)=>{const i=argv.indexOf('--'+k);return i>=0?argv[i+1]:d};
 if(argv.includes('--hilfe')||argv.includes('--help')){console.log(`
 Neon Bastion – Balancing-Simulation
 
-  node sim.js [karriere|upgrades|aeste] [Optionen]
+  node sim.js [karriere|upgrades|aeste|probe] [Optionen]
 
 Karriere (Standard): komplette Spielerkarriere, bis Welle --ziel
   --seeds 4          Anzahl paralleler Simulationen (verschiedene Zufallswerte)
@@ -41,6 +43,12 @@ Ast-Vergleich (aeste): Karriere mit jeder Kombination erlaubter Skilltree-Äste,
   --stunden 2        Spielzeit (1×) je Durchlauf
   --groesse 1,2,3,4,5  nur Kombinationen mit so vielen Ästen
   --tuerme an        an oder aus: darf der Bot Türme freischalten und aufwerten
+
+Probe (probe): derselbe Spielstand spielt wenige Runs, wahlweise gegen zwei Fassungen des Spielcodes
+  --at 25,45,70      Rekorde, bei denen ein Spielstand genommen wird (einmal erspielt, dann aufbewahrt)
+  --runs 10          Runs je Spielstand und Fassung
+  --gegen ORDNER     zweiter src-Ordner zum Vergleich, z. B. nach „git worktree add /tmp/alt v0.14.1“ der Ordner /tmp/alt/src
+  --neu              Spielstände neu erspielen
 
 Allgemein
   --kerne N          Anzahl Prozessorkerne (Standard: alle außer einem)
@@ -138,4 +146,23 @@ async function aeste(){const seeds=+arg('seeds',3),hours=+arg('stunden',2),sizes
   fs.writeFileSync(path.join(OUT,'aeste.csv'),'aeste;anzahl;seed;rekord;runs;supernovas;spielzeit_min\n'+combos.flatMap(c=>res[c].map(r=>[name(c),c.length,r.seed,r.best,r.runs,r.supernovas,(r.totalSec/60).toFixed(0)].join(';'))).join('\n'));
   console.log('\n'+md);console.log(`Gespeichert in ${path.join(OUT,'aeste.md')}`)}
 
-({upgrades,aeste}[mode]||karriere)().catch(e=>{console.error(e);process.exit(1)});
+/* ---------- Probe am festen Spielstand ---------- */
+// Schnelle Antwort auf „macht diese Änderung das Spiel an dieser Stelle schwerer oder leichter?“:
+// Spielstände bei bestimmten Rekorden werden einmal erspielt und aufbewahrt, danach treten sie in wenigen Runs gegen den Spielcode an.
+// Mit --gegen <Ordner> spielt derselbe Spielstand zusätzlich gegen den Spielcode aus einem anderen src-Ordner (z. B. einem älteren Stand).
+async function probe(){const at=String(arg('at','25,45,70')).split(',').map(Number),REP=+arg('runs',10),other=arg('gegen',null),dir=path.join(__dirname,'ergebnisse','staende');
+  fs.mkdirSync(dir,{recursive:true});const file=m=>path.join(dir,`stand_${m}.json`),need=at.filter(m=>argv.includes('--neu')||!fs.existsSync(file(m)));
+  const P=pool(CORES);
+  if(need.length){console.log(`Spielstände für Rekord ${need.join(', ')} werden erspielt (einmalig, danach aus ${path.relative(process.cwd(),dir)}/) …`);
+    const {res:car}=await P.run({type:'career',opt:{...base,zeiger:'ruht',seed:1,target:Math.max(...need),maxRuns:+arg('maxruns',600),maxGameHours:+arg('stunden',300),snapshotsAt:need}},
+      row=>{if(row.event)console.log(`  [${wall()}] Run ${row.run} · Rekord ${row.best} · ${row.event}`)});
+    for(const m of need)if(car.snapshots[m])fs.writeFileSync(file(m),JSON.stringify(car.snapshots[m]));else console.log(`  Rekord ${m} wurde nicht erreicht.`)}
+  const vars=[['aktueller Stand',null]];if(other)vars.push(['Vergleich: '+other,path.resolve(other)]);
+  let md=`# Probe am festen Spielstand\n\nErstellt: ${new Date().toLocaleString('de-DE')} · ${REP} Runs je Zeile · Zeiger: ${base.zeiger} · Start jeweils 10 Wellen unter dem Rekord\n\n| Spielstand | Variante | Ø Welle | niedrigste – höchste | Ø Run-Dauer |\n|---|---|---|---|---|\n`;
+  for(const m of at){if(!fs.existsSync(file(m)))continue;const save=JSON.parse(fs.readFileSync(file(m),'utf8'));
+    const out=await Promise.all(vars.map(([name,src])=>Promise.all(Array.from({length:REP},(_,i)=>P.run({type:'probe',job:{save,seed:1000+i,src,opt:{...base}}}).then(x=>x.res)))));
+    out.forEach((rs,vi)=>{const w=rs.map(r=>r.wave),avg=w.reduce((a,b)=>a+b,0)/w.length;
+      md+=`| Rekord ${save.best} | ${vars[vi][0]} | ${avg.toFixed(1)} | ${Math.min(...w)} – ${Math.max(...w)} | ${fmtT(rs.reduce((a,r)=>a+r.sec,0)/rs.length)} |\n`})}
+  P.close();md+=`\nRechenzeit ${wall()}.\n`;fs.writeFileSync(path.join(OUT,'probe.md'),md);console.log('\n'+md)}
+
+({upgrades,aeste,probe}[mode]||karriere)().catch(e=>{console.error(e);process.exit(1)});

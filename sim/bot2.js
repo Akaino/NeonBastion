@@ -3,12 +3,14 @@
 const fs=require('fs'),vm=require('vm'),path=require('path');
 
 function seededRandom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
-const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(__dirname,'..','src',f),'utf8')).join('\n');
-const SCRIPT=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX});');
+// Der Spielcode wird je Quellordner einmal übersetzt. Standard ist ../src; die Probe kann einen zweiten Ordner zum Vergleich laden.
+const SCRIPTS={};
+function scriptFor(dir){dir=dir||path.join(__dirname,'..','src');if(!SCRIPTS[dir]){const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
+  SCRIPTS[dir]=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX});')}return SCRIPTS[dir]}
 // Wichtig für die Geschwindigkeit: Der Spielcode bekommt die eigenen Bausteine seines Kontexts (Math, Map, Array, …).
 // Nur Math.random wird durch den festen Zufallsgenerator ersetzt. Ein von außen hereingereichtes Math-Objekt
 // würde jeden Aufruf von Math.sqrt & Co. über einen langsamen Umweg schicken (gemessen: 86 % der Rechenzeit).
-function loadGame(seed){const ctx={console,__rnd:seededRandom(seed)};vm.createContext(ctx);vm.runInContext('Math.random=__rnd;',ctx);SCRIPT.runInContext(ctx);return ctx}
+function loadGame(seed,dir){const ctx={console,__rnd:seededRandom(seed)};vm.createContext(ctx);vm.runInContext('Math.random=__rnd;',ctx);scriptFor(dir).runInContext(ctx);return ctx}
 const clone=o=>JSON.parse(JSON.stringify(o));
 const WEIGHT={s:1,k:40,p:400,d:4000,q:1};
 
@@ -94,4 +96,10 @@ function candidates(save,N){const X=loadGame(1),out=[];
   for(const id of X.TOWER_IDS){const t=save.towers[id];if(!t.u)continue;const k=Math.min(N,X.TOWER_MAX-t.l);if(k>0)out.push({mod:{kind:'turm',id,n:k},name:'Startstufe '+X.TOWERS[id].name,cost:costOf(i=>X.towerLvlCost(i),t.l,k)})}
   if((save.tslots||0)<X.SLOT_EXTRA)out.push({mod:{kind:'bauplatz',id:'',n:1},name:'Bauplatz',cost:(()=>{const [cu,a]=X.slotCost(save.tslots||0);const c={s:0,k:0,p:0,d:0};c[cu]=a;return c})()});
   return out}
-module.exports={simulate,benchmark,candidates,WEIGHT};
+// Probe am festen Spielstand: ein Run wie in der Karriere (Start 10 Wellen unter dem Rekord), wahlweise mit dem Spielcode aus einem anderen Ordner.
+// Fehlende Felder eines älteren Spielstands werden aus einem frischen ergänzt.
+function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.freshSave(),clone(job.save));
+  const S=X.stats(save);save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
+  const pick=Math.max(1,Math.min(S.startMax,(save.best||0)-10));save.startPick=pick>=S.startMax?0:pick;
+  const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick}}
+module.exports={simulate,benchmark,probe,candidates,WEIGHT};
