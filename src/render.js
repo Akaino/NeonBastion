@@ -22,6 +22,11 @@ enemySprite(type,r,col,white){const key='e'+type+Math.round(r)+(white?'w':col);r
   else if(type==='shield'){this.neon(c,K,c=>this.poly(c,5,r,0),C,2.4,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.35,-r*.4);c.lineTo(r*.35,-r*.4);c.lineTo(r*.35,r*.05);c.lineTo(0,r*.5);c.lineTo(-r*.35,r*.05);c.closePath()},C,1.5,6)}
   else if(type==='splitter'){for(let i=0;i<3;i++){const a=i*TAU/3,x=Math.cos(a)*r*.45,y=Math.sin(a)*r*.45;this.neon(c,K,c=>{c.beginPath();c.arc(x,y,r*.55,0,TAU)},C,2,10,F)}}
   else if(type==='mite'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.8,0,TAU)},C,1.6,8,F);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.25,0,TAU);c.fill()}
+  else if(type==='queen'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.85,0,TAU)},C,2.4,12,F);this.neon(c,K,c=>{c.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6;c.moveTo(Math.cos(a)*r*.85,Math.sin(a)*r*.85);c.lineTo(Math.cos(a)*r*1.35,Math.sin(a)*r*1.35)}},C,2,6);this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.35,0,TAU)},C,1.6,6)}
+  else if(type==='ram'){this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.4,0);c.lineTo(r*.2,-r);c.lineTo(-r,-r);c.lineTo(-r*.3,0);c.lineTo(-r,r);c.lineTo(r*.2,r);c.closePath()},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(r*.5,-r*.45);c.lineTo(r*.95,0);c.lineTo(r*.5,r*.45)},C,1.6,6)}
+  else if(type==='tank'){this.neon(c,K,c=>{c.beginPath();c.rect(-r*.9,-r*.9,r*1.8,r*1.8)},C,3,12,F);this.neon(c,K,c=>{c.beginPath();c.rect(-r*.5,-r*.5,r,r)},C,1.8,6)}
+  else if(type==='revenant'){this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.1,0);c.lineTo(0,-r);c.lineTo(-r*1.1,0);c.lineTo(0,r);c.closePath()},C,2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.35,-r*.35);c.lineTo(r*.35,r*.35);c.moveTo(r*.35,-r*.35);c.lineTo(-r*.35,r*.35)},C,1.6,6)}
+  else if(type==='commander'){this.neon(c,K,c=>{c.beginPath();for(let i=0;i<10;i++){const a=-PI/2+i*TAU/10,rr=i%2?r*.5:r*1.1;c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}c.closePath()},C,2.2,14,F);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.2,0,TAU);c.fill()}
   else if(type==='healer'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.55,0);c.lineTo(r*.55,0);c.moveTo(0,-r*.55);c.lineTo(0,r*.55)},C,2.6,8)}
   else if(type==='bomber'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.8,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();for(let i=0;i<8;i++){const a=i*TAU/8;c.moveTo(Math.cos(a)*r*.95,Math.sin(a)*r*.95);c.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4)}},C,1.8,6);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.3,0,TAU);c.fill()}
   else if(type==='cloaker'){this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.25,0);c.lineTo(0,-r*.85);c.lineTo(-r*1.25,0);c.lineTo(0,r*.85);c.closePath()},C,2,12,F);this.neon(c,K,c=>{c.beginPath();c.ellipse(0,0,r*.55,r*.28,0,0,TAU)},C,1.5,6)}
@@ -87,7 +92,8 @@ frame(run,dt){this.t+=dt;
       c.lineWidth=1.5;c.setLineDash([3,9]);c.lineDashOffset=this.t*20;c.beginPath();c.arc(e.x,e.y,e.r*1.85,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;c.globalCompositeOperation='source-over'}
     // Störsender: gestrichelter Kreis zeigt, wo Türme ausfallen. Tarner: fast unsichtbar, solange getarnt.
     if(e.type==='jammer'){c.strokeStyle='rgba(61,255,208,.35)';c.lineWidth=1.5;c.setLineDash([4,7]);c.lineDashOffset=this.t*18;c.beginPath();c.arc(e.x,e.y,JAM_R,0,TAU);c.stroke();c.setLineDash([])}
-    if(e.cloak)c.globalAlpha=.14;
+    if(e.type==='commander'){c.strokeStyle='rgba(255,79,79,.32)';c.lineWidth=1.5;c.setLineDash([2,6]);c.lineDashOffset=-this.t*14;c.beginPath();c.arc(e.x,e.y,CMD_R,0,TAU);c.stroke();c.setLineDash([])}
+    if(e.cloak)c.globalAlpha=e.down>0?.35:.14;
     const s=this.enemySprite(e.type,e.r,e.col,e.flash>0);this.draw(s,e.x,e.y,e.boss?this.t*.4:e.ang);c.globalAlpha=1;
     // Boss lädt eine Fähigkeit auf: goldener Ring füllt sich bis zur Auslösung; Panzerung des Koloss als heller Ring
     if(e.boss&&e.cast>0){const f=1-e.cast/e.cast0;c.globalAlpha=.35;c.strokeStyle='#ffe14f';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.r*2.15,0,TAU);c.stroke();

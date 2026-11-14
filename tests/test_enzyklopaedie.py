@@ -16,7 +16,7 @@ with sync_playwright() as p:
     # --- Enzyklopädie leer: alles verdeckt ---
     pg.click('#bCodex');pg.wait_for_timeout(200)
     c=pg.evaluate("()=>({karten:document.querySelectorAll('#clist .hcard').length,verdeckt:document.querySelectorAll('#clist .hcard.lock').length,abschnitte:[...document.querySelectorAll('#clist .sect')].map(e=>e.textContent)})")
-    check(c['abschnitte']==['Gegner','Bosse'] and c['karten']==13+1+6+1 and c['verdeckt']==c['karten'],f"frischer Spielstand: {c['karten']} Einträge in „Gegner“ und „Bosse“, alle verdeckt")
+    check(c['abschnitte']==['Gegner','Bosse'] and c['karten']==18+1+6+1 and c['verdeckt']==c['karten'],f"frischer Spielstand: {c['karten']} Einträge in „Gegner“ und „Bosse“, alle verdeckt")
     check('Sprinter' not in pg.inner_text('#clist') and 'Titan' not in pg.inner_text('#clist'),'verdeckte Einträge verraten keinen Namen')
     pg.click('#codex [data-back]')
     pg.click('#bAchv');pg.wait_for_timeout(150)
