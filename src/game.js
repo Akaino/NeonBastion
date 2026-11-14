@@ -7,7 +7,7 @@ const ETYPES={
 };
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (80 %) des normalen Bosslebens
 const TWIN_EVERY=25,TWIN_HP=.8,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
-const CELL=40,AIM_STICK=60;   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
+const CELL=40,AIM_STICK=60,AUTO_R=30;   // AUTO_R: Trefferradius eines Autofeuer-Schusses   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
 function jag(x1,y1,x2,y2,n,amp){const p=[[x1,y1]],dx=x2-x1,dy=y2-y1,L=hyp(dx,dy)||1,nx=-dy/L,ny=dx/L;
   for(let i=1;i<n;i++){const t=i/n,o=rnd(-amp,amp);p.push([x1+dx*t+nx*o,y1+dy*t+ny*o])}p.push([x2,y2]);return p}
 
@@ -275,18 +275,20 @@ updProj(dt){const lim=Math.max(this.hw,this.hh)+120;
   this.ep=this.ep.filter(q=>!q.dead)}
 
 /* ---------- tap ---------- */
-tap(x,y,auto){if(this.over)return;const S=this.S;this.taps++;
-  // auto = Autofeuer der Basis, sonst Impuls am Zeiger. Zähler laufen immer weiter, auch wenn nichts getroffen wird.
-  let dmg=S.tapDmg*(auto?S.autoDmg:S.impMul),beat=false;
-  if(!auto){this.imps++;if(S.beat&&this.imps%BEAT_N===0){dmg*=1+S.beat;beat=true}}
-  if(S.megaTap&&this.taps%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*3,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
-  const over=S.overload&&this.taps%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
+// Autofeuer der Basis (Basis-Ast): eigener Schaden wie die Geschütze, kleine Fläche, keine Sonderfähigkeiten des Zeigers
+autoShot(x,y){if(this.over)return 0;const S=this.S,hit=this.aoe(x,y,AUTO_R,S.turretDmg*S.autoDmg,{col:'#3df5ff'});
+  this.ring(x,y,4,AUTO_R+4,'#3df5ff',.2,2);this.headless||this.bolts.push({pts:jag(0,0,x,y,5,5),l:0,m:.12,col:'#3df5ff',w:1.6});
+  this.h.sfx&&this.h.sfx(hit.length?'drone':'tapmiss');return hit.length}
+// Impuls am Zeiger (Fokus-Ast). Zähler laufen immer weiter, auch wenn nichts getroffen wird.
+tap(x,y){if(this.over)return;const S=this.S,n=++this.imps;this.taps=n;
+  let dmg=S.tapDmg*S.impMul,beat=false;if(S.beat&&n%BEAT_N===0){dmg*=1+S.beat;beat=true}
+  if(S.megaTap&&n%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*3,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
+  const over=S.overload&&n%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
   const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});
   this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
   if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=(e.x-f.x)**2+(e.y-f.y)**2;if(d<nd){nd=d;nx=e}}
     if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d'})}
-  if(auto){this.headless||this.bolts.push({pts:jag(0,0,x,y,5,5),l:0,m:.12,col:'#3df5ff',w:1.6})}
-  const snd=auto?(hit.length?'drone':'tapmiss'):hit.length?(crit||over||beat?'crit':'tap'):null;if(snd&&this.h.sfx)this.h.sfx(snd);return hit.length}
+  if(hit.length&&this.h.sfx)this.h.sfx(crit||over||beat?'crit':'tap');return hit.length}
 
 /* ---------- main ---------- */
 fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3;p.vy*=1-dt*3}this.parts=this.parts.filter(p=>p.l<p.m);
@@ -300,7 +302,7 @@ step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
   this.t+=dt;
   this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
   this.updHeroes(dt);this.updDrones(dt);
-  if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.tap(tg.x,tg.y,true);this.autoT=1/this.S.autoRate}}}
+  if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.autoShot(tg.x,tg.y);this.autoT=1/this.S.autoRate}}}
   // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
   if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt;this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updEnemies(dt);

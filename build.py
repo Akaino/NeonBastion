@@ -2,11 +2,12 @@
 """Baut Neon Bastion aus src/ zu einer einzigen HTML-Datei.
 
   python3 build.py             -> dist/web/        Testausgabe: komplette Website inkl. beta/, wird nicht veröffentlicht (Tests laufen hiergegen)
-  python3 build.py --beta      -> zusätzlich docs/beta/   Vorschau unter https://neonbastion.de/beta/, das echte Spiel bleibt unverändert
+  python3 build.py --bottest   -> zusätzlich docs/bottest/  Arbeitsstand unter https://neonbastion.de/bottest/ (darf unfertig sein)
+  python3 build.py --beta      -> zusätzlich docs/beta/     Vorschau unter https://neonbastion.de/beta/, das echte Spiel bleibt unverändert
   python3 build.py --release   -> zusätzlich docs/        komplette Website für GitHub Pages (Spiel, Impressum, Datenschutz, Schrift, Icons, CNAME, beta/)
 
-Die Beta ist dieselbe Datei mit angepassten Pfaden. Dass sie eine Beta ist, erkennt das Spiel zur Laufzeit am Pfad /beta/
-(IS_BETA in core.js): eigener Spielstand, Kennzeichnung „Beta“, Knopf „Live-Spielstand übernehmen“.
+Beta und Bottest sind dieselbe Datei mit angepassten Pfaden. Die Stufe erkennt das Spiel zur Laufzeit am Pfad /beta/ bzw. /bottest/
+(STAGE in core.js): eigener Spielstand, Kennzeichnung an der Version, Knopf „Live-Spielstand übernehmen“.
 """
 import os, re, shutil, sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -34,6 +35,7 @@ def write_site(dst):
     shutil.copytree(os.path.join(ROOT, 'assets'), dst)
     open(os.path.join(dst, 'index.html'), 'w', encoding='utf-8').write(web)
     write_beta(os.path.join(dst, 'beta'))
+    write_beta(os.path.join(dst, 'bottest'))
 
 def write_beta(dst):
     if os.path.isdir(dst):
@@ -45,7 +47,11 @@ write_site(os.path.join(ROOT, 'dist', 'web'))
 print(f'dist/web/ gebaut · Version {version} · {len(web)//1024} KB')
 if '--release' in sys.argv:
     write_site(os.path.join(ROOT, 'docs'))
-    print('docs/ gebaut (Release, inklusive beta/)')
-elif '--beta' in sys.argv:
-    write_beta(os.path.join(ROOT, 'docs', 'beta'))
-    print('docs/beta/ gebaut (Vorschau)')
+    print('docs/ gebaut (Release, inklusive beta/ und bottest/)')
+else:
+    if '--beta' in sys.argv:
+        write_beta(os.path.join(ROOT, 'docs', 'beta'))
+        print('docs/beta/ gebaut (Vorschau)')
+    if '--bottest' in sys.argv:
+        write_beta(os.path.join(ROOT, 'docs', 'bottest'))
+        print('docs/bottest/ gebaut (Arbeitsstand)')

@@ -1,4 +1,4 @@
-const VERSION='0.14.1';
+const VERSION='0.15.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -55,14 +55,14 @@ const NODE_DEFS=[
  ['b2b','b','b1',2,1,'Reparatur',10,'s',35,1.35,l=>l?`Repariert ${fmtD(l*.3)} % Leben pro Sekunde`:'Keine Reparatur'],
  ['b3a','b','b2a',3,-1.3,'Geschütze',4,'k',3,2.2,l=>l?`${l} Geschützt${l>1?'ürme':'urm'} an der Basis`:'Keine Geschütze'],
  ['b3b','b','b2b',3,1.3,'Schockwelle',10,'k',3,1.45,l=>l?`Schockwelle mit ${fmtN(15*(1+.6*(l-1)))} Schaden`:'Keine Schockwelle'],
- ['b4a','b','b3a',4,-1.6,'Kaliber',10,'p',1,1.35,l=>`+${l*40} % Geschützschaden`],
+ ['b4a','b','b3a',4,-1.6,'Kaliber',10,'p',1,1.35,l=>`+${l*40} % Schaden für Geschütze und Autofeuer`],
  ['b4c','b','b3a',4,-.3,'Feuerleitung',10,'k',4,1.4,l=>`+${l*10} % Feuerrate der Geschütze`],
  ['b4b','b','b3b',4,1.4,'Resonanz',4,'p',1,1.6,l=>`−${l*12} % Abklingzeit der Schockwelle`],
  ['b5','b','b4a',5,-1,'Bollwerk',1,'d',3,1,l=>'Doppeltes Basisleben, +50 % Geschützreichweite'],
  ['b5b','b','b4b',5,1.2,'Nova-Ring',5,'k',8,1.6,l=>`+${l*15} % Radius der Schockwelle`],
  ['b6','b','b5',6,0,'Kernreaktor',25,'k',20,1.34,l=>`×${fmtD(Math.pow(1.06,l),2)} Basisleben`],
  ['b7a','b','b6',7,-1,'Schildmatrix',10,'p',3,1.4,l=>`+${l*25} % Schildaufladung, +${l*5} % Schildstärke`],
- ['b7b','b','b6',7,1,'Abwehrnetz',20,'p',2,1.35,l=>`×${fmtD(Math.pow(1.08,l),2)} Geschützschaden`],
+ ['b7b','b','b6',7,1,'Abwehrnetz',20,'p',2,1.35,l=>`×${fmtD(Math.pow(1.08,l),2)} Schaden für Geschütze und Autofeuer`],
  ['b8','b','b7a',8,0,'Festungskern',10,'d',2,1.5,l=>`×${fmtD(Math.pow(1.15,l),2)} Basisleben`],
  ['b9','b','b8',9,0,'Unzerstörbar',10,'d',4,1.5,l=>`−${l*5} % erlittener Schaden`],
  // ---- Einheiten ----
@@ -96,20 +96,20 @@ const NODE_DEFS=[
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
- ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Impuls und Autofeuer`,LADDER],
+ ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Impulsschaden`,LADDER],
  ['f1b','f','f1',1.5,.9,'Taktgeber',IMP_LV,'s',40,1.3,l=>`Impuls alle ${fmtD(impInterval(l),2)} s, dafür etwas weniger Schaden je Impuls`],
  ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Impulse`],
  ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Impulsradius ${26+l*12}`],
- ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Schüsse pro Sekunde automatisch auf Gegner`:'Kein Autofeuer'],
+ ['f2c','b','b1',2.5,0,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Schüsse pro Sekunde automatisch auf Gegner`:'Kein Autofeuer'],
  ['f3a','f','f2a',3,-1.5,'Taktschlag',10,'k',2,1.4,l=>l?`Jeder ${BEAT_N}. Impuls verursacht +${l*100} % Schaden`:'Kein Taktschlag'],
- ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Schuss von Impuls und Autofeuer explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
- ['f3c','f','f2c',3,1.6,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
+ ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Impuls explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
+ ['f3c','b','f2c',3.5,.5,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
  ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
- ['f4b','f','f3c',4,1.3,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Schaden für Impuls und Autofeuer`],
- ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch Impuls und Autofeuer'],
- ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Schaden für Impuls und Autofeuer`],
- ['f7','f','f6',7,0,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
- ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Schuss von Impuls und Autofeuer trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
+ ['f4b','f','f3b',4,1,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Impulsschaden`],
+ ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch deinen Impuls'],
+ ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Impulsschaden`],
+ ['f7','b','f3c',4.5,.6,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
+ ['f8','f','f6',7,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Impuls trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
@@ -169,9 +169,11 @@ function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,c
   heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
   team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,q:0,pr:{},nova:0,cycleBest:0}}
 
-// Beta unter /beta/: eigener Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.
-const IS_BETA=typeof location!=='undefined'&&/\/beta\//.test(location.pathname),LIVE_KEY='neon-bastion-v1';
-const Store={key:IS_BETA?'neon-bastion-beta':LIVE_KEY,
+// Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).
+// Jede Stufe hat einen eigenen Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.
+const STAGE=typeof location==='undefined'?'':/\/bottest\//.test(location.pathname)?'Bottest':/\/beta\//.test(location.pathname)?'Beta':'';
+const IS_BETA=!!STAGE,LIVE_KEY='neon-bastion-v1';
+const Store={key:STAGE?'neon-bastion-'+STAGE.toLowerCase():LIVE_KEY,
   load(){try{const t=localStorage.getItem(this.key);return t?JSON.parse(t):null}catch(e){return null}},
   save(o){try{localStorage.setItem(this.key,JSON.stringify(o))}catch(e){}}};
 

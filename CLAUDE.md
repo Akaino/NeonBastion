@@ -1,6 +1,6 @@
 # Neon Bastion – Projektwissen für Claude Code
 
-Neon-Incremental-Tower-Defense im Browser (Desktop, iOS, Android). Live unter https://neonbastion.de, Vorschau unter https://neonbastion.de/beta/ (GitHub Pages aus `docs/`, Repository `Akaino/NeonBastion`).
+Neon-Incremental-Tower-Defense im Browser (Desktop, iOS, Android). Live unter https://neonbastion.de, Vorschau unter https://neonbastion.de/beta/, Arbeitsstand unter https://neonbastion.de/bottest/ (GitHub Pages aus `docs/`, Repository `Akaino/NeonBastion`).
 Dieses Dokument ist die Übergabe aus der bisherigen Entwicklung in einem claude.ai-Chat. Lies es vollständig, bevor du etwas änderst.
 
 ## 1. Zusammenarbeit mit dem Nutzer
@@ -16,6 +16,7 @@ Dieses Dokument ist die Übergabe aus der bisherigen Entwicklung in einem claude
 
 ```
 python3 build.py                 # baut die Testausgabe dist/web/ (komplette Website inkl. beta/), veröffentlicht nichts
+python3 build.py --bottest       # zusätzlich docs/bottest/ → Arbeitsstand unter neonbastion.de/bottest/, darf unfertig sein
 python3 build.py --beta          # zusätzlich docs/beta/  → Vorschau unter neonbastion.de/beta/, das echte Spiel bleibt unverändert
 python3 build.py --release       # zusätzlich docs/       → komplette Website (Spiel, Rechtsseiten, beta/)
 python3 tests/run_all.py         # alle Browser-Tests (Playwright, Chromium), 4 gleichzeitig, ca. 30 s
@@ -33,6 +34,8 @@ Testen im Browser: `dist/web/index.html` direkt öffnen oder `python3 -m http.se
 
 Der Nutzer testet auf iPhone und MacBook im Browser. **Jede Änderung am Spiel geht zuerst in die Beta und erst auf sein „Release“ auf die Hauptadresse.** Artefakte werden nicht mehr verwendet (er kann sie am Handy nicht öffnen).
 
+**Nichts bleibt nur lokal.** Der Nutzer will jeden Stand im Browser ansehen können (Vorgabe vom 14.11.2026: „Lokal gebaut und nicht in der Beta sollte es zukünftig nicht mehr geben“). Ist eine Änderung noch nicht reif für die Beta – etwa mitten in einem mehrstufigen Balancing mit Messläufen –, geht sie nach `/bottest/`: `python3 build.py --bottest`, Tests, Commit „Bottest vX.Y.Z: …“, Push. Im Bericht immer sagen, was unter `/bottest/` liegt und was daran noch fehlt. Sobald sie reif ist, in die Beta.
+
 Beta (nach „Umsetzen“):
 1. `VERSION` in `src/core.js` erhöhen (Schema 0.MINOR.PATCH; Features → MINOR, reine Fixes → PATCH).
 2. `python3 build.py --beta && python3 tests/run_all.py`
@@ -46,7 +49,7 @@ Release (wenn der Nutzer „Release“ oder „deploy“ sagt):
 
 `docs/` und `dist/` sind Build-Ausgaben. Nie direkt bearbeiten, immer `src/` oder `assets/` ändern und neu bauen. `dist/` ist nicht im Repository.
 
-Die Beta ist dieselbe Datei wie das Spiel mit angepassten Pfaden (`build.py`). Das Spiel erkennt sie zur Laufzeit am Pfad `/beta/` (`IS_BETA` in `core.js`): Kennzeichnung „Beta“ an der Version, eigener Spielstand `neon-bastion-beta`, Knopf „Live-Spielstand übernehmen“ in den Einstellungen (kopiert `neon-bastion-v1` in den Beta-Spielstand, nie umgekehrt), `noindex`. Reine Werkzeug-Änderungen (Tests, Simulation, Dokumentation) brauchen keine Beta.
+Beta und Bottest sind dieselbe Datei wie das Spiel mit angepassten Pfaden (`build.py`). Das Spiel erkennt die Stufe zur Laufzeit am Pfad `/beta/` bzw. `/bottest/` (`STAGE`, `IS_BETA` in `core.js`): Kennzeichnung „Beta“ bzw. „Bottest“ an der Version, eigener Spielstand `neon-bastion-beta` bzw. `neon-bastion-bottest`, Knopf „Live-Spielstand übernehmen“ in den Einstellungen (kopiert `neon-bastion-v1` in den Beta-Spielstand, nie umgekehrt), `noindex`. Reine Werkzeug-Änderungen (Tests, Simulation, Dokumentation) brauchen keine Beta.
 
 ## 4. Architektur
 

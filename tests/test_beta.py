@@ -41,4 +41,7 @@ with sync_playwright() as p:
     # Ohne Live-Spielstand: Hinweis statt Kopie
     pg.goto(BETA);pg.wait_for_timeout(300);pg.evaluate("()=>localStorage.removeItem('neon-bastion-v1')");pg.reload();pg.wait_for_timeout(300);pg.click('#bSet');pg.click('#bLiveCopy');pg.wait_for_timeout(150)
     check('keinen Live-Spielstand' in pg.inner_text('#toast') and pg.evaluate("()=>save.best===99"),'ohne Live-Spielstand: Hinweis, Beta bleibt wie sie ist')
+    # Bottest: eigene Stufe mit eigenem Spielstand und eigener Kennzeichnung
+    pg.goto(BETA.replace('/beta/','/bottest/'));pg.wait_for_timeout(400)
+    check(pg.evaluate("()=>STAGE==='Bottest'&&Store.key==='neon-bastion-bottest'&&(save.best||0)===0") and 'Bottest' in pg.inner_text('.hubfoot') and not failed,'Bottest: eigene Kennzeichnung und eigener Spielstand')
     print('\n'.join(errs) or 'no errors');b.close()
