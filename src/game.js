@@ -1,10 +1,23 @@
 const hyp=(a,b)=>Math.sqrt(a*a+b*b);
+// Gegnertypen. from = erste Welle, share = Anteil an der Welle (wächst ab from um step je Welle bis max), bar = Lebensbalken zeigen.
+// Die Reihenfolge in WAVE_MIX bestimmt, wer bei der Auswahl zuerst drankommt; der Rest der Welle sind Schwärmer.
 const ETYPES={
-  swarm:{hp:8,sp:72,r:7,dmg:3,val:1,col:'#ff8a3d'},
-  brute:{hp:55,sp:30,r:15,dmg:12,val:4,col:'#ff4f6d'},
-  shooter:{hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1},
-  boss:{hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
+  swarm:{name:'Schwärmer',hp:8,sp:72,r:7,dmg:3,val:1,col:'#ff8a3d'},
+  brute:{name:'Brecher',hp:55,sp:30,r:15,dmg:12,val:4,col:'#ff4f6d',bar:1,from:3,step:.04,max:.25},
+  shooter:{name:'Fernkämpfer',hp:22,sp:44,r:10,dmg:6,val:3,col:'#ffb02e',ranged:1,from:5,step:.04,max:.2},
+  // Sprinter: sehr schnell, wenig Leben
+  sprinter:{name:'Sprinter',hp:5,sp:150,r:6,dmg:2,val:1,col:'#fff34f',from:15,step:.03,max:.15,text:'Sehr schnell, aber zerbrechlich.'},
+  // Schildträger: der Schild schluckt die ersten Treffer vollständig, egal wie stark sie sind
+  shield:{name:'Schildträger',hp:40,sp:34,r:13,dmg:9,val:5,col:'#5ab8ff',bar:1,from:30,step:.02,max:.12,text:'Sein Schild schluckt die ersten Treffer vollständig. Viele kleine Treffer brechen ihn am schnellsten.'},
+  // Spalter: zerfällt beim Tod in drei Splitterlinge
+  splitter:{name:'Spalter',hp:30,sp:40,r:12,dmg:6,val:3,col:'#b98cff',bar:1,from:45,step:.02,max:.12,text:'Zerfällt beim Tod in drei Splitterlinge.'},
+  mite:{name:'Splitterling',hp:7,sp:80,r:6,dmg:2,val:1,col:'#d6b8ff'},
+  // Belagerer: bleibt am Rand stehen und beschießt die Basis mit schweren Geschossen
+  siege:{name:'Belagerer',hp:35,sp:26,r:13,dmg:30,val:6,col:'#ff6b3d',ranged:1,bar:1,from:60,step:.02,max:.08,text:'Bleibt weit draußen stehen und beschießt die Basis mit schweren Geschossen.'},
+  boss:{name:'Boss',hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
+const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege'];
+const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (80 %) des normalen Bosslebens
 const TWIN_EVERY=25,TWIN_HP=.8,BOSS_NAMES=['Titan','Koloss','Nemesis','Vortex','Hydra','Leviathan'];
 const CELL=40,AIM_STICK=60,AUTO_R=30;   // AUTO_R: Trefferradius eines Autofeuer-Schusses   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
@@ -22,7 +35,7 @@ constructor(save,hooks){
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
   this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
-  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
+  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.killsBy={};this.pend=[];this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
   for(let w=2;w<=this.w;w++)this.milestone(w);
   const team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
@@ -108,10 +121,14 @@ updTowers(dt){
   for(const e of this.en)if(e.chill>0)e.spMul=Math.min(e.spMul,.5)}
 
 /* ---------- damage ---------- */
-hitE(e,dmg,o={}){if(e.hp<=0)return;dmg*=e.vuln||1;if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+hitE(e,dmg,o={}){if(e.hp<=0)return;
+  if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
+  dmg*=e.vuln||1;if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
   if(e.hp<=0)this.kill(e)}
 kill(e){this.kills++;this.energy+=e.val*this.energyMul(e);
+  const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;
+  if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*.22])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);
   this.h.sfx&&this.h.sfx(e.boss?'boss':e.elite||e.type==='brute'?'killbig':'kill')}
@@ -142,13 +159,15 @@ milestone(w){const S=this.S,r={k:0,p:0};if(w>1&&(w-1)%5===0){r.k=Math.floor((w-1
 nextWave(){const w=++this.w,S=this.S;
   const n=Math.round(Math.min(8+w*2.4,50+w*.6)),bS=w>=3?Math.min(.25,.04*(w-2)):0,sS=w>=5?Math.min(.2,.04*(w-4)):0;
   const eC=Math.min(.08,.03+.003*w)*S.elite,twin=w%TWIN_EVERY===0,boss=w%10===0||twin,cnt=boss?Math.round(n*.5):n,q=[];this.twin=twin;this.bossPt=null;this.twinMax=0;
-  for(let i=0;i<cnt;i++){const r=Math.random();q.push({type:r<bS?'brute':r<bS+sS?'shooter':'swarm',elite:Math.random()<eC})}
+  const mix=WAVE_MIX.map(t=>[t,waveShare(t,w)]);
+  for(let i=0;i<cnt;i++){let r=Math.random(),type='swarm';for(const [t,s] of mix){if(r<s){type=t;break}r-=s}q.push({type,elite:Math.random()<eC})}
   if(boss)q.splice(Math.floor(q.length/3),0,{type:'boss',elite:false});
   if(twin)q.splice(Math.floor(q.length*2/3),0,{type:'boss',elite:false,twin:true});
   if(w>1)this.energy+=10;
   this.queue=q;this.spawnI=Math.min(12,8+w*.12)/q.length;this.spawnT=.2;this.waveEndT=0;
   let sub=twin?'Zwei Bosse nähern sich':boss?'Ein Boss nähert sich':'';
   const ms=this.milestone(w);if(ms.k)sub=`+${fmtN(Math.max(1,ms.k))} ${ms.k<2?'Kern':'Kerne'} für ${w-1} Wellen`;if(ms.p)sub=`Meilenstein: +${fmtN(Math.max(1,ms.p))} ${ms.p<2?'Prisma':'Prismen'}`+(twin?' · Doppelboss naht':boss?' · Boss naht':'');
+  const neu=WAVE_MIX.find(t=>ETYPES[t].from===w&&ETYPES[t].text);if(neu)sub=(sub?sub+' · ':'')+'Neu: '+ETYPES[neu].name;
   if(w>this.save.best&&this.save.best>0&&!this.record){this.record=true}
   this.h.banner&&this.h.banner(`Welle ${w}`,sub);this.h.sfx&&this.h.sfx(boss?'bosswave':'wave')}
 bossName(){const used=this.en.filter(e=>e.boss&&e.hp>0).map(e=>e.name),free=BOSS_NAMES.filter(n=>!used.includes(n)),l=free.length?free:BOSS_NAMES;return l[Math.floor(Math.random()*l.length)]}
@@ -157,7 +176,8 @@ spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
 spawnEnemy(type,elite,x,y){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:rnd(200,240)})}
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0});
+  if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=5+Math.floor(w/15)}}
 updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Math.min(this.queue.length,1+Math.floor(Math.random()*3));
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
       // der zweite Boss eines Doppelbosses kommt von der gegenüberliegenden Seite
@@ -252,7 +272,7 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
     if(e.boss){e.sumT-=dt;if(e.sumT<=0){e.sumT=4;for(let j=0;j<3;j++)this.spawnEnemy('swarm',false,e.x+rnd(-30,30),e.y+rnd(-30,30))}}
     let bl=null;if(!e.ranged)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
     if(bl){if(e.atkT<=0){this.hurtAlly(bl,dm);e.atkT=1}continue}
-    if(e.ranged&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){e.atkT=1.8;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*220,vy:-e.y/d*220,dmg:dm,col:e.col})}continue}
+    if(e.ranged&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){const sg=e.type==='siege',v=sg?150:220;e.atkT=sg?3.6:1.8;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*v,vy:-e.y/d*v,dmg:dm,col:e.col,big:sg})}continue}
     if(d<b.r+e.r+2){if(e.atkT<=0){this.damageBase(dm);e.atkT=1}continue}
     e.wob+=dt*3;const ux=-e.x/d,uy=-e.y/d,lat=e.boss?0:Math.sin(e.wob)*.25;
     e.x+=(ux-uy*lat)*spd*dt;e.y+=(uy+ux*lat)*spd*dt;e.ang=Math.atan2(uy,ux)}}
@@ -307,6 +327,8 @@ step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
   if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt;this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updEnemies(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
-  this.updProj(dt);this.en=this.en.filter(e=>e.hp>0);this.fx(dt)}
+  this.updProj(dt);
+  if(this.pend.length){for(const [t,x,y,hp] of this.pend){this.spawnEnemy(t,false,x,y);const m=this.en[this.en.length-1];if(hp){m.hp=m.max=hp}}this.pend.length=0}
+  this.en=this.en.filter(e=>e.hp>0);this.fx(dt)}
 }
 if(typeof module!=='undefined')module.exports={Run};
