@@ -60,7 +60,7 @@ with sync_playwright() as p:
       return out}""")
     check(r['mix']=={'jaeger':12,'abfang':6,'schwarm':6,'repair':3,'kreuzer':3},'30 Drohnen im Verhältnis 40/20/20/10/10: '+json.dumps(r['mix']))
     check(r['kreuzer']==[4,4,True] and r['schwarm']==3 and r['rep']==0,'Kreuzer vierfach stark und zäh, Schwarm drei Schüsse pro Salve, Reparaturdrohne ohne Schaden')
-    check(abs(r['stufe']-2.2)<1e-9,'Stufe 11 gibt +120 % Schaden gegenüber Stufe 1')
+    check(abs(r['stufe']-pg.evaluate('()=>droneLm(11)'))<1e-9 and abs(pg.evaluate('()=>droneLm(11)')-1.5)<1e-9,'Stufe 11 gibt +50 % Schaden gegenüber Stufe 1')
     check(r['abf']=={'bomber':True,'schwarm':False} and r['jae']=={'bomber':False,'schwarm':True},'Abfänger nimmt den Bomber, der Jäger den näheren Schwärmer')
     check(r['schild']==3,'Schwarm nimmt einem Schildträger drei Ladungen pro Salve')
     check(abs(r['heil']-1.5)<1e-6 and not r['repKampf'],'Reparaturdrohne repariert 0,15 % des Basislebens pro Sekunde und greift nicht an')
