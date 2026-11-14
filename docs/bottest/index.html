@@ -374,7 +374,7 @@ const BR={
 };
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
-const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=20,DRONE_DMG=4.5,MEGA_MUL=2;   // BASE_GUN: % Geschütz-/Autofeuer-Schaden je Stufe Panzerung; DRONE_DMG: Grundschaden einer Drohne; MEGA_MUL: Schadensfaktor des Weltenbrechers   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
+const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=5,MEGA_MUL=2;   // BASE_GUN: % Geschütz-/Autofeuer-Schaden je Stufe Panzerung; DRONE_DMG: Grundschaden einer Drohne; MEGA_MUL: Schadensfaktor des Weltenbrechers   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
 // Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
 // Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
