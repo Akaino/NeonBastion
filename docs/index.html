@@ -307,7 +307,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.12.0';
+const VERSION='0.13.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -328,7 +328,7 @@ const CUR_IDS=['s','k','p','d'];
 const CUR_SRC={s:'Jeder besiegte Gegner',k:'Elite-Gegner und alle 5 Wellen',p:'Bosse, Meilensteine alle 10 Wellen, selten Elite-Gegner',d:'Erster Bosssieg ab Welle 20 je Zyklus, ab Welle 30 jeder Bosssieg',q:'Supernova ab Welle 25'};
 CUR.q={name:'Quanten',one:'Quant',col:'#c7b8ff'};
 const PRESTIGE_DEFS=[
- ['dmg','Urkraft',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Schaden für Helden, Drohnen, Geschütze und Tipps`],
+ ['dmg','Urkraft',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Schaden für Helden, Drohnen, Geschütze und Impulse`],
  ['hp','Kernpanzer',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Basisleben`],
  ['gain','Goldene Ernte',100,2,1.5,l=>`×${fmtD(1+.5*l,1)} Splitter, Kerne und Prismen`],
  ['hero','Heldenblut',50,2,1.5,l=>`×${fmtD(1+.4*l,1)} Heldenschaden und Heldenleben`],
@@ -352,6 +352,10 @@ const BR={
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
 const LADDER=[50,1.12],QUICK_G=1.4;
+// Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
+// Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
+const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
+const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
 const NODE_DEFS=[
  // ---- Basis ----
@@ -401,19 +405,20 @@ const NODE_DEFS=[
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
- ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Tipps und Autofeuer`,LADDER],
- ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Tipps`],
- ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Tippradius ${26+l*12}`],
- ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Tipp-Schüsse pro Sekunde automatisch`:'Kein Autofeuer'],
- ['f3a','f','f2a',3,-1.5,'Combo',10,'k',2,1.4,l=>l?`+${l*2} % Schaden pro Combo-Stufe (max. 25)`:'Keine Combo'],
- ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Tipp explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
+ ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Impuls und Autofeuer`,LADDER],
+ ['f1b','f','f1',1.5,.9,'Taktgeber',IMP_LV,'s',40,1.3,l=>`Impuls alle ${fmtD(impInterval(l),2)} s, dafür etwas weniger Schaden je Impuls`],
+ ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Impulse`],
+ ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Impulsradius ${26+l*12}`],
+ ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Schüsse pro Sekunde automatisch auf Gegner`:'Kein Autofeuer'],
+ ['f3a','f','f2a',3,-1.5,'Taktschlag',10,'k',2,1.4,l=>l?`Jeder ${BEAT_N}. Impuls verursacht +${l*100} % Schaden`:'Kein Taktschlag'],
+ ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Schuss von Impuls und Autofeuer explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
  ['f3c','f','f2c',3,1.6,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
- ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Tipps springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
- ['f4b','f','f3c',4,1.3,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Tippschaden`],
- ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch deine Tipps'],
- ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Tippschaden`],
+ ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
+ ['f4b','f','f3c',4,1.3,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Schaden für Impuls und Autofeuer`],
+ ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch Impuls und Autofeuer'],
+ ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Schaden für Impuls und Autofeuer`],
  ['f7','f','f6',7,0,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
- ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Tipp trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
+ ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Schuss von Impuls und Autofeuer trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
@@ -497,7 +502,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   droneSpawn:3/(1+.2*L('u2b')),droneRange:90*(1+.5*L('u4')),droneBeam:L('u4')>0,mother:L('u5')>0,
   heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5'),
   revive:8*(1-.15*L('h3b')),abilityCd:1-.1*L('h4'),
-  tapDmg:6*(1+.4*L('f1')),tapCrit:.05+.05*L('f2a'),tapR:26+12*L('f2b'),combo:.02*L('f3a'),
+  tapDmg:6*(1+.4*L('f1')),tapCrit:.05+.05*L('f2a'),tapR:26+12*L('f2b'),beat:L('f3a'),
   overload:L('f3b'),chain:L('f4'),
   gS:1+.12*L('e1'),gK:1+.2*L('e2a'),startWave:1+2*L('e2b'),gP:1+.25*L('e3a'),elite:1+.25*L('e3b'),gD:L('e4'),gAll:L('e5')?2:1};
   // neue Knoten
@@ -512,6 +517,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   if(L('f5'))S.tapDmg*=1+S.heroDmg;
+  S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
 
 
@@ -623,7 +629,7 @@ constructor(save,hooks){
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
   this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
-  this.droneT=.4;this.droneIdx=0;this.combo=0;this.comboT=0;this.taps=0;this.shake=0;this.over=false;this.overT=0;
+  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
   for(let w=2;w<=this.w;w++)this.milestone(w);
   const team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
@@ -872,16 +878,17 @@ updProj(dt){const lim=Math.max(this.hw,this.hh)+120;
 
 /* ---------- tap ---------- */
 tap(x,y,auto){if(this.over)return;const S=this.S;this.taps++;
-  if(!auto){this.combo=this.comboT>0?Math.min(25,this.combo+1):0;this.comboT=.7}
-  let dmg=S.tapDmg*(auto?S.autoDmg:1+S.combo*this.combo);
+  // auto = Autofeuer der Basis, sonst Impuls am Zeiger. Zähler laufen immer weiter, auch wenn nichts getroffen wird.
+  let dmg=S.tapDmg*(auto?S.autoDmg:S.impMul),beat=false;
+  if(!auto){this.imps++;if(S.beat&&this.imps%BEAT_N===0){dmg*=1+S.beat;beat=true}}
   if(S.megaTap&&this.taps%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*3,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
   const over=S.overload&&this.taps%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
-  const hit=this.aoe(x,y,r,dmg,{col:'#ffffff',crit,big:over});
-  this.ring(x,y,4,r+6,over?'#ff8a3d':'#ffffff',over?.45:.25,over?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
+  const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});
+  this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
   if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=(e.x-f.x)**2+(e.y-f.y)**2;if(d<nd){nd=d;nx=e}}
     if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d'})}
   if(auto){this.headless||this.bolts.push({pts:jag(0,0,x,y,5,5),l:0,m:.12,col:'#3df5ff',w:1.6})}
-  this.h.sfx&&this.h.sfx(auto?(hit.length?'drone':'tapmiss'):hit.length?(crit||over?'crit':'tap'):'tapmiss');return hit.length}
+  const snd=auto?(hit.length?'drone':'tapmiss'):hit.length?(crit||over||beat?'crit':'tap'):null;if(snd&&this.h.sfx)this.h.sfx(snd);return hit.length}
 
 /* ---------- main ---------- */
 fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3;p.vy*=1-dt*3}this.parts=this.parts.filter(p=>p.l<p.m);
@@ -892,10 +899,12 @@ fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3
   for(const s of this.ghosts)s.l+=dt;this.ghosts=this.ghosts.filter(s=>s.l<s.m);
   this.shake*=Math.exp(-dt*9)}
 step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
-  this.t+=dt;this.comboT-=dt;
+  this.t+=dt;
   this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
   this.updHeroes(dt);this.updDrones(dt);
   if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.tap(tg.x,tg.y,true);this.autoT=1/this.S.autoRate}}}
+  // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
+  if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt;this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updEnemies(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
   this.updProj(dt);this.en=this.en.filter(e=>e.hp>0);this.fx(dt)}
@@ -1055,6 +1064,13 @@ frame(run,dt){this.t+=dt;
     this.draw(this.heroSprite(h.id,h.col,h.flash>0),hx,hy,h.spin>0?h.face+(1-h.spin/.45)*TAU*2:h.face,1.2);
     const f=Math.max(0,h.hp/h.max);c.fillStyle='rgba(5,5,26,.8)';c.fillRect(h.x-12,h.y+16,24,4);c.fillStyle=h.col;c.fillRect(h.x-11.5,h.y+16.5,23*f,3);
     const cf=1-Math.max(0,h.abT)/h.cd;c.strokeStyle=cf>=1?'#ffffff':h.col;c.globalAlpha=cf>=1?.9:.45;c.lineWidth=1.6;c.beginPath();c.arc(h.x,h.y,17,-PI/2,-PI/2+TAU*Math.min(1,cf));c.stroke();c.globalAlpha=1}
+  // Impuls-Ring am Zeiger: füllt sich im Uhrzeigersinn bis zum nächsten Impuls, Farbe kündigt Sondertreffer an
+  if(run.S.impInt>0&&!run.over){const S=run.S,r=S.tapR,f=clamp(1-run.impT/S.impInt,0,1),nx=run.taps+1;
+    const col=S.megaTap&&nx%S.megaTap===0?'#ffe14f':S.overload&&nx%10===0?'#ff8a3d':S.beat&&(run.imps+1)%BEAT_N===0?'#ff4fd8':'#3df5ff';
+    c.fillStyle=col;c.globalAlpha=.05;c.beginPath();c.arc(run.cx,run.cy,r,0,TAU);c.fill();
+    c.globalAlpha=.3;c.strokeStyle='#ffffff';c.lineWidth=1.2;c.stroke();
+    c.globalAlpha=.95;c.strokeStyle=col;c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(run.cx,run.cy,r,-PI/2,-PI/2+TAU*f);c.stroke();c.lineCap='butt';
+    c.globalAlpha=.85;this.draw(this.dot(col),run.cx,run.cy,0,.45);c.globalAlpha=1}
   // additive fx
   c.globalCompositeOperation='lighter';
   for(const p of run.pr){c.strokeStyle=p.col;c.globalAlpha=.55;c.lineWidth=p.size*.9;c.beginPath();c.moveTo(p.tx,p.ty);c.lineTo(p.x,p.y);c.stroke();c.globalAlpha=1;this.draw(this.dot(p.col),p.x,p.y,0,p.size/3)}
@@ -1355,7 +1371,7 @@ const Snd={ctx:null,B:null,last:{},unlocked:false,
   vol(){const B=this.B;if(!B)return;const t=this.ctx.currentTime,cv=v=>Math.pow(clamp(v,0,100)/100,1.6);
     B.mus.gain.setTargetAtTime(.53*cv(save.volMus),t,.05);B.sfx.gain.setTargetAtTime(1*cv(save.volSfx),t,.05)},
   play(n){const B=this.B;if(!(save.volSfx>0)||!B||this.ctx.state!=='running')return;const now=this.ctx.currentTime;
-    const lim={killbig:.08,drone:.09,beam:.09,turret:.1,shoot:.06,shoot2:.08,kill:.05,hit:.06,slash:.07,heavy:.1,tap:.03,zap:.08,base:.12,shield:.1,ui:.04,crit:.06}[n]||.05;
+    const lim={killbig:.08,drone:.09,beam:.09,turret:.1,shoot:.06,shoot2:.08,kill:.05,hit:.06,slash:.07,heavy:.1,tap:.09,zap:.08,base:.12,shield:.1,ui:.04,crit:.09}[n]||.05;
     if(this.last[n]&&now-this.last[n]<lim)return;this.last[n]=now;const f=SFX[n];if(f)f(B,B.sfx,now+.005)},
   suspend(){if(this.ctx&&this.ctx.state==='running')this.ctx.suspend().catch(()=>{})}};
 for(const ev of['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Snd.init(),{capture:true,passive:true});
@@ -1453,9 +1469,9 @@ $$('[data-back]').forEach(b=>b.onclick=goHub);
 /* ---------- run ---------- */
 function startRun(){Snd.init();const S=stats(save);save.team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
   $('#bBuild').dataset.init='';$('#phaseBar').dataset.key='';
-  run=new W.Run(save,{banner,sfx:n=>Snd.play(n)});if(W.id===2)save.w2.runs=(save.w2.runs||0)+1;run.hw=R.hwe;run.hh=R.hhe;paused=false;endShown=false;endBuild();
+  run=new W.Run(save,{banner,sfx:n=>Snd.play(n)});if(W.id===2)save.w2.runs=(save.w2.runs||0)+1;run.hw=R.hwe;run.hh=R.hhe;if(aimPos){run.cx=clamp(aimPos[0],-run.hw,run.hw);run.cy=clamp(aimPos[1],-run.hh,run.hh)}aimDown=false;paused=false;endShown=false;endBuild();
   save.runs++;persist();show('hud');buildChips();$('#bSpeed').textContent=speed+'×';
-  if(save.runs===1)setTimeout(()=>toast('Tippe auf Gegner, um selbst Schaden zu machen'),2400);
+  if(save.runs===1)setTimeout(()=>toast('Dein Impuls trifft alles im Kreis. Zieh ihn auf die Gegner.'),2400);
   else if(W.id===1&&!save.team.length&&HERO_IDS.some(id=>save.heroes[id].u))toast('Kein Held eingesetzt. Das geht im Heldenmenü.')}
 $('#bStart').onclick=startRun;
 $('#bPause').onclick=()=>{if(run&&!run.over){endBuild();paused=true;$('#pause').hidden=false}};
@@ -1479,7 +1495,7 @@ function updHud(){const b=run.base,f=b.hp/b.max;$('#hWave').textContent=`Welle $
     el.querySelector('.ring').style.setProperty('--p',h.dead>0?0:Math.round(100*(1-Math.max(0,h.abT)/h.cd)));
     el.querySelector('b').textContent=h.dead>0?Math.ceil(h.dead):h.d.name[0];el.querySelector('.hb i').style.width=(h.hp/h.max*100)+'%'});
   const bo=run.en.find(e=>e.boss),bb=$('#bossBar');bb.hidden=!bo;if(bo){bb.querySelector('b').textContent='Boss · '+bo.name;bb.querySelector('i').style.width=(Math.max(0,bo.hp/bo.max)*100).toFixed(1)+'%';bb.querySelector('span').textContent=fmtN(Math.max(0,bo.hp))}
-  const co=$('#combo');if(run.S.combo&&run.combo>=2&&run.comboT>0){co.textContent='Combo ×'+run.combo;co.style.opacity=1}else co.style.opacity=0}
+}
 
 function musicState(){if(run.over){Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:0});return}
   const b=run.base,hp=b.hp/b.max;let near=0,boss=false;for(const e of run.en){if(e.boss)boss=true;if(e.x*e.x+e.y*e.y<120*120)near++}
@@ -1498,7 +1514,16 @@ function updPhase(){const pb=$('#phaseBar');if(!run||run.world!==2||run.over){pb
   else set('.pf',`Welle ${p.w} läuft · ${run.en.length+run.queue.length} Gegner übrig`)}
 /* ---------- input ---------- */
 $('#cv').addEventListener('pointerdown',e=>{if(!run||paused||run.over||$('#hud').hidden)return;e.preventDefault();
-  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);if(T){openTower(T);return}run.tap(x,y)});
+  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);aimDown=true;
+  // Auf einem Turm: erst beim Loslassen entscheiden. Kurzes Antippen ohne Bewegung öffnet das Menü, Ziehen bewegt den Impuls-Zeiger.
+  if(T){towerTap={T,x:e.clientX,y:e.clientY,t:performance.now()};return}towerTap=null;aimAt(e)});
+/* Zeiger für den Impuls: Maus bewegt ihn immer, der Finger zieht ihn mit und lässt ihn beim Loslassen liegen. Klicken macht keinen Schaden mehr. */
+let aimDown=false,aimPos=null,towerTap=null;const TAP_MOVE=8,TAP_MS=400;
+function aimAt(e){if(!run||run.over)return;const [x,y]=screenToWorld(e);run.cx=clamp(x,-run.hw,run.hw);run.cy=clamp(y,-run.hh,run.hh);aimPos=[run.cx,run.cy]}
+$('#cv').addEventListener('pointermove',e=>{if(!run||paused||buildSel||moveT||trayOpen||towerSel||$('#hud').hidden)return;if(towerTap){if(Math.abs(e.clientX-towerTap.x)+Math.abs(e.clientY-towerTap.y)<=TAP_MOVE)return;towerTap=null}
+  if(e.pointerType==='mouse'||aimDown)aimAt(e)});
+$('#cv').addEventListener('pointerup',()=>{const tt=towerTap;towerTap=null;if(tt&&run&&!run.over&&!paused&&performance.now()-tt.t<=TAP_MS&&run.towers.includes(tt.T))openTower(tt.T)});
+for(const ev of['pointerup','pointercancel'])addEventListener(ev,()=>{aimDown=false;towerTap=null});
 addEventListener('resize',()=>{R.resize();if(run){run.hw=R.hwe;run.hh=R.hhe}if(!$('#tree').hidden)treeHome()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(Snd.ctx)Snd.ctx.resume().catch(()=>{});return}Snd.suspend();{if(run&&!run.over){paused=true;$('#pause').hidden=false;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w}}persist()}});
 addEventListener('contextmenu',e=>e.preventDefault());
@@ -1518,9 +1543,10 @@ const PREV={
  u5:[['Schwere Kampfschiffe',S=>S.mother?'Ja':'Nein','t']],
  h1:[['Heldenschaden',S=>S.heroDmg,'x']],h2a:[['Heldenplätze',S=>S.slots,'i']],h2b:[['Heldenleben',S=>S.heroHp,'x']],h3a:[['Heldenplätze',S=>S.slots,'i']],
  h3b:[['Wiederbelebung',S=>S.revive,'s']],h4:[['Abklingzeit der Fähigkeiten',S=>S.abilityCd,'x']],h5:[['Heldenplätze',S=>S.slots,'i']],
- f1:[['Schaden pro Tipp und Autofeuer-Schuss',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
- f3a:[['Bonus pro Combo-Stufe',S=>S.combo*100,'pct'],['Schaden bei voller Combo',S=>S.tapDmg*(1+S.combo*25),'n']],
- f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Tippschaden',S=>S.tapDmg,'n']],
+ f1:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n'],['Schaden pro Autofeuer-Schuss',S=>S.autoRate?S.tapDmg*S.autoDmg:0,'n']],f2a:[['Kritische Impulse',S=>S.tapCrit*100,'pct']],f2b:[['Impulsradius',S=>S.tapR,'i']],
+ f1b:[['Impuls alle',S=>fmtD(S.impInt,2)+' s','t'],['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n'],['Impulsschaden pro Sekunde',S=>S.tapDmg*S.impMul/S.impInt,'n']],
+ f3a:[['Schaden jedes 5. Impulses',S=>S.beat?S.tapDmg*S.impMul*(1+S.beat):0,'n']],
+ f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*S.impMul*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
  e1:[['Splitter',S=>S.gS*S.gAll,'x']],e2a:[['Kerne',S=>S.gK*S.gAll,'x']],e2b:[['Startwelle',S=>S.startWave,'i']],e3a:[['Prismen',S=>S.gP*S.gAll,'x']],
  e3b:[['Elite-Gegner',S=>S.elite,'x']],
  b4c:[['Feuerrate der Geschütze',S=>S.turretRate,'x']],b5b:[['Radius der Schockwelle',S=>S.pulseR,'i']],b6:[['Basisleben',S=>S.baseHp,'n']],
@@ -1529,8 +1555,8 @@ const PREV={
  u7b:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u8:[['Drohnenschaden',S=>S.droneDmg,'n']],u9:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],
  h3c:[['Angriffstempo',S=>S.heroRate,'x']],h4b:[['Krit-Chance der Helden',S=>S.heroCrit*100,'pct']],h6:[['Heldenschaden',S=>S.heroDmg,'x']],h7a:[['Heldenleben',S=>S.heroHp,'x']],
  h7b:[['Heldenschaden',S=>S.heroDmg,'x']],h8:[['Heldenschaden',S=>S.heroDmg,'x']],h9:[['Stärke der Fähigkeiten',S=>S.abilPow,'x']],
- f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f3c:[['Autofeuer-Schaden',S=>S.autoDmg,'x'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Tippschaden',S=>S.tapDmg,'n']],
- f6:[['Tippschaden',S=>S.tapDmg,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f8:[['Weltenbrecher alle … Tipps',S=>S.megaTap||'–','t']],
+ f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f3c:[['Autofeuer-Schaden',S=>S.autoDmg,'x'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
+ f6:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f8:[['Weltenbrecher alle … Schüsse',S=>S.megaTap||'–','t']],
  e3c:[['Splitter',S=>S.gS*S.gAll,'x']],e4b:[['Prisma-Chance pro Elite',S=>fmtD(S.prismChance*100,1)+' %','t']],e6:[['Splitter',S=>S.gS*S.gAll,'x'],['Kerne',S=>S.gK*S.gAll,'x']],
  e7:[['Kerne',S=>S.gK*S.gAll,'x']],e7b:[['Quanten',S=>S.qMul,'x']],e4:[['Sternenstaub pro Meilenstein',S=>(1+S.gD)*S.gAll,'i']],e5:[['Alle Belohnungen',S=>S.gAll,'x']]};
 const PREV2={k1:[['Kernleben',S=>S.baseHp,'n']],k2a:[['Schild',S=>S.baseHp*S.shieldPct,'n']],k2b:[['Reparatur pro Sekunde',S=>S.baseHp*S.regen,'n']],k3:[['Kerngeschütz-Schaden',S=>S.turretDmg,'n']],
@@ -1707,7 +1733,7 @@ function renderNova(){renderCurs();const qg=quantaFor(save.cycleBest,save),cb=sa
     supernova()};
   $('#novaList').innerHTML=Object.values(PRES).map(p=>{const l=save.pr[p.id]||0,max=l>=p.max,c=max?0:presCost(p,l);
     const S0=stats(save),S1=max?null:stats({...save,pr:{...save.pr,[p.id]:l+1}});const rows=[['Stufe',`${l}`,max?undefined:`${l+1}`]];
-    const pv={dmg:[['Klinge-Schaden',S=>fv(S.heroDmg*HEROES.klinge.dmg)],['Tippschaden',S=>fv(S.tapDmg)],['Drohnenschaden',S=>fv(S.droneDmg)]],hp:[['Basisleben',S=>fv(S.baseHp)]],
+    const pv={dmg:[['Klinge-Schaden',S=>fv(S.heroDmg*HEROES.klinge.dmg)],['Schaden pro Impuls',S=>fv(S.tapDmg*S.impMul)],['Drohnenschaden',S=>fv(S.droneDmg)]],hp:[['Basisleben',S=>fv(S.baseHp)]],
       gain:[['Splitter',S=>'×'+fmtD(S.gS,2)],['Kerne',S=>'×'+fmtD(S.gK,2)],['Prismen',S=>'×'+fmtD(S.gP,2)]],
       hero:[['Heldenschaden',S=>'×'+fmtD(S.heroDmg,2)],['Heldenleben',S=>'×'+fmtD(S.heroHp,2)]],drone:[['Drohnen',S=>String(S.drones)]]}[p.id]||[];
     for(const [lab,f] of pv)rows.push([lab,f(S0),S1?f(S1):undefined]);

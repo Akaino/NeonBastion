@@ -90,9 +90,9 @@ $$('[data-back]').forEach(b=>b.onclick=goHub);
 /* ---------- run ---------- */
 function startRun(){Snd.init();const S=stats(save);save.team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
   $('#bBuild').dataset.init='';$('#phaseBar').dataset.key='';
-  run=new W.Run(save,{banner,sfx:n=>Snd.play(n)});if(W.id===2)save.w2.runs=(save.w2.runs||0)+1;run.hw=R.hwe;run.hh=R.hhe;paused=false;endShown=false;endBuild();
+  run=new W.Run(save,{banner,sfx:n=>Snd.play(n)});if(W.id===2)save.w2.runs=(save.w2.runs||0)+1;run.hw=R.hwe;run.hh=R.hhe;if(aimPos){run.cx=clamp(aimPos[0],-run.hw,run.hw);run.cy=clamp(aimPos[1],-run.hh,run.hh)}aimDown=false;paused=false;endShown=false;endBuild();
   save.runs++;persist();show('hud');buildChips();$('#bSpeed').textContent=speed+'×';
-  if(save.runs===1)setTimeout(()=>toast('Tippe auf Gegner, um selbst Schaden zu machen'),2400);
+  if(save.runs===1)setTimeout(()=>toast('Dein Impuls trifft alles im Kreis. Zieh ihn auf die Gegner.'),2400);
   else if(W.id===1&&!save.team.length&&HERO_IDS.some(id=>save.heroes[id].u))toast('Kein Held eingesetzt. Das geht im Heldenmenü.')}
 $('#bStart').onclick=startRun;
 $('#bPause').onclick=()=>{if(run&&!run.over){endBuild();paused=true;$('#pause').hidden=false}};
@@ -116,7 +116,7 @@ function updHud(){const b=run.base,f=b.hp/b.max;$('#hWave').textContent=`Welle $
     el.querySelector('.ring').style.setProperty('--p',h.dead>0?0:Math.round(100*(1-Math.max(0,h.abT)/h.cd)));
     el.querySelector('b').textContent=h.dead>0?Math.ceil(h.dead):h.d.name[0];el.querySelector('.hb i').style.width=(h.hp/h.max*100)+'%'});
   const bo=run.en.find(e=>e.boss),bb=$('#bossBar');bb.hidden=!bo;if(bo){bb.querySelector('b').textContent='Boss · '+bo.name;bb.querySelector('i').style.width=(Math.max(0,bo.hp/bo.max)*100).toFixed(1)+'%';bb.querySelector('span').textContent=fmtN(Math.max(0,bo.hp))}
-  const co=$('#combo');if(run.S.combo&&run.combo>=2&&run.comboT>0){co.textContent='Combo ×'+run.combo;co.style.opacity=1}else co.style.opacity=0}
+}
 
 function musicState(){if(run.over){Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:0});return}
   const b=run.base,hp=b.hp/b.max;let near=0,boss=false;for(const e of run.en){if(e.boss)boss=true;if(e.x*e.x+e.y*e.y<120*120)near++}
@@ -135,7 +135,16 @@ function updPhase(){const pb=$('#phaseBar');if(!run||run.world!==2||run.over){pb
   else set('.pf',`Welle ${p.w} läuft · ${run.en.length+run.queue.length} Gegner übrig`)}
 /* ---------- input ---------- */
 $('#cv').addEventListener('pointerdown',e=>{if(!run||paused||run.over||$('#hud').hidden)return;e.preventDefault();
-  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);if(T){openTower(T);return}run.tap(x,y)});
+  if(trayOpen||towerSel){endBuild();return}if(buildSel||moveT){buildDown=true;ghostAt(e);return}const [x,y]=screenToWorld(e);const T=towerAt(x,y);aimDown=true;
+  // Auf einem Turm: erst beim Loslassen entscheiden. Kurzes Antippen ohne Bewegung öffnet das Menü, Ziehen bewegt den Impuls-Zeiger.
+  if(T){towerTap={T,x:e.clientX,y:e.clientY,t:performance.now()};return}towerTap=null;aimAt(e)});
+/* Zeiger für den Impuls: Maus bewegt ihn immer, der Finger zieht ihn mit und lässt ihn beim Loslassen liegen. Klicken macht keinen Schaden mehr. */
+let aimDown=false,aimPos=null,towerTap=null;const TAP_MOVE=8,TAP_MS=400;
+function aimAt(e){if(!run||run.over)return;const [x,y]=screenToWorld(e);run.cx=clamp(x,-run.hw,run.hw);run.cy=clamp(y,-run.hh,run.hh);aimPos=[run.cx,run.cy]}
+$('#cv').addEventListener('pointermove',e=>{if(!run||paused||buildSel||moveT||trayOpen||towerSel||$('#hud').hidden)return;if(towerTap){if(Math.abs(e.clientX-towerTap.x)+Math.abs(e.clientY-towerTap.y)<=TAP_MOVE)return;towerTap=null}
+  if(e.pointerType==='mouse'||aimDown)aimAt(e)});
+$('#cv').addEventListener('pointerup',()=>{const tt=towerTap;towerTap=null;if(tt&&run&&!run.over&&!paused&&performance.now()-tt.t<=TAP_MS&&run.towers.includes(tt.T))openTower(tt.T)});
+for(const ev of['pointerup','pointercancel'])addEventListener(ev,()=>{aimDown=false;towerTap=null});
 addEventListener('resize',()=>{R.resize();if(run){run.hw=R.hwe;run.hh=R.hhe}if(!$('#tree').hidden)treeHome()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(Snd.ctx)Snd.ctx.resume().catch(()=>{});return}Snd.suspend();{if(run&&!run.over){paused=true;$('#pause').hidden=false;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w}}persist()}});
 addEventListener('contextmenu',e=>e.preventDefault());
@@ -155,9 +164,10 @@ const PREV={
  u5:[['Schwere Kampfschiffe',S=>S.mother?'Ja':'Nein','t']],
  h1:[['Heldenschaden',S=>S.heroDmg,'x']],h2a:[['Heldenplätze',S=>S.slots,'i']],h2b:[['Heldenleben',S=>S.heroHp,'x']],h3a:[['Heldenplätze',S=>S.slots,'i']],
  h3b:[['Wiederbelebung',S=>S.revive,'s']],h4:[['Abklingzeit der Fähigkeiten',S=>S.abilityCd,'x']],h5:[['Heldenplätze',S=>S.slots,'i']],
- f1:[['Schaden pro Tipp und Autofeuer-Schuss',S=>S.tapDmg,'n']],f2a:[['Kritische Tipps',S=>S.tapCrit*100,'pct']],f2b:[['Tippradius',S=>S.tapR,'i']],
- f3a:[['Bonus pro Combo-Stufe',S=>S.combo*100,'pct'],['Schaden bei voller Combo',S=>S.tapDmg*(1+S.combo*25),'n']],
- f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Tippschaden',S=>S.tapDmg,'n']],
+ f1:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n'],['Schaden pro Autofeuer-Schuss',S=>S.autoRate?S.tapDmg*S.autoDmg:0,'n']],f2a:[['Kritische Impulse',S=>S.tapCrit*100,'pct']],f2b:[['Impulsradius',S=>S.tapR,'i']],
+ f1b:[['Impuls alle',S=>fmtD(S.impInt,2)+' s','t'],['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n'],['Impulsschaden pro Sekunde',S=>S.tapDmg*S.impMul/S.impInt,'n']],
+ f3a:[['Schaden jedes 5. Impulses',S=>S.beat?S.tapDmg*S.impMul*(1+S.beat):0,'n']],
+ f3b:[['Schaden der Überladung',S=>S.overload?S.tapDmg*S.impMul*(4+2*S.overload):0,'n']],f4:[['Zusätzliche Kettenziele',S=>S.chain,'i']],f5:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
  e1:[['Splitter',S=>S.gS*S.gAll,'x']],e2a:[['Kerne',S=>S.gK*S.gAll,'x']],e2b:[['Startwelle',S=>S.startWave,'i']],e3a:[['Prismen',S=>S.gP*S.gAll,'x']],
  e3b:[['Elite-Gegner',S=>S.elite,'x']],
  b4c:[['Feuerrate der Geschütze',S=>S.turretRate,'x']],b5b:[['Radius der Schockwelle',S=>S.pulseR,'i']],b6:[['Basisleben',S=>S.baseHp,'n']],
@@ -166,8 +176,8 @@ const PREV={
  u7b:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u8:[['Drohnenschaden',S=>S.droneDmg,'n']],u9:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],
  h3c:[['Angriffstempo',S=>S.heroRate,'x']],h4b:[['Krit-Chance der Helden',S=>S.heroCrit*100,'pct']],h6:[['Heldenschaden',S=>S.heroDmg,'x']],h7a:[['Heldenleben',S=>S.heroHp,'x']],
  h7b:[['Heldenschaden',S=>S.heroDmg,'x']],h8:[['Heldenschaden',S=>S.heroDmg,'x']],h9:[['Stärke der Fähigkeiten',S=>S.abilPow,'x']],
- f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f3c:[['Autofeuer-Schaden',S=>S.autoDmg,'x'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Tippschaden',S=>S.tapDmg,'n']],
- f6:[['Tippschaden',S=>S.tapDmg,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f8:[['Weltenbrecher alle … Tipps',S=>S.megaTap||'–','t']],
+ f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f3c:[['Autofeuer-Schaden',S=>S.autoDmg,'x'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
+ f6:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],f8:[['Weltenbrecher alle … Schüsse',S=>S.megaTap||'–','t']],
  e3c:[['Splitter',S=>S.gS*S.gAll,'x']],e4b:[['Prisma-Chance pro Elite',S=>fmtD(S.prismChance*100,1)+' %','t']],e6:[['Splitter',S=>S.gS*S.gAll,'x'],['Kerne',S=>S.gK*S.gAll,'x']],
  e7:[['Kerne',S=>S.gK*S.gAll,'x']],e7b:[['Quanten',S=>S.qMul,'x']],e4:[['Sternenstaub pro Meilenstein',S=>(1+S.gD)*S.gAll,'i']],e5:[['Alle Belohnungen',S=>S.gAll,'x']]};
 const PREV2={k1:[['Kernleben',S=>S.baseHp,'n']],k2a:[['Schild',S=>S.baseHp*S.shieldPct,'n']],k2b:[['Reparatur pro Sekunde',S=>S.baseHp*S.regen,'n']],k3:[['Kerngeschütz-Schaden',S=>S.turretDmg,'n']],
@@ -344,7 +354,7 @@ function renderNova(){renderCurs();const qg=quantaFor(save.cycleBest,save),cb=sa
     supernova()};
   $('#novaList').innerHTML=Object.values(PRES).map(p=>{const l=save.pr[p.id]||0,max=l>=p.max,c=max?0:presCost(p,l);
     const S0=stats(save),S1=max?null:stats({...save,pr:{...save.pr,[p.id]:l+1}});const rows=[['Stufe',`${l}`,max?undefined:`${l+1}`]];
-    const pv={dmg:[['Klinge-Schaden',S=>fv(S.heroDmg*HEROES.klinge.dmg)],['Tippschaden',S=>fv(S.tapDmg)],['Drohnenschaden',S=>fv(S.droneDmg)]],hp:[['Basisleben',S=>fv(S.baseHp)]],
+    const pv={dmg:[['Klinge-Schaden',S=>fv(S.heroDmg*HEROES.klinge.dmg)],['Schaden pro Impuls',S=>fv(S.tapDmg*S.impMul)],['Drohnenschaden',S=>fv(S.droneDmg)]],hp:[['Basisleben',S=>fv(S.baseHp)]],
       gain:[['Splitter',S=>'×'+fmtD(S.gS,2)],['Kerne',S=>'×'+fmtD(S.gK,2)],['Prismen',S=>'×'+fmtD(S.gP,2)]],
       hero:[['Heldenschaden',S=>'×'+fmtD(S.heroDmg,2)],['Heldenleben',S=>'×'+fmtD(S.heroHp,2)]],drone:[['Drohnen',S=>String(S.drones)]]}[p.id]||[];
     for(const [lab,f] of pv)rows.push([lab,f(S0),S1?f(S1):undefined]);

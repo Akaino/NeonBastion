@@ -92,6 +92,13 @@ frame(run,dt){this.t+=dt;
     this.draw(this.heroSprite(h.id,h.col,h.flash>0),hx,hy,h.spin>0?h.face+(1-h.spin/.45)*TAU*2:h.face,1.2);
     const f=Math.max(0,h.hp/h.max);c.fillStyle='rgba(5,5,26,.8)';c.fillRect(h.x-12,h.y+16,24,4);c.fillStyle=h.col;c.fillRect(h.x-11.5,h.y+16.5,23*f,3);
     const cf=1-Math.max(0,h.abT)/h.cd;c.strokeStyle=cf>=1?'#ffffff':h.col;c.globalAlpha=cf>=1?.9:.45;c.lineWidth=1.6;c.beginPath();c.arc(h.x,h.y,17,-PI/2,-PI/2+TAU*Math.min(1,cf));c.stroke();c.globalAlpha=1}
+  // Impuls-Ring am Zeiger: füllt sich im Uhrzeigersinn bis zum nächsten Impuls, Farbe kündigt Sondertreffer an
+  if(run.S.impInt>0&&!run.over){const S=run.S,r=S.tapR,f=clamp(1-run.impT/S.impInt,0,1),nx=run.taps+1;
+    const col=S.megaTap&&nx%S.megaTap===0?'#ffe14f':S.overload&&nx%10===0?'#ff8a3d':S.beat&&(run.imps+1)%BEAT_N===0?'#ff4fd8':'#3df5ff';
+    c.fillStyle=col;c.globalAlpha=.05;c.beginPath();c.arc(run.cx,run.cy,r,0,TAU);c.fill();
+    c.globalAlpha=.3;c.strokeStyle='#ffffff';c.lineWidth=1.2;c.stroke();
+    c.globalAlpha=.95;c.strokeStyle=col;c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(run.cx,run.cy,r,-PI/2,-PI/2+TAU*f);c.stroke();c.lineCap='butt';
+    c.globalAlpha=.85;this.draw(this.dot(col),run.cx,run.cy,0,.45);c.globalAlpha=1}
   // additive fx
   c.globalCompositeOperation='lighter';
   for(const p of run.pr){c.strokeStyle=p.col;c.globalAlpha=.55;c.lineWidth=p.size*.9;c.beginPath();c.moveTo(p.tx,p.ty);c.lineTo(p.x,p.y);c.stroke();c.globalAlpha=1;this.draw(this.dot(p.col),p.x,p.y,0,p.size/3)}

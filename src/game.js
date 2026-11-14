@@ -20,7 +20,7 @@ constructor(save,hooks){
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
   this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
-  this.droneT=.4;this.droneIdx=0;this.combo=0;this.comboT=0;this.taps=0;this.shake=0;this.over=false;this.overT=0;
+  this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
   for(let w=2;w<=this.w;w++)this.milestone(w);
   const team=save.team.filter(id=>save.heroes[id]&&save.heroes[id].u).slice(0,S.slots);
@@ -269,16 +269,17 @@ updProj(dt){const lim=Math.max(this.hw,this.hh)+120;
 
 /* ---------- tap ---------- */
 tap(x,y,auto){if(this.over)return;const S=this.S;this.taps++;
-  if(!auto){this.combo=this.comboT>0?Math.min(25,this.combo+1):0;this.comboT=.7}
-  let dmg=S.tapDmg*(auto?S.autoDmg:1+S.combo*this.combo);
+  // auto = Autofeuer der Basis, sonst Impuls am Zeiger. Zähler laufen immer weiter, auch wenn nichts getroffen wird.
+  let dmg=S.tapDmg*(auto?S.autoDmg:S.impMul),beat=false;
+  if(!auto){this.imps++;if(S.beat&&this.imps%BEAT_N===0){dmg*=1+S.beat;beat=true}}
   if(S.megaTap&&this.taps%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*3,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
   const over=S.overload&&this.taps%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
-  const hit=this.aoe(x,y,r,dmg,{col:'#ffffff',crit,big:over});
-  this.ring(x,y,4,r+6,over?'#ff8a3d':'#ffffff',over?.45:.25,over?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
+  const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});
+  this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
   if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=(e.x-f.x)**2+(e.y-f.y)**2;if(d<nd){nd=d;nx=e}}
     if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d'})}
   if(auto){this.headless||this.bolts.push({pts:jag(0,0,x,y,5,5),l:0,m:.12,col:'#3df5ff',w:1.6})}
-  this.h.sfx&&this.h.sfx(auto?(hit.length?'drone':'tapmiss'):hit.length?(crit||over?'crit':'tap'):'tapmiss');return hit.length}
+  const snd=auto?(hit.length?'drone':'tapmiss'):hit.length?(crit||over||beat?'crit':'tap'):null;if(snd&&this.h.sfx)this.h.sfx(snd);return hit.length}
 
 /* ---------- main ---------- */
 fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3;p.vy*=1-dt*3}this.parts=this.parts.filter(p=>p.l<p.m);
@@ -289,10 +290,12 @@ fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3
   for(const s of this.ghosts)s.l+=dt;this.ghosts=this.ghosts.filter(s=>s.l<s.m);
   this.shake*=Math.exp(-dt*9)}
 step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
-  this.t+=dt;this.comboT-=dt;
+  this.t+=dt;
   this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
   this.updHeroes(dt);this.updDrones(dt);
   if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.tap(tg.x,tg.y,true);this.autoT=1/this.S.autoRate}}}
+  // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
+  if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt;this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updEnemies(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
   this.updProj(dt);this.en=this.en.filter(e=>e.hp>0);this.fx(dt)}

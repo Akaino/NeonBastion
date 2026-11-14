@@ -2,6 +2,7 @@
 // Neon Bastion – Balancing-Simulation
 //   node sim.js                       Karriere-Simulation (Zeit bis Welle 25/50/75/100)
 //   node sim.js upgrades --at 25,50   Upgrade-Messung an Kontrollpunkten
+//   node sim.js aeste                 Ast-Vergleich: jede Kombination der fünf Skilltree-Äste
 // Alle Optionen: node sim.js --hilfe
 const {Worker,isMainThread,parentPort,workerData}=require('worker_threads');
 const os=require('os'),fs=require('fs'),path=require('path');
@@ -19,13 +20,14 @@ const arg=(k,d)=>{const i=argv.indexOf('--'+k);return i>=0?argv[i+1]:d};
 if(argv.includes('--hilfe')||argv.includes('--help')){console.log(`
 Neon Bastion – Balancing-Simulation
 
-  node sim.js [karriere|upgrades] [Optionen]
+  node sim.js [karriere|upgrades|aeste] [Optionen]
 
-Karriere (Standard): komplette Spielerkarriere ohne Tippen, bis Welle --ziel
+Karriere (Standard): komplette Spielerkarriere, bis Welle --ziel
   --seeds 4          Anzahl paralleler Simulationen (verschiedene Zufallswerte)
   --ziel 100         Zielwelle
   --maxruns 600      Abbruch nach so vielen Runs
   --stunden 300      Abbruch nach so vielen Stunden Spielzeit (1x)
+  --zeiger ruht      Zeiger für den Impuls: ruht (liegt knapp über der Basis, Idle-Spieler), zielt (folgt alle 0,25 s der dichtesten Gruppe, aktiver Spieler), aus (kein Impuls)
   --pause 20         Sekunden, die ein Mensch zwischen zwei Runs in Menüs verbringt
   --stall 4          Supernova, wenn der Rekord so viele Runs nicht steigt
 
@@ -34,6 +36,12 @@ Upgrades: misst, wie viele Wellen ein Upgrade bringt
   --stufen 5         So viele Stufen werden pro Upgrade testweise hinzugefügt
   --wiederholungen 4 Test-Runs pro Upgrade (mit verschiedenen Zufallswerten)
 
+Ast-Vergleich (aeste): Karriere mit jeder Kombination erlaubter Skilltree-Äste, gleiche Spielzeit für alle
+  --seeds 3          Durchläufe je Kombination
+  --stunden 2        Spielzeit (1×) je Durchlauf
+  --groesse 1,2,3,4,5  nur Kombinationen mit so vielen Ästen
+  --tuerme an        an oder aus: darf der Bot Türme freischalten und aufwerten
+
 Allgemein
   --kerne N          Anzahl Prozessorkerne (Standard: alle außer einem)
   --dt 0.05          Simulationsschritt in Sekunden (kleiner = genauer, langsamer)
@@ -41,7 +49,7 @@ Allgemein
 `);process.exit(0)}
 const CORES=Math.max(1,+arg('kerne',Math.max(1,os.cpus().length-1)));
 const OUT=arg('ausgabe',path.join(__dirname,'ergebnisse'));fs.mkdirSync(OUT,{recursive:true});
-const base={dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
+const base={zeiger:arg('zeiger','ruht'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
 const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h} h ${m} min`:`${m} min`};
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[Math.floor((b.length-1)/2)]:NaN};
 const t0=Date.now(),wall=()=>fmtT((Date.now()-t0)/1000);
@@ -56,7 +64,7 @@ function pool(n){const ws=[],queue=[],busy=new Set();let onIdle=null;
 /* ---------- Karriere ---------- */
 async function karriere(){const seeds=+arg('seeds',Math.min(CORES,4)),target=+arg('ziel',100),overhead=+arg('pause',20);
   const opt={...base,target,maxRuns:+arg('maxruns',600),maxGameHours:+arg('stunden',300)};
-  console.log(`Karriere-Simulation: ${seeds} Durchläufe parallel auf ${CORES} Kernen, Ziel Welle ${target}, ohne Tippen\n`);
+  console.log(`Karriere-Simulation: ${seeds} Durchläufe parallel auf ${CORES} Kernen, Ziel Welle ${target}, Zeiger: ${base.zeiger}\n`);
   const csv=fs.createWriteStream(path.join(OUT,'karriere_runs.csv'));let head=false;
   const P=pool(Math.min(CORES,seeds));
   const results=await Promise.all(Array.from({length:seeds},(_,i)=>P.run({type:'career',opt:{...opt,seed:i+1}},row=>{
@@ -64,7 +72,7 @@ async function karriere(){const seeds=+arg('seeds',Math.min(CORES,4)),target=+ar
     console.log(`[${wall()}] Seed ${row.seed} | Run ${String(row.run).padStart(3)} | Zyklus ${row.cycle} | Welle ${String(row.wave).padStart(3)} (Start ${row.startWave}) | Rekord ${row.best} | ${fmtT(row.totalMin*60)} Spielzeit${row.event?' | '+row.event:''}`)}).then(m=>m.res)));
   P.close();csv.end();
   // Auswertung
-  let md=`# Karriere-Simulation (ohne Tippen)\n\nErstellt: ${new Date().toLocaleString('de-DE')} · ${seeds} Durchläufe · Ziel Welle ${target} · Rechenzeit ${wall()}\n\n`;
+  let md=`# Karriere-Simulation (Zeiger: ${base.zeiger})\n\nErstellt: ${new Date().toLocaleString('de-DE')} · ${seeds} Durchläufe · Ziel Welle ${target} · Rechenzeit ${wall()}\n\n`;
   md+=`Die Spielzeit ist die reine Zeit in Runs bei 1×. Für die „Menschzeit“ wird sie durch die Geschwindigkeit geteilt und pro Run ${overhead} s für Menüs addiert.\n\n`;
   md+=`| Meilenstein | erreicht in | Runs (Median) | Supernovas (Median) | Spielzeit 1× (Median) | Mensch bei 1× | Mensch bei 4× | Mensch bei 8× |\n|---|---|---|---|---|---|---|---|\n`;
   for(const m of base.milestones){const hits=results.map(r=>r.milestones[m]).filter(Boolean);if(!hits.length){md+=`| Welle ${m} | 0 von ${seeds} | – | – | – | – | – | – |\n`;continue}
@@ -105,4 +113,29 @@ async function upgrades(){const at=String(arg('at','25,50')).split(',').map(Numb
     console.log('\n'+md.split('\n').slice(0,4+Math.min(rows.length,15)+3).join('\n'));console.log(`… vollständig in ${path.join(OUT,`upgrades_welle${m}.md`)}`)}
   P.close()}
 
-(mode==='upgrades'?upgrades():karriere()).catch(e=>{console.error(e);process.exit(1)});
+/* ---------- Ast-Vergleich ---------- */
+// Spielt die Karriere mit jeder Kombination erlaubter Skilltree-Äste und vergleicht, wie weit man in gleicher Spielzeit kommt.
+async function aeste(){const seeds=+arg('seeds',3),hours=+arg('stunden',2),sizes=String(arg('groesse','1,2,3,4,5')).split(',').map(Number),tuerme=arg('tuerme','an');
+  const BR={b:'Basis',u:'Einheiten',h:'Helden',f:'Fokus',e:'Ertrag'},ids=Object.keys(BR),combos=[''];
+  for(let m=1;m<32;m++){const c=ids.filter((_,i)=>m>>i&1);if(sizes.includes(c.length))combos.push(c.join(''))}
+  combos.sort((a,b)=>a.length-b.length||ids.indexOf(a[0])-ids.indexOf(b[0])||a.localeCompare(b));
+  const name=c=>c?[...c].map(x=>BR[x]).join(' + '):'kein Ast';
+  console.log(`Ast-Vergleich: ${combos.length} Kombinationen × ${seeds} Seeds, je ${hours} h Spielzeit, Zeiger: ${base.zeiger}, Türme: ${tuerme}, ${CORES} Kerne\n`);
+  const P=pool(CORES),res={};let done=0;const total=combos.length*seeds;
+  await Promise.all(combos.flatMap(c=>Array.from({length:seeds},(_,i)=>P.run({type:'career',opt:{...base,seed:i+1,target:9999,maxRuns:+arg('maxruns',2000),maxGameHours:hours,aeste:c,tuerme}}).then(m=>{
+    (res[c]||(res[c]=[])).push(m.res);done++;if(res[c].length===seeds)console.log(`[${wall()}] ${String(done).padStart(3)}/${total} · ${name(c).padEnd(52)} Rekord ${res[c].map(r=>r.best).sort((a,b)=>a-b).join('/')}`)}))));
+  P.close();
+  const med=(c,f)=>median(res[c].map(f)),best=c=>med(c,r=>r.best);
+  let md=`# Ast-Vergleich\n\nErstellt: ${new Date().toLocaleString('de-DE')} · ${seeds} Seeds je Kombination · ${hours} h Spielzeit (1×) je Durchlauf · Zeiger: ${base.zeiger} · Türme: ${tuerme} · Rechenzeit ${wall()}\n\n`;
+  md+=`Der Bot darf nur Knoten der genannten Äste kaufen. Helden (Freischalten, Stufen, Aufstieg) zählen zum Helden-Ast. Supernova und Quanten-Upgrades sind immer erlaubt. „Rekord“ ist die höchste Welle nach ${hours} h Spielzeit.\n\n`;
+  md+=`| Äste | Anzahl | Rekord (Median) | Rekord je Seed | Runs | Supernovas |\n|---|---|---|---|---|---|\n`;
+  for(const c of combos)md+=`| ${name(c)} | ${c.length} | ${best(c)} | ${res[c].map(r=>r.best).sort((a,b)=>a-b).join(' / ')} | ${med(c,r=>r.runs)} | ${med(c,r=>r.supernovas)} |\n`;
+  md+=`\n## Beitrag je Ast\n\nMittlerer Gewinn an Wellen, wenn der Ast zu einer Kombination hinzukommt. „allein“ = gegenüber gar keinem Ast, „als letzter“ = wenn er als fünfter zu den vier anderen kommt.\n\n| Ast | allein | Ø über alle Kombinationen | als letzter |\n|---|---|---|---|\n`;
+  for(const b of ids){const d=[];for(const c of combos){if(c.includes(b))continue;const w=ids.filter(x=>x===b||c.includes(x)).join('');if(res[w])d.push(best(w)-best(c))}
+    const rest=ids.filter(x=>x!==b).join(''),all=ids.join('');
+    md+=`| ${BR[b]} | ${res[b]?'+'+(best(b)-best('')):'–'} | ${d.length?'+'+(d.reduce((a,x)=>a+x,0)/d.length).toFixed(1):'–'} | ${res[rest]&&res[all]?'+'+(best(all)-best(rest)):'–'} |\n`}
+  fs.writeFileSync(path.join(OUT,'aeste.md'),md);
+  fs.writeFileSync(path.join(OUT,'aeste.csv'),'aeste;anzahl;seed;rekord;runs;supernovas;spielzeit_min\n'+combos.flatMap(c=>res[c].map(r=>[name(c),c.length,r.seed,r.best,r.runs,r.supernovas,(r.totalSec/60).toFixed(0)].join(';'))).join('\n'));
+  console.log('\n'+md);console.log(`Gespeichert in ${path.join(OUT,'aeste.md')}`)}
+
+({upgrades,aeste}[mode]||karriere)().catch(e=>{console.error(e);process.exit(1)});

@@ -1,4 +1,4 @@
-const VERSION='0.12.0';
+const VERSION='0.13.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -19,7 +19,7 @@ const CUR_IDS=['s','k','p','d'];
 const CUR_SRC={s:'Jeder besiegte Gegner',k:'Elite-Gegner und alle 5 Wellen',p:'Bosse, Meilensteine alle 10 Wellen, selten Elite-Gegner',d:'Erster Bosssieg ab Welle 20 je Zyklus, ab Welle 30 jeder Bosssieg',q:'Supernova ab Welle 25'};
 CUR.q={name:'Quanten',one:'Quant',col:'#c7b8ff'};
 const PRESTIGE_DEFS=[
- ['dmg','Urkraft',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Schaden für Helden, Drohnen, Geschütze und Tipps`],
+ ['dmg','Urkraft',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Schaden für Helden, Drohnen, Geschütze und Impulse`],
  ['hp','Kernpanzer',100,1,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Basisleben`],
  ['gain','Goldene Ernte',100,2,1.5,l=>`×${fmtD(1+.5*l,1)} Splitter, Kerne und Prismen`],
  ['hero','Heldenblut',50,2,1.5,l=>`×${fmtD(1+.4*l,1)} Heldenschaden und Heldenleben`],
@@ -43,6 +43,10 @@ const BR={
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
 const LADDER=[50,1.12],QUICK_G=1.4;
+// Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
+// Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
+const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
+const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
 const NODE_DEFS=[
  // ---- Basis ----
@@ -92,19 +96,20 @@ const NODE_DEFS=[
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
- ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Tipps und Autofeuer`,LADDER],
- ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Tipps`],
- ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Tippradius ${26+l*12}`],
- ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Tipp-Schüsse pro Sekunde automatisch`:'Kein Autofeuer'],
- ['f3a','f','f2a',3,-1.5,'Combo',10,'k',2,1.4,l=>l?`+${l*2} % Schaden pro Combo-Stufe (max. 25)`:'Keine Combo'],
- ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Tipp explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
+ ['f1','f','root',1,0,'Fingerspitze',999,'s',6,1.25,l=>`+${l*40} % Schaden für Impuls und Autofeuer`,LADDER],
+ ['f1b','f','f1',1.5,.9,'Taktgeber',IMP_LV,'s',40,1.3,l=>`Impuls alle ${fmtD(impInterval(l),2)} s, dafür etwas weniger Schaden je Impuls`],
+ ['f2a','f','f1',2,-1.5,'Präzision',9,'s',25,1.5,l=>`${5+l*5} % Chance auf kritische Impulse`],
+ ['f2b','f','f1',2,0,'Druckwelle',6,'s',25,1.55,l=>`Impulsradius ${26+l*12}`],
+ ['f2c','f','f1',2,1.5,'Autofeuer',10,'s',30,1.45,l=>l?`Die Basis feuert ${fmtD(l*.5)} Schüsse pro Sekunde automatisch auf Gegner`:'Kein Autofeuer'],
+ ['f3a','f','f2a',3,-1.5,'Taktschlag',10,'k',2,1.4,l=>l?`Jeder ${BEAT_N}. Impuls verursacht +${l*100} % Schaden`:'Kein Taktschlag'],
+ ['f3b','f','f2b',3,0,'Überladung',3,'k',4,1.8,l=>l?`Jeder 10. Schuss von Impuls und Autofeuer explodiert mit ${4+l*2}-fachem Schaden`:'Keine Überladung'],
  ['f3c','f','f2c',3,1.6,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
- ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Tipps springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
- ['f4b','f','f3c',4,1.3,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Tippschaden`],
- ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch deine Tipps'],
- ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Tippschaden`],
+ ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
+ ['f4b','f','f3c',4,1.3,'Tippgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Schaden für Impuls und Autofeuer`],
+ ['f5','f','f4',5,-.5,'Göttlicher Finger',1,'d',3,1,l=>'Heldenschaden verstärkt auch Impuls und Autofeuer'],
+ ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Schaden für Impuls und Autofeuer`],
  ['f7','f','f6',7,0,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
- ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Tipp trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
+ ['f8','f','f7',8,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Schuss von Impuls und Autofeuer trifft alle Gegner mit dreifachem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
@@ -188,7 +193,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   droneSpawn:3/(1+.2*L('u2b')),droneRange:90*(1+.5*L('u4')),droneBeam:L('u4')>0,mother:L('u5')>0,
   heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5'),
   revive:8*(1-.15*L('h3b')),abilityCd:1-.1*L('h4'),
-  tapDmg:6*(1+.4*L('f1')),tapCrit:.05+.05*L('f2a'),tapR:26+12*L('f2b'),combo:.02*L('f3a'),
+  tapDmg:6*(1+.4*L('f1')),tapCrit:.05+.05*L('f2a'),tapR:26+12*L('f2b'),beat:L('f3a'),
   overload:L('f3b'),chain:L('f4'),
   gS:1+.12*L('e1'),gK:1+.2*L('e2a'),startWave:1+2*L('e2b'),gP:1+.25*L('e3a'),elite:1+.25*L('e3b'),gD:L('e4'),gAll:L('e5')?2:1};
   // neue Knoten
@@ -203,5 +208,6 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   if(L('f5'))S.tapDmg*=1+S.heroDmg;
+  S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
 
