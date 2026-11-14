@@ -72,6 +72,22 @@ Diese Punkte standen auf der Liste. Ich habe sie nachts nicht gebaut, weil du f�
 - **Welt 2** ruht weiterhin und hat die neuen Gegner nicht.
 - **Noch 7 bis 12 Gegnerarten** bis zu deinem Ziel von 25 bis 30. Im Ideenvorrat stehen unter anderem Spiegel, Phasenläufer, Dieb, Hacker, Mörser, Scharfschütze, Brüter, Giftwolke, Zwilling.
 
+## Messwerte zu 0.21.0
+
+Probe am festen Spielstand gegen 0.19.0 (je 16 Runs, erreichte Welle):
+
+| Spielstand | 0.19.0 | 0.21.0 |
+|---|---|---|
+| Rekord 25 | 26,8 | 27,0 |
+| Rekord 46 | 44,6 | 44,9 |
+| Rekord 52 | 49,9 | 51,4 |
+| Rekord 76 | 77,3 | 77,0 |
+| Rekord 97 | 97,1 | 97,5 |
+
+Äste allein nach 4 Stunden Spielzeit (5 Seeds, Zeiger zielt): Basis 32, Flotte 28, Helden 26, Impuls 26, alle fünf zusammen 67.
+
+Karriere mit ruhendem Zeiger (8 Seeds): Welle 25 nach 51 min, Welle 50 nach 2 h 11 min, Welle 75 nach 7 h 15 min, Welle 100 nach 14 h 34 min.
+
 ## 8. Bekannte Einschränkungen
 
 - Gemessen wurde mit dem Bot, nicht mit einem Menschen. Die Zahlen sind Vergleichswerte.
