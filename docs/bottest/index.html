@@ -622,14 +622,15 @@ const ETYPES={
   // Sprinter: sehr schnell, wenig Leben
   sprinter:{name:'Sprinter',hp:5,sp:150,r:6,dmg:2,val:1,col:'#fff34f',from:15,step:.03,max:.15,text:'Sehr schnell, aber zerbrechlich.'},
   // Schildträger: der Schild schluckt die ersten Treffer vollständig, egal wie stark sie sind
-  shield:{name:'Schildträger',hp:40,sp:34,r:13,dmg:9,val:5,col:'#5ab8ff',bar:1,from:30,step:.02,max:.12,text:'Sein Schild schluckt die ersten Treffer vollständig. Viele kleine Treffer brechen ihn am schnellsten.'},
+  shield:{name:'Schildträger',hp:40,sp:34,r:13,dmg:9,val:5,col:'#5ab8ff',bar:1,from:30,step:.02,max:.1,text:'Sein Schild schluckt die ersten Treffer vollständig. Viele kleine Treffer brechen ihn am schnellsten.'},
   // Spalter: zerfällt beim Tod in drei Splitterlinge
-  splitter:{name:'Spalter',hp:30,sp:40,r:12,dmg:6,val:3,col:'#b98cff',bar:1,from:45,step:.02,max:.12,text:'Zerfällt beim Tod in drei Splitterlinge.'},
+  splitter:{name:'Spalter',hp:30,sp:40,r:12,dmg:6,val:3,col:'#b98cff',bar:1,from:45,step:.02,max:.1,text:'Zerfällt beim Tod in drei Splitterlinge.'},
   mite:{name:'Splitterling',hp:7,sp:80,r:6,dmg:2,val:1,col:'#d6b8ff'},
   // Belagerer: bleibt am Rand stehen und beschießt die Basis mit schweren Geschossen
-  siege:{name:'Belagerer',hp:35,sp:26,r:13,dmg:30,val:6,col:'#ff6b3d',ranged:1,bar:1,from:60,step:.02,max:.08,text:'Bleibt weit draußen stehen und beschießt die Basis mit schweren Geschossen.'},
+  siege:{name:'Belagerer',hp:35,sp:26,r:13,dmg:15,val:6,col:'#ff6b3d',ranged:1,bar:1,from:60,step:.01,max:.05,text:'Bleibt weit draußen stehen und beschießt die Basis mit schweren Geschossen.'},
   boss:{name:'Boss',hp:900,sp:17,r:42,dmg:40,val:40,col:'#ff3b5c'}
 };
+const SHIELD_HITS=4,SHIELD_PER=30,MITE_HP=.15;   // Schildladungen: Grundwert + 1 je SHIELD_PER Wellen; Splitterling: Anteil am Leben des Spalters
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (80 %) des normalen Bosslebens
@@ -742,7 +743,7 @@ hitE(e,dmg,o={}){if(e.hp<=0)return;
   if(e.hp<=0)this.kill(e)}
 kill(e){this.kills++;this.energy+=e.val*this.energyMul(e);
   const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;
-  if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*.22])}
+  if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*MITE_HP])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);
   this.h.sfx&&this.h.sfx(e.boss?'boss':e.elite||e.type==='brute'?'killbig':'kill')}
@@ -791,7 +792,7 @@ spawnEnemy(type,elite,x,y){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=t
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
     ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0});
-  if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=5+Math.floor(w/15)}}
+  if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
 updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Math.min(this.queue.length,1+Math.floor(Math.random()*3));
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
       // der zweite Boss eines Doppelbosses kommt von der gegenüberliegenden Seite
