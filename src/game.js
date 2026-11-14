@@ -207,7 +207,7 @@ updBase(dt){const b=this.base,S=this.S;b.rot+=dt*.6;b.flash-=dt;
   for(const tu of b.turrets){tu.t-=dt;const x=Math.cos(tu.a)*44,y=Math.sin(tu.a)*44,tg=this.nearest(x,y,S.turretRange);
     if(tg){tu.aim=Math.atan2(tg.y-y,tg.x-x);if(tu.t<=0){tu.t=1/(1.5*S.turretRate);this.shootAt(x+Math.cos(tu.aim)*8,y+Math.sin(tu.aim)*8,tg,560,S.turretDmg,'#3df5ff',{num:false,size:3});this.h.sfx&&this.h.sfx('turret')}}}
   if(S.pulse){b.pulseT-=dt;if(b.pulseT<=0){let any=false;
-    for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)||1;if(d<S.pulseR+e.r){any=true;if(!e.boss){e.x+=e.x/d*35;e.y+=e.y/d*35}this.hitE(e,S.pulseDmg,{col:'#3df5ff'})}}
+    for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)||1;if(d<S.pulseR+e.r){any=true;if(!e.boss){e.x+=e.x/d*35;e.y+=e.y/d*35}this.hitE(e,S.pulseDmg+e.max*(S.pulsePct||0)*(e.boss?.2:1),{col:'#3df5ff'})}}
     if(any){this.ring(0,0,30,S.pulseR+15,'#3df5ff',.5,10);b.pulseT=S.pulseCd;this.h.sfx&&this.h.sfx('pulse')}else b.pulseT=.3}}}
 
 /* ---------- heroes ---------- */

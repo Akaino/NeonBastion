@@ -352,7 +352,7 @@ const BR={
 };
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
-const LADDER=[50,1.12],QUICK_G=1.4;
+const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012;   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
 // Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
 // Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
@@ -364,7 +364,7 @@ const NODE_DEFS=[
  ['b2a','b','b1',2,-1,'Schildgenerator',10,'s',40,1.35,l=>l?`Schild mit ${25+(l-1)*8} % des Basislebens`:'Noch kein Schild'],
  ['b2b','b','b1',2,1,'Reparatur',10,'s',35,1.35,l=>l?`Repariert ${fmtD(l*.3)} % Leben pro Sekunde`:'Keine Reparatur'],
  ['b3a','b','b2a',3,-1.3,'Geschütze',4,'k',3,2.2,l=>l?`${l} Geschützt${l>1?'ürme':'urm'} an der Basis`:'Keine Geschütze'],
- ['b3b','b','b2b',3,1.3,'Schockwelle',10,'k',3,1.45,l=>l?`Schockwelle mit ${fmtN(15*(1+.6*(l-1)))} Schaden`:'Keine Schockwelle'],
+ ['b3b','b','b2b',3,1.3,'Schockwelle',10,'k',3,1.45,l=>l?`Schockwelle mit ${fmtN(15*(1+.6*(l-1)))} Schaden plus ${fmtD(l*PULSE_PCT*100,1)} % des Gegnerlebens (Bosse ein Fünftel)`:'Keine Schockwelle'],
  ['b4a','b','b3a',4,-1.6,'Kaliber',10,'p',1,1.35,l=>`+${l*40} % Schaden für Geschütze und Autofeuer`],
  ['b4c','b','b3a',4,-.3,'Feuerleitung',10,'k',4,1.4,l=>`+${l*10} % Feuerrate der Geschütze`],
  ['b4b','b','b3b',4,1.4,'Resonanz',4,'p',1,1.6,l=>`−${l*12} % Abklingzeit der Schockwelle`],
@@ -385,10 +385,10 @@ const NODE_DEFS=[
  ['u4','u','u3a',4,-1,'Lanzenstrahl',3,'p',1,1.8,l=>l?`Strahlwaffen, +${l*50} % Reichweite`:'Normale Bordkanonen'],
  ['u4b','u','u3b',4,1.3,'Schwarmintelligenz',10,'k',6,1.45,l=>`+${l*2} % Drohnenschaden pro aktiver Drohne`],
  ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Jede vierte Drohne ist ein schweres Kampfschiff'],
- ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden`],
+ ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden und -leben`],
  ['u7a','u','u6',7,-1,'Flottenausbau',5,'p',3,1.8,l=>`+${l*2} Drohnen`],
  ['u7b','u','u6',7,1,'Plasmakern',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Drohnenschaden und -leben`],
- ['u8','u','u7b',8,0,'Admiral',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Drohnenschaden`],
+ ['u8','u','u7b',8,0,'Admiral',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Drohnenschaden und -leben`],
  ['u9','u','u8',9,0,'Hyperflotte',3,'d',5,1.8,l=>`+${l*50} % Feuerrate der Drohnen`],
  // ---- Helden ----
  ['h1','h','root',1,0,'Ausbildung',999,'s',12,1.25,l=>`+${l*15} % Heldenschaden`,LADDER],
@@ -502,7 +502,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   shieldPct:L('b2a')?.25+.08*(L('b2a')-1):0,
   regen:.003*L('b2b'),
   turrets:L('b3a'),turretDmg:6*(1+.4*L('b4a')),turretRange:200*(L('b5')?1.5:1),
-  pulse:L('b3b'),pulseDmg:15*(1+.6*Math.max(0,L('b3b')-1)),pulseCd:8*(1-.12*L('b4b')),
+  pulse:L('b3b'),pulsePct:PULSE_PCT*L('b3b'),pulseDmg:15*(1+.6*Math.max(0,L('b3b')-1)),pulseCd:8*(1-.12*L('b4b')),
   drones:2+L('u1')+2*L('u3b'),droneDmg:3*(1+.25*L('u2a')),droneHp:20*(1+.4*L('u3a')),
   droneSpawn:3/(1+.2*L('u2b')),droneRange:90*(1+.5*L('u4')),droneBeam:L('u4')>0,mother:L('u5')>0,
   heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5'),
@@ -513,7 +513,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   // neue Knoten
   S.baseHp*=Math.pow(1.06,L('b6'))*Math.pow(1.15,L('b8'));S.turretRate=1+.1*L('b4c');S.turretDmg*=Math.pow(1.08,L('b7b'));
   S.pulseR=150*(1+.15*L('b5b'));S.shRegen=1+.25*L('b7a');S.shieldPct=S.shieldPct?S.shieldPct+.05*L('b7a'):0;S.dmgTaken=1-.05*L('b9');
-  S.droneRate=(1+.08*L('u3c'))*(1+.5*L('u9'));S.swarmInt=.02*L('u4b');S.droneDmg*=Math.pow(1.06,L('u6'))*Math.pow(1.08,L('u7b'))*Math.pow(1.25,L('u8'));S.droneHp*=Math.pow(1.08,L('u7b'));S.drones+=2*L('u7a');
+  S.droneRate=(1+.08*L('u3c'))*(1+.5*L('u9'));S.swarmInt=.02*L('u4b');S.droneDmg*=Math.pow(1.06,L('u6'))*Math.pow(1.08,L('u7b'))*Math.pow(1.25,L('u8'));S.droneHp*=Math.pow(1.08,L('u7b'))*Math.pow(1.06,L('u6'))*Math.pow(1.25,L('u8'));S.drones+=2*L('u7a');
   S.heroRate=1+.06*L('h3c');S.heroCrit=.04*L('h4b');S.heroDmg*=Math.pow(1.06,L('h6'))*Math.pow(1.08,L('h7b'))*Math.pow(1.25,L('h8'));S.heroHp*=Math.pow(1.1,L('h7a'));S.abilPow=1+.5*L('h9');
   S.autoRate=.5*L('f2c')*Math.pow(1.25,L('f7'));S.autoAim=L('f3c')>0;S.autoDmg=1+.2*L('f3c');S.tapDmg*=Math.pow(1.06,L('f4b'))*Math.pow(1.08,L('f6'));S.megaTap=L('f8')?60-L('f8')*10:0;
   S.gS*=Math.pow(1.05,L('e3c'))*Math.pow(1.06,L('e6'));S.gK*=Math.pow(1.08,L('e7'))*Math.pow(1.06,L('e6'));S.prismChance=.006+.006*L('e4b');S.qMul=1+.1*L('e7b');
@@ -821,7 +821,7 @@ updBase(dt){const b=this.base,S=this.S;b.rot+=dt*.6;b.flash-=dt;
   for(const tu of b.turrets){tu.t-=dt;const x=Math.cos(tu.a)*44,y=Math.sin(tu.a)*44,tg=this.nearest(x,y,S.turretRange);
     if(tg){tu.aim=Math.atan2(tg.y-y,tg.x-x);if(tu.t<=0){tu.t=1/(1.5*S.turretRate);this.shootAt(x+Math.cos(tu.aim)*8,y+Math.sin(tu.aim)*8,tg,560,S.turretDmg,'#3df5ff',{num:false,size:3});this.h.sfx&&this.h.sfx('turret')}}}
   if(S.pulse){b.pulseT-=dt;if(b.pulseT<=0){let any=false;
-    for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)||1;if(d<S.pulseR+e.r){any=true;if(!e.boss){e.x+=e.x/d*35;e.y+=e.y/d*35}this.hitE(e,S.pulseDmg,{col:'#3df5ff'})}}
+    for(const e of this.en){if(e.hp<=0)continue;const d=hyp(e.x,e.y)||1;if(d<S.pulseR+e.r){any=true;if(!e.boss){e.x+=e.x/d*35;e.y+=e.y/d*35}this.hitE(e,S.pulseDmg+e.max*(S.pulsePct||0)*(e.boss?.2:1),{col:'#3df5ff'})}}
     if(any){this.ring(0,0,30,S.pulseR+15,'#3df5ff',.5,10);b.pulseT=S.pulseCd;this.h.sfx&&this.h.sfx('pulse')}else b.pulseT=.3}}}
 
 /* ---------- heroes ---------- */
@@ -1630,7 +1630,7 @@ const FMT={n:fv,i:v=>String(Math.round(v)),s:v=>v?fmtD(v,1)+' s':'–',x:v=>'×'
 const PREV={
  b1:[['Basisleben',S=>S.baseHp,'n']],b2a:[['Schild',S=>S.baseHp*S.shieldPct,'n']],b2b:[['Reparatur pro Sekunde',S=>S.baseHp*S.regen,'n']],
  b3a:[['Geschütztürme',S=>S.turrets,'i'],['Schaden pro Schuss',S=>S.turrets?S.turretDmg:0,'n']],
- b3b:[['Schockwellen-Schaden',S=>S.pulse?S.pulseDmg:0,'n'],['Abklingzeit',S=>S.pulse?S.pulseCd:0,'s']],
+ b3b:[['Schockwellen-Schaden',S=>S.pulse?S.pulseDmg:0,'n'],['Anteil am Gegnerleben',S=>fmtD(S.pulsePct*100,1)+' %','t'],['Abklingzeit',S=>S.pulse?S.pulseCd:0,'s']],
  b4a:[['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n']],b4b:[['Abklingzeit der Schockwelle',S=>S.pulseCd,'s']],
  b5:[['Basisleben',S=>S.baseHp,'n'],['Geschützreichweite',S=>S.turretRange,'i']],
  u1:[['Drohnen',S=>S.drones,'i']],u2a:[['Drohnenschaden',S=>S.droneDmg,'n']],u2b:[['Bauzeit pro Drohne',S=>S.droneSpawn,'s']],
@@ -1646,8 +1646,8 @@ const PREV={
  e3b:[['Elite-Gegner',S=>S.elite,'x']],
  b4c:[['Feuerrate der Geschütze',S=>S.turretRate,'x']],b5b:[['Radius der Schockwelle',S=>S.pulseR,'i']],b6:[['Basisleben',S=>S.baseHp,'n']],
  b7a:[['Schildaufladung',S=>S.shRegen,'x'],['Schild',S=>S.baseHp*S.shieldPct,'n']],b7b:[['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n']],b8:[['Basisleben',S=>S.baseHp,'n']],b9:[['Erlittener Schaden',S=>S.dmgTaken*100,'pct']],
- u3c:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],u4b:[['Bonus pro aktiver Drohne',S=>S.swarmInt*100,'pct']],u6:[['Drohnenschaden',S=>S.droneDmg,'n']],u7a:[['Drohnen',S=>S.drones,'i']],
- u7b:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u8:[['Drohnenschaden',S=>S.droneDmg,'n']],u9:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],
+ u3c:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],u4b:[['Bonus pro aktiver Drohne',S=>S.swarmInt*100,'pct']],u6:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u7a:[['Drohnen',S=>S.drones,'i']],
+ u7b:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u8:[['Drohnenschaden',S=>S.droneDmg,'n'],['Drohnenleben',S=>S.droneHp,'n']],u9:[['Feuerrate der Drohnen',S=>S.droneRate,'x']],
  h3c:[['Angriffstempo',S=>S.heroRate,'x']],h4b:[['Krit-Chance der Helden',S=>S.heroCrit*100,'pct']],h6:[['Heldenschaden',S=>S.heroDmg,'x']],h7a:[['Heldenleben',S=>S.heroHp,'x']],
  h7b:[['Heldenschaden',S=>S.heroDmg,'x']],h8:[['Heldenschaden',S=>S.heroDmg,'x']],h9:[['Stärke der Fähigkeiten',S=>S.abilPow,'x']],
  f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n'],['Schaden pro Schuss',S=>S.autoRate?S.turretDmg*S.autoDmg:0,'n']],f3c:[['Schaden pro Schuss',S=>S.turretDmg*S.autoDmg,'n'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
