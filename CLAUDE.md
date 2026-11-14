@@ -23,6 +23,7 @@ python3 tests/run_all.py --jobs 1  # nacheinander (ca. 90 s), um Wackler einzugr
 node sim/sim.js --seeds 8        # Karriere-Simulation, Zeiger ruht (Idle-Spieler), Auswertung in sim/ergebnisse/
 node sim/sim.js --seeds 8 --zeiger zielt   # Bot zieht den Impuls alle 0,25 s auf die dichteste Gruppe (Idealspieler); --zeiger aus = kein Impuls
 node sim/sim.js upgrades --at 25,50,75   # Wirkung einzelner Upgrades an Kontrollpunkten
+node sim/sim.js aeste --seeds 3 --stunden 4 --zeiger zielt   # Ast-Vergleich: Karriere mit jeder Kombination der fünf Skilltree-Äste
 ```
 
 Voraussetzungen: Python 3, Node.js ab 18, `pip install playwright && playwright install chromium`.
@@ -118,6 +119,33 @@ Impuls in 0.13.0 (8 Seeds, gleiche Regeln, nur der Zeiger unterscheidet sich):
 - Ein ruhender Zeiger ist wirkungslos (entspricht 0.12.0). Zielen bringt früh viel (−40 % Runs bis Welle 25) und spät fast nichts (−3 % Spielzeit bis Welle 100). **Der Impuls skaliert zu schwach mit**: voll ausgebaut etwa 10 Impulse/s mit ×0,9 Grundschaden, Autofeuer dagegen bis 30 Schüsse/s mit bis zu ×3. Das widerspricht dem Ziel „Zeiger so wichtig wie Einheiten/Türme/Helden“ und ist beim Ausbau von Welt 1 zu lösen.
 - Wand bei Welle 70–72: In beiden Läufen zünden fast alle Seeds dort ihre erste Supernova; danach Rekordsprünge von 5–9 Wellen pro Run. Nicht durch den Zeiger verursacht.
 
+Ast-Vergleich 0.13.0 (`node sim/sim.js aeste`, 3 Seeds, je 4 h Spielzeit, Rekord-Welle; Zeiger zielt / ruht):
+
+| Erlaubte Äste | zielt | ruht |
+|---|---|---|
+| kein Ast | 7 | 4 |
+| Ertrag allein | 7 | 3 |
+| Basis allein | 22 | 21 |
+| Einheiten allein | 26 | 25 |
+| Helden allein | 30 | 30 |
+| Fokus allein | 48 | 45 |
+| Fokus + Ertrag | 67 | 62 |
+| Helden + Fokus + Ertrag | **75** | **71** |
+| alle außer Fokus | 52 | 54 |
+| alle fünf | 70 | 66 |
+
+| Ast | Ø Gewinn über alle Kombinationen (zielt / ruht) | als letzter zu den vier anderen |
+|---|---|---|
+| Fokus | +22,1 / +19,8 | +18 / +12 |
+| Ertrag | +15,5 / +16,8 | +28 / +24 |
+| Helden | +11,3 / +12,0 | +9 / +7 |
+| Einheiten | +5,5 / +5,8 | −1 / −5 |
+| Basis | +1,3 / +3,0 | +1 / +1 |
+
+- **Der Fokus-Ast trägt das Spiel fast allein** (45–48 von 66–70 Wellen). Ertrag bringt allein nichts, ist aber der stärkste Verstärker. Helden liegen in der Mitte.
+- **Basis und Einheiten sind nahezu wertlos**: Drei Äste (Helden + Fokus + Ertrag) kommen weiter als alle fünf. Wer Splitter in Basis und Einheiten steckt, wird langsamer. Der Bot kauft immer das Billigste und verteilt deshalb gleichmäßig; ein Mensch, der gezielt kauft, käme mit allen fünf etwas weiter, der Befund bleibt aber.
+- Ziel für den Ausbau von Welt 1: Jeder Ast soll allein spielbar und in jeder Kombination ein Gewinn sein, kein Ast soll allein mehr als etwa die Hälfte tragen. Stellschrauben: Basis und Einheiten deutlich aufwerten, Autofeuer (Fokus) bremsen oder vom Impuls trennen, Impuls stärker mitwachsen lassen.
+
 Befunde:
 - Einzelne Seeds streuen weiterhin (Zufall schaukelt sich auf). Immer mehrere Seeds verwenden.
 - Der Bot kauft stets die billigste Option. Der Ausgaben-Anteil sagt deshalb mehr über die Kostenkurven als über die Wirkung; für die Wirkung `node sim/sim.js upgrades` nutzen.
@@ -131,6 +159,9 @@ Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht
 2. **Welt 1 ausbauen** (Inhalte erst mit dem Nutzer besprechen):
    - Deutlich umfangreicherer Skilltree; bestehende Skills dürfen aufgeteilt werden, wo es sinnvoll ist (Kandidat: „Göttlicher Finger“ bringt bei Welle 25 allein +6 Wellen – ein Sprung).
    - Weitere Helden, weitere Türme.
+   - Größere Gegnervielfalt: mit höherer Wellenzahl neue, stärkere Gegnertypen (heute nur Schwärmer, Brecher, Fernkämpfer, Elite, Boss).
+   - Bosse mit Fähigkeiten und einer Anzeige, die bis zur Ausführung herunterzählt (heute beschwört der Boss nur alle 4 s Schwärmer, ohne Ankündigung).
+   - Doppelbosse auf den Wellen 25, 50, 75 und 100. Achtung: Bosse kommen heute nur alle 10 Wellen, Welle 25 und 75 sind also bisher keine Bosswellen.
    - **Balancing-Ziel: Der Zeiger (Impuls) soll nicht weniger wichtig sein als Einheiten, Türme und Helden** – und umgekehrt. Stand Upgrade-Messung 0.12.0: Der Fokus-Ast dominiert über das Autofeuer, Basis-Verteidigung (Panzerung, Schild, Reparatur, Geschütze) bringt bei Welle 25 +0,0 Wellen. Eher die anderen Äste aufwerten als den Fokus schwächen.
    - Turm-Menü (erledigt in 0.13.0): öffnet sich nur noch bei kurzem Antippen ohne Bewegung (`towerTap`, `TAP_MOVE`, `TAP_MS` in `ui.js`); aufsetzen und ziehen bewegt den Impuls-Zeiger. Beim Nutzer nachfragen, ob das versehentliche Öffnen damit weg ist.
 3. **Welten 3–10:** sind eingeplant (`WORLD_MAX`, `worldUnlockWave(id)=(id−1)·100` in `core2.js`, Karte „Weitere Welten“ im Welten-Menü), aber ohne Inhalt. Welt 2 ist der erste Test für das Prinzip „alle 100 Wellen in Welt 1 eine neue Welt“. Ideenfindung steht aus und läuft mit dem Nutzer. **Vorgabe: Das Kernsystem bleibt in jeder Welt SEHR ähnlich – Basis beschützen, Impulse mit dem Zeiger.** Welten unterscheiden sich über Regeln und Inhalte, nicht über ein anderes Grundspiel.

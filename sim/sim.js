@@ -125,7 +125,7 @@ async function aeste(){const seeds=+arg('seeds',3),hours=+arg('stunden',2),sizes
   await Promise.all(combos.flatMap(c=>Array.from({length:seeds},(_,i)=>P.run({type:'career',opt:{...base,seed:i+1,target:9999,maxRuns:+arg('maxruns',2000),maxGameHours:hours,aeste:c,tuerme}}).then(m=>{
     (res[c]||(res[c]=[])).push(m.res);done++;if(res[c].length===seeds)console.log(`[${wall()}] ${String(done).padStart(3)}/${total} · ${name(c).padEnd(52)} Rekord ${res[c].map(r=>r.best).sort((a,b)=>a-b).join('/')}`)}))));
   P.close();
-  const med=(c,f)=>median(res[c].map(f)),best=c=>med(c,r=>r.best);
+  const med=(c,f)=>median(res[c].map(f)),best=c=>med(c,r=>r.best),sg=x=>(+x>=0?'+':'')+x;
   let md=`# Ast-Vergleich\n\nErstellt: ${new Date().toLocaleString('de-DE')} · ${seeds} Seeds je Kombination · ${hours} h Spielzeit (1×) je Durchlauf · Zeiger: ${base.zeiger} · Türme: ${tuerme} · Rechenzeit ${wall()}\n\n`;
   md+=`Der Bot darf nur Knoten der genannten Äste kaufen. Helden (Freischalten, Stufen, Aufstieg) zählen zum Helden-Ast. Supernova und Quanten-Upgrades sind immer erlaubt. „Rekord“ ist die höchste Welle nach ${hours} h Spielzeit.\n\n`;
   md+=`| Äste | Anzahl | Rekord (Median) | Rekord je Seed | Runs | Supernovas |\n|---|---|---|---|---|---|\n`;
@@ -133,7 +133,7 @@ async function aeste(){const seeds=+arg('seeds',3),hours=+arg('stunden',2),sizes
   md+=`\n## Beitrag je Ast\n\nMittlerer Gewinn an Wellen, wenn der Ast zu einer Kombination hinzukommt. „allein“ = gegenüber gar keinem Ast, „als letzter“ = wenn er als fünfter zu den vier anderen kommt.\n\n| Ast | allein | Ø über alle Kombinationen | als letzter |\n|---|---|---|---|\n`;
   for(const b of ids){const d=[];for(const c of combos){if(c.includes(b))continue;const w=ids.filter(x=>x===b||c.includes(x)).join('');if(res[w])d.push(best(w)-best(c))}
     const rest=ids.filter(x=>x!==b).join(''),all=ids.join('');
-    md+=`| ${BR[b]} | ${res[b]?'+'+(best(b)-best('')):'–'} | ${d.length?'+'+(d.reduce((a,x)=>a+x,0)/d.length).toFixed(1):'–'} | ${res[rest]&&res[all]?'+'+(best(all)-best(rest)):'–'} |\n`}
+    md+=`| ${BR[b]} | ${res[b]?sg(best(b)-best('')):'–'} | ${d.length?sg((d.reduce((a,x)=>a+x,0)/d.length).toFixed(1)):'–'} | ${res[rest]&&res[all]?sg(best(all)-best(rest)):'–'} |\n`}
   fs.writeFileSync(path.join(OUT,'aeste.md'),md);
   fs.writeFileSync(path.join(OUT,'aeste.csv'),'aeste;anzahl;seed;rekord;runs;supernovas;spielzeit_min\n'+combos.flatMap(c=>res[c].map(r=>[name(c),c.length,r.seed,r.best,r.runs,r.supernovas,(r.totalSec/60).toFixed(0)].join(';'))).join('\n'));
   console.log('\n'+md);console.log(`Gespeichert in ${path.join(OUT,'aeste.md')}`)}
