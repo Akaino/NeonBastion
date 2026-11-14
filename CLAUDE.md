@@ -166,7 +166,6 @@ Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht
    - Deutlich umfangreicherer Skilltree; bestehende Skills dürfen aufgeteilt werden, wo es sinnvoll ist (Kandidat: „Göttlicher Finger“ bringt bei Welle 25 allein +6 Wellen – ein Sprung).
    - Weitere Helden, weitere Türme.
    - Größere Gegnervielfalt: mit höherer Wellenzahl neue, stärkere Gegnertypen (heute nur Schwärmer, Brecher, Fernkämpfer, Elite, Boss).
-   - Zähler „So viele spielen gerade“: vom Nutzer gewünscht. Braucht einen kleinen eigenen Dienst (GitHub Pages hat keinen Server) und eine Ergänzung der Datenschutzerklärung; Entscheidung des Nutzers steht aus.
    - Bosse mit Fähigkeiten und einer Anzeige, die bis zur Ausführung herunterzählt (heute beschwört der Boss nur alle 4 s Schwärmer, ohne Ankündigung).
    - **Balancing-Ziel: Der Zeiger (Impuls) soll nicht weniger wichtig sein als Einheiten, Türme und Helden** – und umgekehrt. Stand Upgrade-Messung 0.12.0: Der Fokus-Ast dominiert über das Autofeuer, Basis-Verteidigung (Panzerung, Schild, Reparatur, Geschütze) bringt bei Welle 25 +0,0 Wellen. Eher die anderen Äste aufwerten als den Fokus schwächen.
    - Turm-Menü (erledigt in 0.13.0): öffnet sich nur noch bei kurzem Antippen ohne Bewegung (`towerTap`, `TAP_MOVE`, `TAP_MS` in `ui.js`); aufsetzen und ziehen bewegt den Impuls-Zeiger. Beim Nutzer nachfragen, ob das versehentliche Öffnen damit weg ist.
@@ -176,6 +175,8 @@ Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht
 6. Langfristig: Verpackung für App Stores (Capacitor) und Steam (Tauri/Electron).
 
 Erledigt in 0.12.0: Zahlen-Notation über 10^18 (`numUnit` in `core.js`: nach Qi folgen aa, ab, … zz), Fingerspitze-Beschreibung.
+
+Vom Nutzer abgelehnt (nicht erneut vorschlagen): Zähler „So viele spielen gerade“ (14.11.2026).
 
 ## 8. Fallstricke aus der bisherigen Entwicklung
 
