@@ -36,9 +36,12 @@ heroSprite(id,col,white){return this.sprite('h'+id+(white?'w':''),26,(c,K)=>{con
   else if(id==='schuetzin'){this.neon(c,K,c=>{c.beginPath();c.arc(-2,0,9,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.arc(-4,0,15,-1.1,1.1);c.moveTo(-6,0);c.lineTo(16,0);c.moveTo(12,-4);c.lineTo(16,0);c.lineTo(12,4)},C,1.8,8)}
   else if(id==='arkanist'){this.neon(c,K,c=>{c.beginPath();for(const o of[0,PI]){for(let i=0;i<3;i++){const a=o-PI/2+i*TAU/3;i?c.lineTo(Math.cos(a)*13,Math.sin(a)*13):c.moveTo(Math.cos(a)*13,Math.sin(a)*13)}c.closePath()}},C,2.2,14,F);c.fillStyle=C;c.beginPath();c.arc(0,0,3,0,TAU);c.fill()}
   else{this.neon(c,K,c=>{c.beginPath();c.moveTo(-10,-11);c.lineTo(10,-11);c.lineTo(10,0);c.quadraticCurveTo(10,9,0,14);c.quadraticCurveTo(-10,9,-10,0);c.closePath()},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(0,-6);c.lineTo(0,6);c.moveTo(-5,0);c.lineTo(5,0)},C,1.8,6)}})}
-droneSprite(big,white){return this.sprite('d'+(big?1:0)+(white?'w':''),big?20:12,(c,K)=>{const C=white?'#fff':'#3df5ff',r=big?9:5;
-  if(big){this.neon(c,K,c=>this.poly(c,6,r,0),C,2,12,'rgba(4,20,30,.9)');this.neon(c,K,c=>{c.beginPath();c.moveTo(r*.8,0);c.lineTo(-r*.4,-r*.5);c.lineTo(-r*.4,r*.5);c.closePath()},C,1.4,4)}
-  else this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.3,0);c.lineTo(-r*.8,-r*.9);c.lineTo(-r*.3,0);c.lineTo(-r*.8,r*.9);c.closePath()},C,1.6,8,'rgba(4,20,30,.9)')})}
+droneSprite(cls,white){const D=DRONES[cls]||DRONES.jaeger,big=cls==='kreuzer';return this.sprite('d'+cls+(white?'w':''),big?20:13,(c,K)=>{const C=white?'#fff':D.col,r=D.r,F='rgba(4,20,30,.9)';
+  if(big){this.neon(c,K,c=>this.poly(c,6,r,0),C,2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(r*.8,0);c.lineTo(-r*.4,-r*.5);c.lineTo(-r*.4,r*.5);c.closePath()},C,1.4,4)}
+  else if(cls==='abfang')this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.9,0);c.lineTo(-r*.9,-r*.6);c.lineTo(-r*.2,0);c.lineTo(-r*.9,r*.6);c.closePath()},C,1.5,8,F);
+  else if(cls==='schwarm'){for(let i=0;i<3;i++){const a=i*TAU/3,x=Math.cos(a)*r*.6,y=Math.sin(a)*r*.6;this.neon(c,K,c=>{c.beginPath();c.moveTo(x+r*.55,y);c.lineTo(x-r*.35,y-r*.38);c.lineTo(x-r*.35,y+r*.38);c.closePath()},C,1.2,6,F)}}
+  else if(cls==='repair'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.95,0,TAU)},C,1.6,8,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.5,0);c.lineTo(r*.5,0);c.moveTo(0,-r*.5);c.lineTo(0,r*.5)},C,1.6,5)}
+  else this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.3,0);c.lineTo(-r*.8,-r*.9);c.lineTo(-r*.3,0);c.lineTo(-r*.8,r*.9);c.closePath()},C,1.6,8,F)})}
 coreSprite(r,n,lw,col,key){return this.sprite(key,r+14,(c,K)=>this.neon(c,K,c=>this.poly(c,n,r,0),col,lw,16,'rgba(6,10,36,.92)'))}
 /* ----- background ----- */
 buildBg(){const W=this.cv.width,H=this.cv.height,b=document.createElement('canvas');b.width=W;b.height=H;const c=b.getContext('2d'),cx=W/2,cy=H/2;
@@ -68,7 +71,7 @@ frame(run,dt){this.t+=dt;
   c.globalCompositeOperation='lighter';const sw=this.t*.9;c.strokeStyle='rgba(61,245,255,.10)';c.lineWidth=14;c.beginPath();c.arc(0,0,95,sw,sw+.9);c.stroke();
   c.strokeStyle='rgba(255,79,216,.08)';c.lineWidth=6;c.beginPath();c.arc(0,0,150,-sw*.6,-sw*.6+1.4);c.stroke();c.globalCompositeOperation='source-over';
   if(!run){this.drawBase({r:30,rot:this.t*.6,hp:1,max:1,sh:1,shMax:1,ov:0,flash:0,turrets:[]},null);
-    for(let i=0;i<5;i++){const a=this.t*.5+i*TAU/5;this.draw(this.droneSprite(false),Math.cos(a)*70,Math.sin(a)*70,a+PI/2)}
+    for(let i=0;i<5;i++){const a=this.t*.5+i*TAU/5;this.draw(this.droneSprite('jaeger'),Math.cos(a)*70,Math.sin(a)*70,a+PI/2)}
     if(this.theme===2){for(let i=0;i<4;i++){const a=-this.t*.25+i*TAU/4,ty=['laser','frost','rocket','tesla'][i];this.draw(this.towerSprite(ty,TOWERS[ty].col),Math.cos(a)*118,Math.sin(a)*118,a+PI)}}
     else for(let i=0;i<3;i++){const a=-this.t*.3+i*TAU/3,col=['#ff4fd8','#8cff4f','#b98cff'][i];this.draw(this.heroSprite(['klinge','schuetzin','arkanist'][i],col),Math.cos(a)*118,Math.sin(a)*118,a-PI/2)}
     c.setTransform(1,0,0,1,0,0);c.drawImage(this.vig,0,0);return}
@@ -104,7 +107,7 @@ frame(run,dt){this.t+=dt;
   for(const e of run.en){if(e.boss||e.hp>=e.max||(!e.elite&&!ETYPES[e.type].bar))continue;const w=e.r*2.2,f=Math.max(0,e.hp/e.max),y=e.y-e.r*1.5-6;
     c.fillStyle='rgba(5,5,26,.8)';c.fillRect(e.x-w/2-1,y-1,w+2,5);c.fillStyle=e.boss?'#ff3b5c':e.elite?'#ffe14f':'#ff8a3d';c.fillRect(e.x-w/2,y,w*f,3)}
   // drones
-  for(const d of run.drones)this.draw(this.droneSprite(d.big,d.flash>0),d.x,d.y,d.face);
+  for(const d of run.drones)this.draw(this.droneSprite(d.cls,d.flash>0),d.x,d.y,d.face);
   // dash afterimages
   for(const g of run.ghosts){if(g.l<0)continue;c.globalAlpha=(1-g.l/g.m)*.45;this.draw(this.heroSprite(g.id,g.col),g.x,g.y,g.a,1.2)}c.globalAlpha=1;
   // heroes

@@ -81,7 +81,11 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .head h2{margin:0;font-size:20px;font-weight:700;flex:none}
 .head .curs{flex:1;justify-content:flex-end;gap:4px 10px;font-size:14px}
 .head .curs svg{width:14px;height:14px}
-#tree,#heroes,#codex,#achv{background:var(--bg)}
+#tree,#heroes,#codex,#achv,#fleet{background:var(--bg)}
+/* Flotte */
+#fbar{flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px 4px}
+.fdist{display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.08)}.fdist i{display:block;height:100%}
+.fshare{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:14px;color:var(--muted)}.fshare b{color:var(--ink);font-size:17px;min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
 /* Enzyklopädie und Erfolge */
 .sect{grid-column:1/-1;margin:8px 0 -4px;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .unk{width:56px;height:56px;flex:none;border-radius:50%;border:2px dashed var(--dim);display:grid;place-items:center;font-size:24px;font-weight:700;color:var(--dim)}
@@ -234,7 +238,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
     <div class="hubrow"><button class="btn" id="bTree" style="--c:var(--mag)">Skilltree</button><button class="btn" id="bHeroes" style="--c:var(--lime)">Helden</button><button class="btn" id="bTowers" style="--c:#5ab8ff">Türme</button></div>
     <button class="btn nova" id="bNova" hidden style="--c:#c7b8ff"></button>
     <button class="btn" id="bWorlds" hidden style="--c:#ff8a3d">Welten</button>
-    <div class="hubrow"><button class="btn" id="bCodex" style="--c:#9fd8ff">Enzyklopädie</button><button class="btn" id="bAchv" style="--c:#ffe14f">Erfolge</button></div>
+    <div class="hubrow"><button class="btn" id="bFleet" style="--c:#8cff4f">Flotte</button><button class="btn" id="bCodex" style="--c:#9fd8ff">Enzyklopädie</button><button class="btn" id="bAchv" style="--c:#ffe14f">Erfolge</button></div>
     <div class="hubfoot"><span><b class="ver"></b> · Fortschritt wird auf diesem Gerät gespeichert</span><button id="bSet" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Einstellungen</button></div>
   </div>
 </section>
@@ -274,6 +278,12 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Helden</h2><div class="curs" data-cur></div></div>
   <div class="slots" id="slots"></div>
   <div class="hlist" id="hlist"></div>
+</section>
+
+<section id="fleet" class="screen" hidden>
+  <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Flotte</h2><div class="curs" data-cur></div></div>
+  <div class="slots" id="fbar"></div>
+  <div class="hlist" id="flist"></div>
 </section>
 
 <section id="codex" class="screen" hidden>

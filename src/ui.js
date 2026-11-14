@@ -31,7 +31,7 @@ function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);docume
 const persist=()=>Store.save(save);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
-function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
+function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
 function renderCurs(){const ws=W.s(),h=W.curIds.map(c=>curHTML(c,ws.cur[c])).join('')+(W.id===1&&(save.nova||save.q)?curHTML('q',save.q):'');$('#hubCur').innerHTML=h;$$('[data-cur]').forEach(e=>e.innerHTML=h)}
 function canPay(c,a){return (W.s().cur[c]||0)>=a}
 function pay(c,a,btn){if(!canPay(c,a)){Snd.play('no');if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake')}
@@ -44,7 +44,7 @@ function startStepper(){const S=stats(save);return `<div class="stepper"><span>G
 function bindStepper(){$$('[data-sw]').forEach(b=>b.onclick=()=>{const S=stats(save);let v=S.startWave+(+b.dataset.sw)*2;v=clamp(v,1,S.startMax);save.startPick=v>=S.startMax?0:v;persist();
   if(!$('#tree').hidden)renderSheet();renderHub()})}
 /* ---------- hub ---------- */
-function renderHub(){renderCurs();const w1=W.id===1;$('#hubWorld').textContent=W.name;$('#bHeroes').hidden=!w1;$('#bWorlds').hidden=!w2Unlocked(save);
+function renderHub(){renderCurs();const w1=W.id===1;$('#hubWorld').textContent=W.name;$('#bHeroes').hidden=!w1;$('#bFleet').hidden=!w1;$('#bWorlds').hidden=!w2Unlocked(save);
   const treeAff=Object.values(W.nodes).some(n=>n.id!=='root'&&nodeState(n).aff),heroAff=w1&&HERO_IDS.some(id=>!save.heroes[id].u&&canPay(...HEROES[id].unlock));
   $('#bTree').classList.toggle('ping',treeAff);$('#bHeroes').classList.toggle('ping',heroAff);
   {const S=stats(save),hs=$('#hubStart');if(w1&&S.startMax>1){hs.hidden=false;hs.innerHTML=startStepper();bindStepper()}else hs.hidden=true}
@@ -89,6 +89,36 @@ function renderWorlds(){const un2=w2Unlocked(save),b1=w2BonusForW1(save),b2=1+.0
       <p class="trayinfo">${bonus.split(': ')[0]}. ${id===1?'Jede Welle Rekord in der Gitterfestung gibt hier +2 % Schaden.':'Jede Welle Rekord im Neon-Sektor gibt hier +1 % Turmschaden.'}</p>
       ${ok?(act?'<button class="btn" disabled>Aktive Welt</button>':`<button class="btn big" data-world="${id}" style="--c:${Wd.col}">Welt betreten</button>`):`<button class="btn poor" disabled>Freischaltung bei Welle ${worldUnlockWave(id)} im Neon-Sektor</button>`}</article>`}).join('')+futureWorlds();
   $$('[data-world]').forEach(b=>b.onclick=()=>{setWorld(+b.dataset.world);Snd.play('nova');goHub();toast(`Willkommen in: ${W.name}`)})}
+/* ---------- Flotte: Drohnenklassen freischalten, aufwerten und ihre Verteilung einstellen ---------- */
+const fleetOn=id=>droneUnlocked(save,id);
+const fleetSum=()=>DRONE_IDS.reduce((s,id)=>s+(fleetOn(id)?save.fleet[id].p:0),0);
+function renderFleet(){renderCurs();const S=stats(save),sum=fleetSum(),F=save.fleet;
+  $('#fbar').innerHTML=`<div class="slotinfo"><b>${S.drones}</b> Drohnen gleichzeitig · gebaut wird im eingestellten Verhältnis</div><div class="fdist" aria-hidden="true">${sum?DRONE_IDS.filter(id=>fleetOn(id)&&F[id].p>0).map(id=>`<i style="width:${F[id].p/sum*100}%;background:${DRONES[id].col}"></i>`).join(''):''}</div>${sum?'':'<p class="hint">Kein Anteil eingestellt. Die Basis baut dann nur Jäger.</p>'}`;
+  $('#flist').innerHTML=DRONE_IDS.map(id=>{const D=DRONES[id],st=F[id],un=fleetOn(id),lm=droneLm(st.l),lm1=droneLm(st.l+1),rep=id==='repair';let act='',prev='',share='';
+    const stat=rep?`<div>Basis pro Sekunde<b>${fmtD(REPAIR_BASE*repairMul(st.l)*100,2)} %</b></div><div>Verbündete<b>${fmtD(REPAIR_ALLY*repairMul(st.l)*100,1)} %</b></div><div>Leben<b>${fv(S.droneHp*lm*D.hp)}</b></div>`
+      :`<div>Schaden<b>${fv(S.droneDmg*lm*D.dmg)}${D.shots?' × '+D.shots:''}</b></div><div>Leben<b>${fv(S.droneHp*lm*D.hp)}</b></div><div>Tempo<b>${D.sp}</b></div>`;
+    if(un){if(st.l<DRONE_MAX){const rows=[['<small>Aufwerten</small> Stufe',`${st.l}`,`${st.l+1}`]];
+        if(rep)rows.push(['Basis pro Sekunde',fmtD(REPAIR_BASE*repairMul(st.l)*100,2)+' %',fmtD(REPAIR_BASE*repairMul(st.l+1)*100,2)+' %']);else rows.push(['Schaden',fv(S.droneDmg*lm*D.dmg),fv(S.droneDmg*lm1*D.dmg)]);
+        rows.push(['Leben',fv(S.droneHp*lm*D.hp),fv(S.droneHp*lm1*D.hp)]);prev=cmpRows(rows,D.col);
+        const [c,a]=droneLvlCost(st.l);act=`<button class="btn ${canPay(c,a)?'':'poor'}" data-fl="${id}" style="--c:${D.col}">${costBtn('Aufwerten',c,a)}</button>`}
+      else act='<button class="btn" disabled>Maximal ausgebaut</button>';
+      share=`<div class="fshare"><span>Anteil an der Flotte</span><span style="display:flex;align-items:center;gap:8px"><button class="btn icon sm" data-fp="${id}:-10" aria-label="Anteil ${D.name} verringern">−</button><b>${sum?Math.round(st.p/sum*100):0} %</b><button class="btn icon sm" data-fp="${id}:10" aria-label="Anteil ${D.name} erhöhen">+</button></span></div>`}
+    else if(typeof D.unlock==='string')act=`<button class="btn poor" disabled>Im Skilltree: „${NODES[D.unlock].name}“</button>`;
+    else{const [c,a]=D.unlock;act=`<button class="btn ${canPay(c,a)?'':'poor'}" data-fu="${id}" style="--c:${D.col}">${costBtn('Freischalten',c,a)}</button>`}
+    return `<article class="hcard ${un?'':'lock'}" style="--c:${D.col}"><div class="hc-top"><canvas data-d="${id}" width="112" height="112"></canvas><div><h3>${D.name}</h3><small>${D.role}</small></div>
+      <div class="lvl">${un?`<small>Stufe</small><br>${st.l}<small> / ${DRONE_MAX}</small>`:'<small>Gesperrt</small>'}</div></div>
+      <p style="margin:0;color:var(--muted);font-size:13px">${D.text}</p><div class="stats">${stat}</div>${share}${prev}<div class="hc-act">${act}</div></article>`}).join('');
+  $$('#flist canvas[data-d]').forEach(cv=>{const id=cv.dataset.d,c=cv.getContext('2d'),s=R.droneSprite(id);c.clearRect(0,0,112,112);c.drawImage(s,16,16,80,80)})}
+$('#fleet').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const F=save.fleet;
+  if(b.dataset.fp){const [id,d]=b.dataset.fp.split(':'),st=F[id];
+    // angezeigt wird der normierte Anteil; verstellt wird der Rohwert, danach werden alle auf Summe 100 gebracht
+    const on=DRONE_IDS.filter(fleetOn),sum=fleetSum()||0;for(const i of on)F[i].p=sum?Math.round(F[i].p/sum*100):0;st.p=clamp(st.p+(+d),0,100);
+    const rest=on.filter(i=>i!==id),rs=rest.reduce((s,i)=>s+F[i].p,0),left=100-st.p;for(const i of rest)F[i].p=rs?Math.round(F[i].p/rs*left):Math.round(left/rest.length);
+    persist();renderFleet();return}
+  if(b.dataset.fu){const id=b.dataset.fu,D=DRONES[id];if(pay(D.unlock[0],D.unlock[1],b)){F[id].u=1;if(!F[id].p){const on=DRONE_IDS.filter(fleetOn).filter(i=>i!==id);for(const i of on)F[i].p=Math.round(F[i].p*.8);F[id].p=20}persist();renderFleet();toast(`${D.name} ist freigeschaltet`)}return}
+  if(b.dataset.fl){const id=b.dataset.fl,st=F[id],[c,a]=droneLvlCost(st.l);if(pay(c,a,b)){st.l++;persist();renderFleet()}}});
+$('#bFleet').onclick=()=>{show('fleet');renderFleet()};
+
 /* ---------- Enzyklopädie: was man besiegt hat, getrennt nach Gegnern und Bossen ---------- */
 const CODEX_TYPES=['swarm','brute','shooter','sprinter','healer','shield','bomber','splitter','mite','cloaker','siege','jammer','giant'];
 function renderCodex(){const K=save.kills||{},n=t=>K[t]||0;let h='<h3 class="sect">Gegner</h3>';
@@ -431,7 +461,7 @@ function renderNova(){renderCurs();const qg=quantaFor(save.cycleBest,save),cb=sa
   let next='';if(cb<NOVA_MIN)next=`Erreiche Welle ${NOVA_MIN}, um deine Supernova zu zünden.`;else{let w=cb+1;while(quantaFor(w,save)<=qg&&w<cb+30)w++;next=`Bei Welle ${w} wären es ${fmtN(quantaFor(w,save))} Quanten.`}
   $('#novaTop').innerHTML=`<div class="novabig">${curIcon('q')}<b>+${fmtN(qg)}</b><span>Quanten</span></div>
     <p>Höchste Welle in diesem Zyklus: <b>${cb}</b>. ${next}</p>
-    <div class="resets"><p><span>Wird zurückgesetzt:</span> Skilltree, Währungen, Helden- und Turmstufen</p><p><span>Bleibt erhalten:</span> freigeschaltete Helden und Türme, Bauplätze, Rekord, Quanten und Quanten-Upgrades</p></div>
+    <div class="resets"><p><span>Wird zurückgesetzt:</span> Skilltree, Währungen, Helden-, Flotten- und Turmstufen</p><p><span>Bleibt erhalten:</span> freigeschaltete Helden, Drohnenklassen und Türme, die Verteilung der Flotte, Bauplätze, Rekord, Quanten und Quanten-Upgrades</p></div>
     <button class="btn big ${qg>0?'':'poor'}" id="bNovaGo" style="--c:#c7b8ff">Supernova zünden</button>`;
   const b=$('#bNovaGo');b.onclick=()=>{if(qg<=0){Snd.play('no');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');toast(`Die Supernova braucht mindestens Welle ${NOVA_MIN}`);return}
     if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Wirklich zünden? Nochmal tippen';setTimeout(()=>{if(b.isConnected&&b.dataset.arm){b.dataset.arm='';b.textContent='Supernova zünden'}},4000);return}
@@ -452,7 +482,7 @@ $('#novaList').addEventListener('click',e=>{const b=e.target.closest('[data-pr]'
   if(save.q<c){Snd.play('no');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');toast(`Dir fehlen ${fmtN(c-save.q)} Quanten`);return}
   save.q-=c;save.pr[p.id]=l+1;Snd.play('buy');persist();renderNova()});
 function supernova(){const g=quantaFor(save.cycleBest,save);if(g<=0)return;save.q+=g;save.nova=(save.nova||0)+1;
-  save.cur={s:0,k:0,p:0,d:0};save.nodes={root:1};for(const id of HERO_IDS){save.heroes[id].l=1;save.heroes[id].a=0}for(const id of TOWER_IDS)save.towers[id].l=1;
+  save.cur={s:0,k:0,p:0,d:0};save.nodes={root:1};for(const id of HERO_IDS){save.heroes[id].l=1;save.heroes[id].a=0}for(const id of TOWER_IDS)save.towers[id].l=1;for(const id of DRONE_IDS)save.fleet[id].l=1;
   const L=save.pr.legacy||0;if(L)for(const n of Object.values(NODES))if(n.cur==='s')save.nodes[n.id]=Math.min(n.max,L);
   const st=save.pr.start||0;if(st){save.cur.s=200*Math.pow(3,st-1);save.cur.k=st*5}
   save.cycleBest=0;save.team=save.team.slice(0,stats(save).slots);persist();
@@ -475,6 +505,6 @@ function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
     pendT+=dt;if(pendT>2&&!run.over){pendT=0;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w};persist()}
     hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}
   else if(!run)Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:W.id===2?5:0});
-  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
+  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden&&$('#fleet').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
   requestAnimationFrame(loop)}
 requestAnimationFrame(loop);

@@ -6,7 +6,7 @@ function seededRandom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t
 // Der Spielcode wird je Quellordner einmal übersetzt. Standard ist ../src; die Probe kann einen zweiten Ordner zum Vergleich laden.
 const SCRIPTS={};
 function scriptFor(dir){dir=dir||path.join(__dirname,'..','src');if(!SCRIPTS[dir]){const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
-  SCRIPTS[dir]=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX});')}return SCRIPTS[dir]}
+  SCRIPTS[dir]=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX,DRONES:typeof DRONES!=="undefined"?DRONES:null,DRONE_IDS:typeof DRONE_IDS!=="undefined"?DRONE_IDS:[],DRONE_MAX:typeof DRONE_MAX!=="undefined"?DRONE_MAX:0,droneLvlCost:typeof droneLvlCost!=="undefined"?droneLvlCost:null,droneUnlocked:typeof droneUnlocked!=="undefined"?droneUnlocked:null});')}return SCRIPTS[dir]}
 // Wichtig für die Geschwindigkeit: Der Spielcode bekommt die eigenen Bausteine seines Kontexts (Math, Map, Array, …).
 // Nur Math.random wird durch den festen Zufallsgenerator ersetzt. Ein von außen hereingereichtes Math-Objekt
 // würde jeden Aufruf von Math.sqrt & Co. über einen langsamen Umweg schicken (gemessen: 86 % der Rechenzeit).
@@ -41,10 +41,15 @@ function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),
   if(heroes)for(const id of save.team){const h=save.heroes[id];if(h.a<5)o.push({id:'aufstieg:'+id,name:'Aufstieg '+X.HEROES[id].name,cur:'p',cost:(h.a+1)*2,apply:()=>h.a++,undo:()=>h.a--});
     if(h.l<X.HERO_MAX){const [cu,a]=X.heroLvlCost(h.l);o.push({id:'held:'+id,name:'Stufe '+X.HEROES[id].name,cur:cu,cost:a,apply:()=>h.l++,undo:()=>h.l--})}}
   if(towers)for(const id of X.TOWER_IDS){const t=save.towers[id];if(t.u&&t.l<X.TOWER_MAX){const [cu,a]=X.towerLvlCost(t.l);o.push({id:'turm:'+id,name:'Startstufe '+X.TOWERS[id].name,cur:cu,cost:a,apply:()=>t.l++,undo:()=>t.l--,fix:.01})}}
+  // Flotte: Stufen der freigeschalteten und eingesetzten Drohnenklassen (zählt zum Ast Flotte)
+  if(save.fleet&&allowBr(opt,'u'))for(const id of X.DRONE_IDS){const f=save.fleet[id];if(X.droneUnlocked(save,id)&&f.p>0&&f.l<X.DRONE_MAX){const [cu,a]=X.droneLvlCost(f.l);o.push({id:'drohne:'+id,name:'Stufe '+X.DRONES[id].name,cur:cu,cost:a,apply:()=>f.l++,undo:()=>f.l--,fix:.02})}}
   if(towers&&(save.tslots||0)<X.SLOT_EXTRA){const [cu,a]=X.slotCost(save.tslots||0);o.push({id:'bauplatz',name:'Bauplatz',cur:cu,cost:a,apply:()=>save.tslots=(save.tslots||0)+1,undo:()=>save.tslots--,fix:.05})}
   return o}
 function unlocks(X,save,spend,opt){
   if(allowBr(opt,'h'))for(const id in X.HEROES){const h=save.heroes[id];if(!h.u){const [cu,a]=X.HEROES[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;h.u=1;track(spend,'frei:'+id,'Held '+X.HEROES[id].name,cu,a)}}}
+  // Drohnenklassen freischalten und gleichmäßig einsetzen (Reparaturdrohnen mit halbem Anteil)
+  if(save.fleet&&allowBr(opt,'u')){for(const id of X.DRONE_IDS){const D=X.DRONES[id],f=save.fleet[id];if(!f.u&&Array.isArray(D.unlock)&&save.cur[D.unlock[0]]>=D.unlock[1]){save.cur[D.unlock[0]]-=D.unlock[1];f.u=1;track(spend,'frei:'+id,'Klasse '+D.name,D.unlock[0],D.unlock[1])}}
+    for(const id of X.DRONE_IDS)save.fleet[id].p=X.droneUnlocked(save,id)?(id==='repair'?10:20):0}
   if(!opt||opt.tuerme!=='aus')for(const id of X.TOWER_IDS){const t=save.towers[id];if(!t.u&&X.TOWERS[id].unlock){const [cu,a]=X.TOWERS[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;t.u=1;track(spend,'frei:'+id,X.TOWERS[id].name,cu,a)}}}}
 function track(spend,id,name,cur,cost){const e=spend[id]||(spend[id]={id,name,levels:0,s:0,k:0,p:0,d:0,q:0});e.levels++;e[cur]+=cost}
 
@@ -71,6 +76,7 @@ function buy(X,save,spend,opt){const smart=opt&&opt.kauf==='nutzen';for(let c=0;
 function buyPrestige(X,save,spend){for(let c=0;c<2000;c++){const o=Object.values(X.PRES).filter(p=>(save.pr[p.id]||0)<p.max).map(p=>[X.presCost(p,save.pr[p.id]||0)*(p.id==='dmg'||p.id==='hp'?.6:1),p]);
   if(!o.length)break;o.sort((a,b)=>a[0]-b[0]);const p=o[0][1],real=X.presCost(p,save.pr[p.id]||0);if(save.q<real)break;save.q-=real;save.pr[p.id]=(save.pr[p.id]||0)+1;track(spend,'nova:'+p.id,'Supernova: '+p.name,'q',real)}}
 function supernova(X,save){const g=X.quantaFor(save.cycleBest,save);save.q+=g;save.nova=(save.nova||0)+1;save.cur={s:0,k:0,p:0,d:0};save.nodes={root:1};
+  if(save.fleet)for(const id of X.DRONE_IDS)save.fleet[id].l=1;
   for(const id in save.heroes){save.heroes[id].l=1;save.heroes[id].a=0}for(const id of X.TOWER_IDS)save.towers[id].l=1;
   const L=save.pr.legacy||0;if(L)for(const n of Object.values(X.NODES))if(n.cur==='s')save.nodes[n.id]=Math.min(n.max,L);
   const st=save.pr.start||0;if(st){save.cur.s=200*Math.pow(3,st-1);save.cur.k=st*5}save.cycleBest=0;return g}

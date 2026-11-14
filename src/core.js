@@ -1,4 +1,4 @@
-const VERSION='0.19.0';
+const VERSION='0.20.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -43,7 +43,7 @@ const BR={
 };
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
-const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=5,MEGA_MUL=2;   // BASE_GUN: % Geschütz-/Autofeuer-Schaden je Stufe Panzerung; DRONE_DMG: Grundschaden einer Drohne; MEGA_MUL: Schadensfaktor des Weltenbrechers   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
+const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=3.5,MEGA_MUL=2;   // BASE_GUN: % Geschütz-/Autofeuer-Schaden je Stufe Panzerung; DRONE_DMG: Grundschaden einer Drohne; MEGA_MUL: Schadensfaktor des Weltenbrechers   // PULSE_PCT: Anteil des Gegnerlebens je Stufe Schockwelle
 // Impuls: löst am Zeiger automatisch aus. Start alle 2 s, „Taktgeber“ verkürzt um 8 % je Stufe bis 0,1 s.
 // Schaden je Impuls = Grundschaden × IMP_MUL × √(Intervall/2): schnellere Impulse treffen schwächer, der Schaden pro Sekunde steigt trotzdem.
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
@@ -75,7 +75,7 @@ const NODE_DEFS=[
  ['u3b','u','u2b',3,1.3,'Schwarm',4,'k',4,1.8,l=>`+${l*2} zusätzliche Drohnen`],
  ['u4','u','u3a',4,-1,'Lanzenstrahl',3,'p',1,1.8,l=>l?`Strahlwaffen, +${l*50} % Reichweite`:'Normale Bordkanonen'],
  ['u4b','u','u3b',4,1.3,'Schwarmintelligenz',10,'k',6,1.45,l=>`+${l*2} % Drohnenschaden pro aktiver Drohne`],
- ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Jede vierte Drohne ist ein schweres Kampfschiff'],
+ ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Schaltet in der Flotte die Klasse Kreuzer frei'],
  ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden und -leben`],
  ['u7a','u','u6',7,-1,'Flottenausbau',5,'p',3,1.8,l=>`+${l*2} Drohnen`],
  ['u7b','u','u6',7,1,'Plasmakern',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Drohnenschaden und -leben`],
@@ -165,10 +165,24 @@ const towerLvlCost=l=>l<8?['s',Math.ceil(150*Math.pow(1.7,l-1))]:l<16?['k',Math.
 const slotCost=n=>['p',2*(n+1)];
 const heroLvlCost=l=>l<30?['s',Math.ceil(20*Math.pow(1.22,l-1))]:['k',Math.ceil(3*Math.pow(1.12,l-30))];
 const heroAscCost=a=>['p',(a+1)*2];
+// Flotte: Drohnenklassen. dmg/hp/rate sind Faktoren auf die Werte aus dem Skilltree. unlock: null = von Anfang an, [Währung, Kosten] oder die ID eines Skilltree-Knotens.
+const DRONES={
+  jaeger:{name:'Jäger',role:'Allrounder',col:'#3df5ff',unlock:null,dmg:1,hp:1,rate:1,sp:160,r:5,text:'Schnell und zuverlässig gegen einzelne Ziele.'},
+  abfang:{name:'Abfänger',role:'Jagd auf schnelle Gegner',col:'#fff34f',unlock:['k',8],dmg:.8,hp:.7,rate:1.4,sp:250,r:5,text:'Sehr schnell. Greift zuerst Bomber, Sprinter und Tarner an.'},
+  schwarm:{name:'Schwarm',role:'Viele kleine Treffer',col:'#8cff4f',unlock:['k',20],dmg:.4,hp:.8,rate:1,sp:150,r:6,shots:3,text:'Feuert drei kleine Geschosse pro Salve. Bricht Schilde besonders schnell.'},
+  repair:{name:'Reparaturdrohne',role:'Unterstützung',col:'#6dffb0',unlock:['p',3],dmg:0,hp:1.2,rate:1,sp:130,r:6,text:'Greift nicht an. Repariert die Basis und heilt Helden und Drohnen in ihrer Nähe.'},
+  kreuzer:{name:'Kreuzer',role:'Schwerer Flächenschaden',col:'#ff8a3d',unlock:'u5',dmg:4,hp:4,rate:1,sp:110,r:9,splash:34,text:'Langsam und zäh. Seine Treffer schaden allen Gegnern im Umkreis.'}};
+const DRONE_IDS=Object.keys(DRONES),DRONE_MAX=60,DRONE_PRIO={bomber:1,sprinter:1,cloaker:1},REPAIR_BASE=.0015,REPAIR_ALLY=.03,REPAIR_R=120;
+const droneLvlCost=l=>heroLvlCost(l);
+const droneLm=l=>1+.12*(l-1);                 // Stufenfaktor auf Schaden und Leben, wie bei den Helden
+const repairMul=l=>1+.04*(l-1);               // Stufenfaktor der Reparaturleistung
+const droneUnlocked=(save,id)=>{const D=DRONES[id],st=save.fleet&&save.fleet[id];return D.unlock===null||!!(st&&st.u)||(typeof D.unlock==='string'&&((save.nodes&&save.nodes[D.unlock])||0)>0)};
+// p = eingestellter Anteil an den gebauten Drohnen in Prozentpunkten (wird über die freigeschalteten Klassen normiert)
+const freshFleet=()=>({jaeger:{u:1,l:1,p:100},abfang:{u:0,l:1,p:0},schwarm:{u:0,l:1,p:0},repair:{u:0,l:1,p:0},kreuzer:{u:0,l:1,p:0}});
 
 function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,cur:{s:0,k:0,p:0,d:0},nodes:{root:1},
   heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
-  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
+  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,fleet:freshFleet(),kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
 
 // Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).
 // Jede Stufe hat einen eigenen Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.
@@ -183,6 +197,9 @@ function loadSave(){const f=freshSave(),s=Store.load();if(!s)return f;
   o.heroes=Object.assign(freshSave().heroes,s.heroes||{});
   if(s.volMus===undefined)o.volMus=s.mus===0?0:70;if(s.volSfx===undefined)o.volSfx=s.snd===0?0:80;
   o.towers=Object.assign(freshSave().towers,s.towers||{});o.tslots=s.tslots||0;
+  o.fleet=Object.assign(freshFleet(),s.fleet||{});
+  // Spielstände von vor der Flotte: wer „Mutterschiff“ hatte, bekam jede vierte Drohne als Kampfschiff – das entspricht etwa 20 % Kreuzern
+  if(!s.fleet&&o.nodes.u5){o.fleet.jaeger.p=80;o.fleet.kreuzer.p=20}
   o.pr=Object.assign({},s.pr||{});
   o.w2=Object.assign(freshW2(),s.w2||{});o.w2.cur=Object.assign({c:0,m:0},(s.w2&&s.w2.cur)||{});o.w2.towers=Object.assign(freshW2().towers,(s.w2&&s.w2.towers)||{});o.w2.nodes=Object.assign({root:1},(s.w2&&s.w2.nodes)||{});if(s.cycleBest===undefined)o.cycleBest=s.best||0;
   if(!s.v||s.v<2){for(const id of['klinge','schuetzin']){const h=o.heroes[id];if(h.u&&h.l===1&&h.a===0)h.u=0}o.team=o.team.filter(id=>o.heroes[id]&&o.heroes[id].u);o.v=2}
