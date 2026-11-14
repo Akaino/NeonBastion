@@ -1,1 +1,6 @@
 .DS_Store
+tests/out/
+dist/
+sim/ergebnisse/
+node_modules/
+__pycache__/

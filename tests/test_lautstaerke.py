@@ -1,0 +1,20 @@
+import os,sys
+HERE=os.path.dirname(os.path.abspath(__file__))
+GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'docs','index.html'))
+os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    b=p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required']);pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
+    errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
+    pg.goto(GAME);pg.wait_for_timeout(300)
+    pg.click('#bSet');pg.wait_for_timeout(200)
+    pg.fill('#volMus','30');pg.fill('#volSfx','100');pg.wait_for_timeout(400)
+    print(pg.evaluate("()=>JSON.stringify({m:save.volMus,s:save.volSfx,gm:+Snd.B.mus.gain.value.toFixed(3),gs:+Snd.B.sfx.gain.value.toFixed(3),lbl:document.querySelector('#volMusV').textContent})"))
+    pg.screenshot(path='y1_settings.png')
+    pg.fill('#volMus','0');pg.wait_for_timeout(300);print('mus0 label',pg.evaluate("()=>document.querySelector('#volMusV').textContent"),'gain',pg.evaluate("()=>Snd.B.mus.gain.value"))
+    pg.click('#bSetClose');pg.click('#bStart');pg.wait_for_timeout(6000)
+    pg.click('#bPause');pg.click('#bPSet');pg.wait_for_timeout(200);pg.screenshot(path='y2_pauseset.png')
+    print('reset hidden in run',pg.evaluate("()=>document.querySelector('#bReset').hidden"))
+    pg.click('#bSetClose');pg.click('#bResume');pg.wait_for_timeout(500)
+    pg.reload();pg.wait_for_timeout(300);print('persisted',pg.evaluate("()=>[save.volMus,save.volSfx]"))
+    print('\n'.join(errs) or 'no errors');b.close()
