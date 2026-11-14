@@ -4,7 +4,7 @@ Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel st
 
 Zum schnellen Einstieg: In der Beta unter „Einstellungen“ den Knopf „Live-Spielstand übernehmen“ nutzen. Für späte Gegner im Hub die Startwelle hochstellen.
 
-Alles hier ist automatisch getestet (25 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+Alles hier ist automatisch getestet (22 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
 
 ## 1. Flotte (neu)
 
