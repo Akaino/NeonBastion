@@ -1,6 +1,6 @@
 # Neon Bastion – Projektwissen für Claude Code
 
-Neon-Incremental-Tower-Defense im Browser (Desktop, iOS, Android). Live unter https://neonbastion.de (GitHub Pages aus `docs/`).
+Neon-Incremental-Tower-Defense im Browser (Desktop, iOS, Android). Live unter https://neonbastion.de, Vorschau unter https://neonbastion.de/beta/ (GitHub Pages aus `docs/`, Repository `Akaino/NeonBastion`).
 Dieses Dokument ist die Übergabe aus der bisherigen Entwicklung in einem claude.ai-Chat. Lies es vollständig, bevor du etwas änderst.
 
 ## 1. Zusammenarbeit mit dem Nutzer
@@ -15,8 +15,9 @@ Dieses Dokument ist die Übergabe aus der bisherigen Entwicklung in einem claude
 ## 2. Befehle
 
 ```
-python3 build.py                 # baut docs/index.html (Website) aus src/
-python3 build.py --artifact      # zusätzlich dist/neon-bastion-artifact.html (Google Fonts statt lokaler Schrift)
+python3 build.py                 # baut die Testausgabe dist/web/ (komplette Website inkl. beta/), veröffentlicht nichts
+python3 build.py --beta          # zusätzlich docs/beta/  → Vorschau unter neonbastion.de/beta/, das echte Spiel bleibt unverändert
+python3 build.py --release       # zusätzlich docs/       → komplette Website (Spiel, Rechtsseiten, beta/)
 python3 tests/run_all.py         # alle Browser-Tests (Playwright, Chromium), 4 gleichzeitig, ca. 30 s
 python3 tests/run_all.py --jobs 1  # nacheinander (ca. 90 s), um Wackler einzugrenzen
 node sim/sim.js --seeds 8        # Karriere-Simulation, Zeiger ruht (Idle-Spieler), Auswertung in sim/ergebnisse/
@@ -25,16 +26,26 @@ node sim/sim.js upgrades --at 25,50,75   # Wirkung einzelner Upgrades an Kontrol
 ```
 
 Voraussetzungen: Python 3, Node.js ab 18, `pip install playwright && playwright install chromium`.
-Testen im Browser: `docs/index.html` direkt öffnen oder `python3 -m http.server -d docs 8000`.
+Testen im Browser: `dist/web/index.html` direkt öffnen oder `python3 -m http.server -d dist/web 8000`. Die Tests laufen gegen `dist/web/`.
 
-## 3. Release
+## 3. Beta und Release
 
+Der Nutzer testet auf iPhone und MacBook im Browser. **Jede Änderung am Spiel geht zuerst in die Beta und erst auf sein „Release“ auf die Hauptadresse.** Artefakte werden nicht mehr verwendet (er kann sie am Handy nicht öffnen).
+
+Beta (nach „Umsetzen“):
 1. `VERSION` in `src/core.js` erhöhen (Schema 0.MINOR.PATCH; Features → MINOR, reine Fixes → PATCH).
-2. `python3 build.py && python3 tests/run_all.py`
-3. Commit „Release vX.Y.Z“, Tag `vX.Y.Z`, Push auf `main`. GitHub Pages veröffentlicht `docs/` automatisch.
-4. Prüfen, dass `https://neonbastion.de` die neue `const VERSION='X.Y.Z'` ausliefert (Pages cached einige Minuten).
+2. `python3 build.py --beta && python3 tests/run_all.py`
+3. Commit „Beta vX.Y.Z: …“ (Quelltext, Tests, `docs/beta/`), Push auf `main`. **Kein Tag, `docs/index.html` nicht anfassen.**
+4. Prüfen, dass `https://neonbastion.de/beta/` die neue Version ausliefert, dem Nutzer Bescheid geben.
 
-`docs/` ist Build-Ausgabe. Nie direkt bearbeiten, immer `src/` ändern und neu bauen.
+Release (wenn der Nutzer „Release“ oder „deploy“ sagt):
+1. `python3 build.py --release && python3 tests/run_all.py`
+2. Commit „Release vX.Y.Z“, Tag `vX.Y.Z`, Push auf `main`.
+3. Prüfen, dass `https://neonbastion.de` die neue `const VERSION='X.Y.Z'` ausliefert (Pages cached einige Minuten).
+
+`docs/` und `dist/` sind Build-Ausgaben. Nie direkt bearbeiten, immer `src/` oder `assets/` ändern und neu bauen. `dist/` ist nicht im Repository.
+
+Die Beta ist dieselbe Datei wie das Spiel mit angepassten Pfaden (`build.py`). Das Spiel erkennt sie zur Laufzeit am Pfad `/beta/` (`IS_BETA` in `core.js`): Kennzeichnung „Beta“ an der Version, eigener Spielstand `neon-bastion-beta`, Knopf „Live-Spielstand übernehmen“ in den Einstellungen (kopiert `neon-bastion-v1` in den Beta-Spielstand, nie umgekehrt), `noindex`. Reine Werkzeug-Änderungen (Tests, Simulation, Dokumentation) brauchen keine Beta.
 
 ## 4. Architektur
 

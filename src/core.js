@@ -1,4 +1,4 @@
-const VERSION='0.13.1';
+const VERSION='0.13.2';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -169,7 +169,9 @@ function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,c
   heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
   team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,q:0,pr:{},nova:0,cycleBest:0}}
 
-const Store={key:'neon-bastion-v1',
+// Beta unter /beta/: eigener Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.
+const IS_BETA=typeof location!=='undefined'&&/\/beta\//.test(location.pathname),LIVE_KEY='neon-bastion-v1';
+const Store={key:IS_BETA?'neon-bastion-beta':LIVE_KEY,
   load(){try{const t=localStorage.getItem(this.key);return t?JSON.parse(t):null}catch(e){return null}},
   save(o){try{localStorage.setItem(this.key,JSON.stringify(o))}catch(e){}}};
 

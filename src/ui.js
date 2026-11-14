@@ -57,7 +57,13 @@ function goHub(){const wasRun=!!run;run=null;paused=false;show('hub');renderHub(
 function setVol(k,v){save[k]=+v;$('#'+k+'V').textContent=v>0?v+' %':'Aus';Snd.init();Snd.vol();clearTimeout(setVol.t);setVol.t=setTimeout(persist,300)}
 $('#volMus').oninput=e=>setVol('volMus',e.target.value);
 $('#volSfx').oninput=e=>{setVol('volSfx',e.target.value);const n=Date.now();if(!setVol.p||n-setVol.p>180){setVol.p=n;Snd.play(['tap','shoot','turret','kill'][Math.floor(n/180)%4])}};
-function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;devTaps=0;$('#devCode').hidden=true;updW2Btn()}
+function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;devTaps=0;$('#devCode').hidden=true;updW2Btn();const lc=$('#bLiveCopy');lc.hidden=!IS_BETA||!!run;lc.dataset.arm='';lc.textContent='Live-Spielstand übernehmen'}
+/* Nur in der Beta: Kopie des echten Spielstands holen. Geschrieben wird ausschließlich in den Beta-Spielstand. */
+$('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStorage.getItem(LIVE_KEY)}catch(e){}
+  if(!t){Snd.play('no');toast('Auf diesem Gerät gibt es keinen Live-Spielstand');return}
+  if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Beta-Spielstand ersetzen? Nochmal tippen';setTimeout(()=>{if(b.dataset.arm){b.dataset.arm='';b.textContent='Live-Spielstand übernehmen'}},4000);return}
+  try{const o=JSON.parse(t);o.pending=null;Store.save(o);save=loadSave()}catch(e){Snd.play('no');toast('Der Live-Spielstand ist nicht lesbar');return}
+  location.reload()};
 $('#bSet').onclick=openSettings;$('#bPSet').onclick=openSettings;
 $('#bSetClose').onclick=()=>{$('#settings').hidden=true};
 $('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
@@ -387,7 +393,7 @@ function supernova(){const g=quantaFor(save.cycleBest,save);if(g<=0)return;save.
 if(save.pending&&save.pending.g){const ps=save.pending.world===2?save.w2:save;for(const c in save.pending.g)ps.cur[c]=(ps.cur[c]||0)+(save.pending.g[c]||0);ps.best=Math.max(ps.best||0,save.pending.w||0);ps.cycleBest=Math.max(ps.cycleBest||0,save.pending.w||0);save.pending=null;persist();
   setTimeout(()=>toast('Belohnungen aus deinem letzten Run wurden gutgeschrieben'),600)}
 R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
-$$('.ver').forEach(e=>e.textContent='Version '+VERSION);save.ver=VERSION;
+$$('.ver').forEach(e=>e.textContent='Version '+VERSION+(IS_BETA?' Beta':''));save.ver=VERSION;
 goHub();
 let last=performance.now(),acc=0,hudT=0,pendT=0;
 function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;

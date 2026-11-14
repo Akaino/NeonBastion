@@ -8,9 +8,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Neon Bastion</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#05051a;--panel:rgba(10,9,34,.92);--panel2:rgba(18,15,52,.92);--ink:#eaf0ff;--muted:#9b98c8;--dim:#5f5c8c;--cyan:#3df5ff;--mag:#ff4fd8;--lime:#8cff4f;--gold:#ffe14f;--line:rgba(61,245,255,.22);
   color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
@@ -291,8 +288,9 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>Effekte<b id="volSfxV"></b></span><input type="range" id="volSfx" min="0" max="100" step="5"></label>
     <p id="resetInfo" style="margin:6px 0 0;color:var(--muted);font-size:13px">Zurücksetzen löscht deinen gesamten Fortschritt auf diesem Gerät, auch Quanten und Rekorde.</p>
     <button class="btn" id="bW2Test" style="--c:#ff8a3d" hidden></button><button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button>
+    <button class="btn" id="bLiveCopy" style="--c:#c7b8ff" hidden>Live-Spielstand übernehmen</button>
     <button class="btn" id="bReset" style="--c:#ff4f6d">Spielstand zurücksetzen</button><button class="btn big" id="bSetClose">Fertig</button>
-    <p class="legal"><a href="https://neonbastion.de/impressum.html" target="_blank" rel="noopener">Impressum</a> · <a href="https://neonbastion.de/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p></div>
+    <p class="legal"><a href="impressum.html" target="_blank" rel="noopener">Impressum</a> · <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p></div>
 </section>
 
 <section id="pause" class="screen modal" hidden>

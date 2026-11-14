@@ -2,7 +2,7 @@
 ein falscher Code schaltet nichts frei. Der richtige Code steht bewusst nicht im Test: der Modus wird direkt im Spielstand gesetzt."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
-GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'docs','index.html'))
+GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'dist','web','index.html'))
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):

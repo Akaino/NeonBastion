@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Führt alle Browser-Tests aus. Voraussetzung: python3 build.py, pip install playwright, playwright install chromium.
+"""Führt alle Browser-Tests gegen die Testausgabe dist/web/ aus. Voraussetzung: python3 build.py, pip install playwright, playwright install chromium.
 
   python3 tests/run_all.py            -> Tests laufen gleichzeitig (Standard: 4 auf einmal)
   python3 tests/run_all.py --jobs 1   -> nacheinander, z. B. um einen Wackler einzugrenzen

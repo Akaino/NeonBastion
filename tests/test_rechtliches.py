@@ -1,6 +1,6 @@
 """Impressum und Datenschutz: Seiten existieren, sind aus den Einstellungen verlinkt und führen zurück ins Spiel."""
 import os,sys
-HERE=os.path.dirname(os.path.abspath(__file__));DOCS=os.path.join(os.path.dirname(HERE),'docs')
+HERE=os.path.dirname(os.path.abspath(__file__));DOCS=os.path.join(os.path.dirname(HERE),'dist','web')
 GAME='file://'+os.path.join(DOCS,'index.html')
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
@@ -15,7 +15,7 @@ with sync_playwright() as p:
     check(pg.is_visible('#settings .legal a'),'Links sichtbar')
     pg.screenshot(path='r1_einstellungen.png')
     for f,h1,other in[('impressum.html','Impressum','datenschutz.html'),('datenschutz.html','Datenschutz','impressum.html')]:
-        check(os.path.isfile(os.path.join(DOCS,f)),f+' wird nach docs/ kopiert')
+        check(os.path.isfile(os.path.join(DOCS,f)),f+' liegt in der gebauten Website')
         pg.goto('file://'+os.path.join(DOCS,f));pg.wait_for_timeout(200)
         check(h1 in pg.inner_text('h1').replace('­',''),f+': Überschrift')
         check('kontakt@neonbastion.de' in pg.inner_text('main'),f+': Kontaktadresse')
