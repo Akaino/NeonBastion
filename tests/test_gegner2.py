@@ -1,7 +1,8 @@
 """Zweiter Schub Gegner: Heiler, Bomber, Tarner, Störsender, Hüne."""
 import os,sys,json
 HERE=os.path.dirname(os.path.abspath(__file__))
-GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'dist','web','index.html'))
+sys.path.insert(0,HERE);from _web import web
+GAME=os.environ.get('GAME_URL',web(os.path.join(os.path.dirname(HERE),'dist','web','index.html')))
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):

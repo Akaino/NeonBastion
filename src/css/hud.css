@@ -1,0 +1,176 @@
+/* Anzeige im Run, Banner, Bau-Leiste */
+/* hud */
+#hud {
+  pointer-events: none;
+  justify-content: space-between;
+}
+#hud .top {
+  padding: 10px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: linear-gradient(180deg, rgba(5, 5, 26, 0.85), rgba(5, 5, 26, 0));
+  padding-bottom: 16px;
+}
+.row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.row1 button {
+  pointer-events: auto;
+}
+.wave {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 10px var(--cyan);
+}
+.bar {
+  position: relative;
+  height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(5, 5, 26, 0.8);
+  overflow: hidden;
+}
+.bar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+}
+#hHp {
+  background: linear-gradient(90deg, #ff4f6d, #ff8a3d);
+  box-shadow: 0 0 10px #ff4f6d;
+}
+#hHp.ok {
+  background: linear-gradient(90deg, #3df5ff, #8cff4f);
+  box-shadow: 0 0 10px var(--cyan);
+}
+#hSh {
+  background: rgba(61, 245, 255, 0.55);
+  height: 4px;
+  top: auto;
+}
+.bar span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow:
+    0 0 3px #000,
+    0 0 3px #000;
+}
+#hGain {
+  justify-content: center;
+}
+#hHeroes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 12px 14px;
+  background: linear-gradient(0deg, rgba(5, 5, 26, 0.8), rgba(5, 5, 26, 0));
+}
+.hchip {
+  width: 58px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.hchip .ring {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 3px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(255, 255, 255, 0.08) 0);
+  box-shadow: 0 0 10px -3px var(--c);
+}
+.hchip .ring b {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #090822;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--c);
+}
+.hchip.dead .ring {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+.hchip .hb {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hchip .hb i {
+  display: block;
+  height: 100%;
+  background: var(--c);
+}
+#combo {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  font-weight: 700;
+  color: #ff8a3d;
+  text-shadow: 0 0 10px #ff8a3d;
+  font-size: 18px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+/* banner */
+#banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30%;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+}
+#banner.show {
+  animation: ban 2.2s ease-out;
+}
+#banner b {
+  display: block;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 0 8px var(--cyan),
+    0 0 26px var(--cyan);
+}
+#banner span {
+  display: block;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(255, 225, 79, 0.7);
+  margin-top: 4px;
+}
+@keyframes ban {
+  0% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}

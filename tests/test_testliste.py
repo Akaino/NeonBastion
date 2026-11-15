@@ -1,6 +1,7 @@
 """Testliste zum Abhaken: Seite liegt neben der Beta, Haken und Notizen bleiben nach dem Neuladen erhalten."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__));DOCS=os.path.join(os.path.dirname(HERE),'dist','web')
+sys.path.insert(0,HERE);from _web import web
 F=os.path.join(DOCS,'beta','testliste.html')
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
@@ -12,7 +13,7 @@ with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     check(os.path.isfile(F),'testliste.html liegt neben der Beta')
-    pg.goto('file://'+F);pg.wait_for_timeout(200)
+    pg.goto(web(F));pg.wait_for_timeout(200)
     n=pg.locator('.checks li').count()
     check(n>5,f'{n} Prüfpunkte')
     check(pg.inner_text('#total')==f'0 von {n} geprüft','Zähler am Anfang: '+pg.inner_text('#total'))

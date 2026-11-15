@@ -3,14 +3,19 @@
 const fs=require('fs'),vm=require('vm'),path=require('path');
 
 function seededRandom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
-// Der Spielcode wird je Quellordner einmal übersetzt. Standard ist ../src; die Probe kann einen zweiten Ordner zum Vergleich laden.
-const SCRIPTS={};
-function scriptFor(dir){dir=dir||path.join(__dirname,'..','src');if(!SCRIPTS[dir]){const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
+// Der Spielcode liegt seit 0.31.0 als Module in src/js. Die Simulation lädt nur die Spiellogik (src/js/logic.js: Daten, Werte, Run, Welt 2),
+// ohne Oberfläche, Grafik und Ton. Module lassen sich nur asynchron laden, deshalb muss vor dem ersten Lauf prepare(dir) abgewartet werden.
+// Der Zufall wird je Lauf über Math.random des jeweiligen Arbeitsfadens festgelegt (jeder Faden hat sein eigenes Math).
+// Ältere Stände (vor 0.31.0, etwa ein git-Worktree für „--gegen“) haben noch core.js, game.js usw. in einem Ordner; sie laufen wie früher in einem eigenen vm-Kontext.
+const {pathToFileURL}=require('url');
+const DEFAULT=path.join(__dirname,'..','src'),MODS={},SCRIPTS={};
+const isLegacy=dir=>fs.existsSync(path.join(dir,'core.js'));
+async function prepare(dir){dir=dir||DEFAULT;if(isLegacy(dir)||MODS[dir])return;MODS[dir]=await import(pathToFileURL(path.join(dir,'js','logic.js')).href)}
+function scriptFor(dir){if(!SCRIPTS[dir]){const SRC=['core.js','core2.js','game.js','game2.js'].map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
   SCRIPTS[dir]=new vm.Script(SRC+';Object.assign(this,{Run,freshSave,NODES,nodeCost,heroLvlCost,stats,HEROES,PRES,presCost,quantaFor,TOWERS,TOWER_IDS,towerLvlCost,slotCost,SLOT_EXTRA,HERO_MAX,TOWER_MAX,DRONES:typeof DRONES!=="undefined"?DRONES:null,DRONE_IDS:typeof DRONE_IDS!=="undefined"?DRONE_IDS:[],DRONE_MAX:typeof DRONE_MAX!=="undefined"?DRONE_MAX:0,droneLvlCost:typeof droneLvlCost!=="undefined"?droneLvlCost:null,droneUnlocked:typeof droneUnlocked!=="undefined"?droneUnlocked:null});')}return SCRIPTS[dir]}
-// Wichtig für die Geschwindigkeit: Der Spielcode bekommt die eigenen Bausteine seines Kontexts (Math, Map, Array, …).
-// Nur Math.random wird durch den festen Zufallsgenerator ersetzt. Ein von außen hereingereichtes Math-Objekt
-// würde jeden Aufruf von Math.sqrt & Co. über einen langsamen Umweg schicken (gemessen: 86 % der Rechenzeit).
-function loadGame(seed,dir){const ctx={console,__rnd:seededRandom(seed)};vm.createContext(ctx);vm.runInContext('Math.random=__rnd;',ctx);scriptFor(dir).runInContext(ctx);return ctx}
+function loadGame(seed,dir){dir=dir||DEFAULT;
+  if(isLegacy(dir)){const ctx={console,__rnd:seededRandom(seed)};vm.createContext(ctx);vm.runInContext('Math.random=__rnd;',ctx);scriptFor(dir).runInContext(ctx);return ctx}
+  if(!MODS[dir])throw new Error('prepare('+dir+') wurde nicht abgewartet');Math.random=seededRandom(seed);return MODS[dir]}
 const clone=o=>JSON.parse(JSON.stringify(o));
 const WEIGHT={s:1,k:40,p:400,d:4000,q:1};
 
@@ -133,4 +138,4 @@ function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.fres
   if(job.opt.held&&save.team.length)for(const id of String(job.opt.held).split(','))if(save.heroes[id]&&!save.team.includes(id)){const o=save.heroes[save.team[save.team.length-1]];save.heroes[id]={u:1,l:o.l,a:o.a};save.team[save.team.length-1]=id}
   const pick=Math.max(1,Math.min(S.startMax,(save.best||0)-10));save.startPick=pick>=S.startMax?0:pick;
   const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick,tally:r.tally||null}}
-module.exports={simulate,benchmark,probe,candidates,WEIGHT};
+module.exports={prepare,simulate,benchmark,probe,candidates,WEIGHT};

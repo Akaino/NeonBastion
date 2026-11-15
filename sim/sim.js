@@ -10,7 +10,7 @@ const os=require('os'),fs=require('fs'),path=require('path');
 const bot=require('./bot2.js');
 
 if(!isMainThread){
-  parentPort.on('message',msg=>{
+  parentPort.on('message',async msg=>{await bot.prepare();if(msg.job&&msg.job.src)await bot.prepare(msg.job.src);
     if(msg.type==='career'){const res=bot.simulate(msg.opt,row=>parentPort.postMessage({type:'row',row}));parentPort.postMessage({type:'done',res})}
     else if(msg.type==='bench'){parentPort.postMessage({type:'bench',id:msg.id,res:bot.benchmark(msg.job)})}
     else if(msg.type==='probe'){parentPort.postMessage({type:'probe',res:bot.probe(msg.job)})}});
@@ -106,7 +106,7 @@ async function upgrades(){const at=String(arg('at','25,50')).split(',').map(Numb
   const {res:car}=await P.run({type:'career',opt:{...base,seed:1,target:Math.max(...at),maxRuns:+arg('maxruns',600),maxGameHours:+arg('stunden',300),snapshotsAt:at}},
     row=>{if(row.event)console.log(`  [${wall()}] Run ${row.run} · Rekord ${row.best} · ${row.event}`)});
   for(const m of at){const save=car.snapshots[m];if(!save){console.log(`Welle ${m} wurde nicht erreicht, übersprungen.`);continue}
-    const cands=bot.candidates(save,N),jobs=[];console.log(`\nSchritt 2 (Welle ${m}): ${cands.length} Upgrades × ${REP} Runs + Vergleich …`);
+    await bot.prepare();const cands=bot.candidates(save,N),jobs=[];console.log(`\nSchritt 2 (Welle ${m}): ${cands.length} Upgrades × ${REP} Runs + Vergleich …`);
     const opt={...base};let done=0;const total=(cands.length+1)*REP;
     const runSet=mod=>Promise.all(Array.from({length:REP},(_,i)=>P.run({type:'bench',id:0,job:{save,mod,seed:1000+i,opt}}).then(x=>{done++;if(done%20===0)process.stdout.write(`  ${done}/${total} Test-Runs (${wall()})\n`);return x.res.wave})));
     const baseW=await runSet(null),b0=baseW.reduce((a,b)=>a+b,0)/REP;

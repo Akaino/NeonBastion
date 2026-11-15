@@ -1,7 +1,8 @@
 """Beta unter /beta/: gekennzeichnet, eigener Spielstand, Live-Spielstand lässt sich als Kopie holen, das echte Spiel bleibt unberührt."""
 import os,sys,json
 HERE=os.path.dirname(os.path.abspath(__file__));WEB=os.path.join(os.path.dirname(HERE),'dist','web')
-LIVE='file://'+os.path.join(WEB,'index.html');BETA='file://'+os.path.join(WEB,'beta','index.html')
+sys.path.insert(0,HERE);from _web import web
+LIVE=web(os.path.join(WEB,'index.html'));BETA=web(os.path.join(WEB,'beta','index.html'))
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):

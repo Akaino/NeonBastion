@@ -7,6 +7,7 @@
 import subprocess,sys,os,glob,time
 from concurrent.futures import ThreadPoolExecutor
 HERE=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0,HERE);import _web;os.environ['NB_WEB_PORT']=str(_web.start())   # ein Webserver für alle Tests
 jobs=int(sys.argv[sys.argv.index('--jobs')+1]) if '--jobs' in sys.argv else min(4,os.cpu_count() or 1)
 runs=[]
 for t in sorted(glob.glob(os.path.join(HERE,'test_*.py'))):

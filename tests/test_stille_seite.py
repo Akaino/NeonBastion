@@ -2,6 +2,7 @@
 Hintergrund: Ein fremdes Skript im Safari des Nutzers reagierte auf jede Änderung am Dokument mit einem Hänger pro Sekunde."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0,HERE);from _web import web
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
@@ -12,7 +13,7 @@ with sync_playwright() as p:
     for name,sub in (('echtes Spiel',''),('Beta mit Messanzeige','beta')):
         pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
         errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
-        pg.goto('file://'+os.path.join(os.path.dirname(HERE),'dist','web',sub,'index.html'));pg.wait_for_timeout(300)
+        pg.goto(web(os.path.join(os.path.dirname(HERE),'dist','web',sub,'index.html')));pg.wait_for_timeout(300)
         if sub:pg.evaluate("()=>{save.dev=true;save.devPerf=true;persist()}");pg.reload();pg.wait_for_timeout(300)
         check(pg.evaluate("()=>!!document.querySelector('#ui')&&!document.querySelector('#hud')&&!!UI.querySelector('#hud')&&!!UI.querySelector('#banner')&&!!$('#hWave')"),name+': Anzeige und Banner liegen im Schattenbaum, $ findet sie')
         pg.evaluate("()=>{save.speed=4;speed=4;save.nodes.b1=60;persist()}")
@@ -35,6 +36,6 @@ with sync_playwright() as p:
         pg.click('#bSet');pg.wait_for_timeout(100);pg.click('#bSetClose');pg.wait_for_timeout(300)
         mm=pg.evaluate("()=>[...new Set(MUT)]")
         check(pg.evaluate("()=>save.nodes.b1")>=5 and mm==[],name+': Menüs öffnen, fünfmal kaufen, Einstellungen – keine Änderung am beobachtbaren Dokument: '+str(mm[:6]))
-        check(pg.evaluate("()=>document.querySelectorAll('*').length")<25 and pg.evaluate("()=>UI.querySelectorAll('*').length")>200,name+': im Dokument stehen nur noch Rahmen und Spielfeld')
+        check(pg.evaluate("()=>document.body.querySelectorAll('*').length")<=8 and pg.evaluate("()=>UI.querySelectorAll('*').length")>200,name+': im Dokument stehen nur noch Rahmen und Spielfeld')
         print('\n'.join(errs) or 'no errors');pg.close()
     b.close()

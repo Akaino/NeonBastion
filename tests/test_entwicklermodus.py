@@ -2,7 +2,8 @@
 ein falscher Code schaltet nichts frei. Der richtige Code steht bewusst nicht im Test: der Modus wird direkt im Spielstand gesetzt."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
-GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'dist','web','beta','index.html'))
+sys.path.insert(0,HERE);from _web import web
+GAME=os.environ.get('GAME_URL',web(os.path.join(os.path.dirname(HERE),'dist','web','beta','index.html')))
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
@@ -43,14 +44,23 @@ with sync_playwright() as p:
     print('\n'.join(errs) or 'no errors');b.close()
 # Das echte Spiel enthält den Entwicklermodus gar nicht: weder Code noch Knöpfe, und gesetzte Felder im Spielstand wirken nicht
 ROOT=os.path.join(os.path.dirname(HERE),'dist','web')
-rel=open(os.path.join(ROOT,'index.html'),encoding='utf-8').read();bet=open(os.path.join(ROOT,'beta','index.html'),encoding='utf-8').read()
+def alles(d):
+    # gesamter ausgelieferter Text einer Fassung: index.html und alle Dateien im Versionsordner (ohne Unterordner beta/ und bottest/)
+    t=open(os.path.join(d,'index.html'),encoding='utf-8').read()
+    for v in [x for x in os.listdir(d) if x.startswith('v') and os.path.isdir(os.path.join(d,x))]:
+        for pfad,_,fs in os.walk(os.path.join(d,v)):
+            for f in fs:
+                if f!='expose.js':t+=open(os.path.join(pfad,f),encoding='utf-8').read()
+    return t
+rel=alles(ROOT);bet=alles(os.path.join(ROOT,'beta'))
+check(not os.path.exists(os.path.join(ROOT,[x for x in os.listdir(ROOT) if x.startswith('v')][0],'js','dev')) and 'dev-main.js' not in open(os.path.join(ROOT,'index.html')).read(),'echtes Spiel: keine Dateien des Entwicklermodus ausgeliefert')
 WORDS=['renderDev','devCode','bW2Test','bDevOff','2085854505','Perf.scan','Dev.stats =','Dev.wave =','Dev.w2 =','devTaps','Ursachensuche']
 check(not [w for w in WORDS if w in rel],'echtes Spiel: kein Entwicklermodus im Quelltext '+str([w for w in WORDS if w in rel]))
 check(all(w in bet for w in WORDS),'Beta: Entwicklermodus vollständig enthalten '+str([w for w in WORDS if w not in bet]))
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
-    pg.goto('file://'+os.path.join(ROOT,'index.html'));pg.wait_for_timeout(300)
+    pg.goto(web(os.path.join(ROOT,'index.html')));pg.wait_for_timeout(300)
     pg.evaluate("()=>{save.dev=true;save.devStart=40;save.devShiny=true;save.devDrop=true;save.devPerf=true;save.w2test=true;persist()}");pg.reload();pg.wait_for_timeout(300)
     check(pg.evaluate("()=>stats(save).startWave")==1 and not pg.evaluate("()=>w2Unlocked(save)"),'echtes Spiel: Startwelle und Gitterfestung lassen sich über den Spielstand nicht freischalten')
     pg.click('#bSet');pg.wait_for_timeout(150)
