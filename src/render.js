@@ -98,6 +98,7 @@ frame(run,dt){this.t+=dt;
       c.lineWidth=1.5;c.setLineDash([3,9]);c.lineDashOffset=this.t*20;c.beginPath();c.arc(e.x,e.y,e.r*1.85,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;c.globalCompositeOperation='source-over'}
     // Störsender: gestrichelter Kreis zeigt, wo Türme ausfallen. Tarner: fast unsichtbar, solange getarnt.
     if(e.type==='jammer'){c.strokeStyle='rgba(61,255,208,.35)';c.lineWidth=1.5;c.setLineDash([4,7]);c.lineDashOffset=this.t*18;c.beginPath();c.arc(e.x,e.y,JAM_R,0,TAU);c.stroke();c.setLineDash([])}
+    if(e.mark>1){c.strokeStyle='rgba(255,225,79,.8)';c.lineWidth=1.4;const m=e.r+5;c.beginPath();for(let q=0;q<4;q++){const a=q*PI/2+PI/4;c.moveTo(e.x+Math.cos(a)*m,e.y+Math.sin(a)*m);c.lineTo(e.x+Math.cos(a)*(m+5),e.y+Math.sin(a)*(m+5))}c.stroke()}
     if(e.type==='hacker'){c.strokeStyle='rgba(79,255,138,.32)';c.lineWidth=1.5;c.setLineDash([1,5]);c.lineDashOffset=this.t*10;c.beginPath();c.arc(e.x,e.y,HACK_R,0,TAU);c.stroke();c.setLineDash([])}
     if(e.type==='shade'){c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.arc(e.x,e.y,SHADE_R,0,TAU);c.fill();c.strokeStyle='rgba(138,125,255,.25)';c.lineWidth=1;c.beginPath();c.arc(e.x,e.y,SHADE_R,0,TAU);c.stroke()}
     if(e.type==='commander'){c.strokeStyle='rgba(255,79,79,.32)';c.lineWidth=1.5;c.setLineDash([2,6]);c.lineDashOffset=-this.t*14;c.beginPath();c.arc(e.x,e.y,CMD_R,0,TAU);c.stroke();c.setLineDash([])}
@@ -198,6 +199,8 @@ towerSprite(type,col){return this.sprite('t'+type+col,26,(c,K)=>{const C=col,F='
   if(type==='frost'){this.neon(c,K,c=>this.poly(c,6,13,0),C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();for(let i=0;i<6;i++){const a=i*PI/3;c.moveTo(0,0);c.lineTo(Math.cos(a)*9,Math.sin(a)*9);
       c.moveTo(Math.cos(a)*5+Math.cos(a+.9)*3,Math.sin(a)*5+Math.sin(a+.9)*3);c.lineTo(Math.cos(a)*5,Math.sin(a)*5);c.lineTo(Math.cos(a)*5+Math.cos(a-.9)*3,Math.sin(a)*5+Math.sin(a-.9)*3)}},C,1.3,6)}
   else if(type==='weak'){this.neon(c,K,c=>{c.beginPath();c.moveTo(-13,-9);c.lineTo(13,-9);c.lineTo(0,14);c.closePath()},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.arc(0,-1,4.5,0,TAU)},C,1.6,8);c.fillStyle=C;c.beginPath();c.arc(0,-1,1.8,0,TAU);c.fill()}
+  else if(type==='mute'){this.neon(c,K,c=>this.poly(c,8,13,PI/8),C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.arc(0,0,6.5,0,TAU);c.moveTo(-4.6,4.6);c.lineTo(4.6,-4.6)},C,1.7,8)}
+  else if(type==='mark'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,12,0,TAU)},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.arc(0,0,5.5,0,TAU);c.moveTo(-10,0);c.lineTo(-3,0);c.moveTo(3,0);c.lineTo(10,0);c.moveTo(0,-10);c.lineTo(0,-3);c.moveTo(0,3);c.lineTo(0,10)},C,1.5,8)}
   else if(type==='laser'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,11,0,TAU)},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(4,-3);c.lineTo(18,-3);c.moveTo(4,3);c.lineTo(18,3)},C,2,8);c.fillStyle=C;c.beginPath();c.arc(0,0,3.5,0,TAU);c.fill()}
   else if(type==='rocket'){this.neon(c,K,c=>{c.beginPath();c.rect(-11,-11,22,22)},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.rect(-3,-9,16,6);c.rect(-3,3,16,6)},C,1.6,8)}
   else if(type==='tesla'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,12,0,TAU)},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-6,-7);c.lineTo(2,-2);c.lineTo(-3,1);c.lineTo(6,7);c.moveTo(-8,0);c.arc(0,0,8,PI,PI*1.6)},C,1.6,8)}

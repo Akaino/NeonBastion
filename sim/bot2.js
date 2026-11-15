@@ -25,7 +25,7 @@ function aimPointer(r){if(r.drops&&r.drops.length){r.cx=r.drops[0].x;r.cy=r.drop
 
 // Einen Run spielen. Türme werden automatisch gebaut, Tippen gibt es nicht.
 function playRun(X,save,opt){const r=new X.Run(save,{});r.headless=opt.headless!==false;r.hw=330;r.hh=700;r.noImpulse=opt.zeiger==='aus';const aimS=opt.zeiger==='zielt';let aimT=0;const ang=[.8,2.4,4,5.5,1.6,3.2];let ti=0;
-  const types=X.TOWER_IDS.filter(t=>save.towers[t].u),pref=['weak','frost','cryo'].filter(t=>types.includes(t));
+  const types=X.TOWER_IDS.filter(t=>save.towers[t].u),pref=(aimS?['weak','mark','frost','cryo']:['weak','frost','cryo']).filter(t=>types.includes(t));
   while(!r.over&&r.t<opt.maxRunSec){r.step(opt.dt);
     if(aimS&&(aimT-=opt.dt)<=0){aimT=.25;aimPointer(r)}
     if(pref.length&&ti<r.towerSlots()){const ty=pref[ti%pref.length];if(r.energy>=r.buildCost(ty)&&r.place(ty,Math.cos(ang[ti])*110,Math.sin(ang[ti])*110))ti++}}
@@ -34,6 +34,7 @@ function playRun(X,save,opt){const r=new X.Run(save,{});r.headless=opt.headless!
 // Liste aller Kaufoptionen (id, Währung, Kosten, Anwenden)
 // opt.aeste: erlaubte Äste als Buchstabenfolge (b Basis, u Einheiten, h Helden, f Fokus, e Ertrag); fehlt die Angabe, ist alles erlaubt.
 // Helden (Freischalten, Stufen, Aufstieg) gehören zum Helden-Ast. opt.tuerme==='aus' sperrt Turm-Käufe.
+const botTowers=(X,opt)=>X.TOWER_IDS.filter(id=>id!=='mute'&&(id!=='mark'||(opt&&opt.zeiger==='zielt')));
 const allowBr=(opt,br)=>!opt||opt.aeste==null||opt.aeste.includes(br);
 function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),towers=!opt||opt.tuerme!=='aus';
   for(const n of Object.values(X.NODES)){if(n.id==='root'||!allowBr(opt,n.br))continue;const l=save.nodes[n.id]||0;if(l>=n.max||!(save.nodes[n.parent]>0))continue;
@@ -41,7 +42,7 @@ function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),
     o.push({id:n.id,name:n.name,cur:n.cur,cost:X.nodeCost(n,l),apply:()=>save.nodes[n.id]=l+1,undo:()=>save.nodes[n.id]=l})}
   if(heroes)for(const id of save.team){const h=save.heroes[id];if(h.a<5)o.push({id:'aufstieg:'+id,name:'Aufstieg '+X.HEROES[id].name,cur:'p',cost:(h.a+1)*2,apply:()=>h.a++,undo:()=>h.a--});
     if(h.l<X.HERO_MAX){const [cu,a]=X.heroLvlCost(h.l);o.push({id:'held:'+id,name:'Stufe '+X.HEROES[id].name,cur:cu,cost:a,apply:()=>h.l++,undo:()=>h.l--})}}
-  if(towers)for(const id of X.TOWER_IDS){const t=save.towers[id];if(t.u&&t.l<X.TOWER_MAX){const [cu,a]=X.towerLvlCost(t.l);o.push({id:'turm:'+id,name:'Startstufe '+X.TOWERS[id].name,cur:cu,cost:a,apply:()=>t.l++,undo:()=>t.l--,fix:.01})}}
+  if(towers)for(const id of botTowers(X,opt)){const t=save.towers[id];if(t.u&&t.l<X.TOWER_MAX){const [cu,a]=X.towerLvlCost(t.l);o.push({id:'turm:'+id,name:'Startstufe '+X.TOWERS[id].name,cur:cu,cost:a,apply:()=>t.l++,undo:()=>t.l--,fix:.01})}}
   // Flotte: Stufen der freigeschalteten und eingesetzten Drohnenklassen (zählt zum Ast Flotte)
   if(save.fleet&&allowBr(opt,'u'))for(const id of X.DRONE_IDS){const f=save.fleet[id];if(X.droneUnlocked(save,id)&&f.p>0&&f.l<X.DRONE_MAX){const [cu,a]=X.droneLvlCost(f.l);o.push({id:'drohne:'+id,name:'Stufe '+X.DRONES[id].name,cur:cu,cost:a,apply:()=>f.l++,undo:()=>f.l--,fix:.02})}}
   if(towers&&(save.tslots||0)<X.SLOT_EXTRA){const [cu,a]=X.slotCost(save.tslots||0);o.push({id:'bauplatz',name:'Bauplatz',cur:cu,cost:a,apply:()=>save.tslots=(save.tslots||0)+1,undo:()=>save.tslots--,fix:.05})}
@@ -51,7 +52,7 @@ function unlocks(X,save,spend,opt){
   // Drohnenklassen freischalten und gleichmäßig einsetzen (Reparaturdrohnen mit halbem Anteil)
   if(save.fleet&&allowBr(opt,'u')){for(const id of X.DRONE_IDS){const D=X.DRONES[id],f=save.fleet[id];if(!f.u&&Array.isArray(D.unlock)&&save.cur[D.unlock[0]]>=D.unlock[1]){save.cur[D.unlock[0]]-=D.unlock[1];f.u=1;track(spend,'frei:'+id,'Klasse '+D.name,D.unlock[0],D.unlock[1])}}
     for(const id of X.DRONE_IDS)save.fleet[id].p=X.droneUnlocked(save,id)?(id==='repair'?10:20):0}
-  if(!opt||opt.tuerme!=='aus')for(const id of X.TOWER_IDS){const t=save.towers[id];if(!t.u&&X.TOWERS[id].unlock){const [cu,a]=X.TOWERS[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;t.u=1;track(spend,'frei:'+id,X.TOWERS[id].name,cu,a)}}}}
+  if(!opt||opt.tuerme!=='aus')for(const id of botTowers(X,opt)){const t=save.towers[id];if(!t.u&&X.TOWERS[id].unlock){const [cu,a]=X.TOWERS[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;t.u=1;track(spend,'frei:'+id,X.TOWERS[id].name,cu,a)}}}}
 function track(spend,id,name,cur,cost){const e=spend[id]||(spend[id]={id,name,levels:0,s:0,k:0,p:0,d:0,q:0});e.levels++;e[cur]+=cost}
 
 // Grobe Stärkeschätzung für die Kaufregel „nutzen“: Schaden pro Sekunde aller Quellen, Standfestigkeit der Basis und Einkommen, jeweils logarithmisch.
@@ -121,6 +122,8 @@ function candidates(save,N){const X=loadGame(1),out=[];
 // Probe am festen Spielstand: ein Run wie in der Karriere (Start 10 Wellen unter dem Rekord), wahlweise mit dem Spielcode aus einem anderen Ordner.
 // Fehlende Felder eines älteren Spielstands werden aus einem frischen ergänzt.
 function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.freshSave(),clone(job.save));
+  save.towers=Object.assign(X.freshSave().towers,save.towers);   // ältere Spielstände kennen neuere Türme nicht
+  if(job.opt.frei)for(const id of String(job.opt.frei).split(','))if(save.towers[id]){save.towers[id].u=1;save.towers[id].l=Math.max(save.towers[id].l,+job.opt.freiStufe||1)}   // --frei mark: Turm für die Probe freischalten
   const S=X.stats(save);save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
   const pick=Math.max(1,Math.min(S.startMax,(save.best||0)-10));save.startPick=pick>=S.startMax?0:pick;
   const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick}}

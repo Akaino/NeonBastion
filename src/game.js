@@ -145,10 +145,14 @@ moveTower(T,x,y){if(!this.canPlace(x,y,T))return false;this.burst(T.x,T.y,10,T.c
 sellTower(T){this.energy+=this.refund(T);this.towers=this.towers.filter(t=>t!==T);this.burst(T.x,T.y,18,T.col,220,.5);this.h.sfx&&this.h.sfx('down')}
 updTowers(dt){
   // 1) Zurücksetzen und sammeln, welche Türme jeden Gegner erreichen
-  for(const e of this.en){e.spMul=1;e.vuln=1;e.dmgMul=1;e.critB=0;e.combo=0;e.perma=false;e.shat=false;e.nullp=false;e.tw?e.tw.length=0:e.tw=[];
+  for(const e of this.en){e.mute=false;e.mark=1;e.spMul=1;e.vuln=1;e.dmgMul=1;e.critB=0;e.combo=0;e.perma=false;e.shat=false;e.nullp=false;e.tw?e.tw.length=0:e.tw=[];
     if(e.frozen>0)e.frozen-=dt;if(e.chill>0)e.chill-=dt;if(e.frzImm>0)e.frzImm-=dt}
-  const jam=this.en.filter(e=>e.type==='jammer'&&e.hp>0);
-  for(const T of this.towers){T.pulse+=dt;T.born+=dt;T.jam=jam.length>0&&jam.some(j=>hyp(j.x-T.x,j.y-T.y)<JAM_R);if(T.jam)continue;const r2=T.r*T.r;
+  // Stör-Türme zuerst: Sie lassen sich nicht abschalten und nehmen auch Störsendern die Wirkung. Tarner und Phasenläufer werden sichtbar.
+  for(const T of this.towers){if(T.type!=='mute')continue;T.pulse+=dt;T.born+=dt;T.jam=false;const r2=T.r*T.r;
+    for(const e of this.en){if(e.hp<=0||e.boss||e.down>0)continue;if(sq(e.x-T.x)+sq(e.y-T.y)<r2+e.r*e.r){e.mute=true;if(e.cloak)e.cloak=false}}}
+  const jam=this.en.filter(e=>e.type==='jammer'&&e.hp>0&&!e.mute);
+  for(const T of this.towers){if(T.type==='mute')continue;T.pulse+=dt;T.born+=dt;T.jam=jam.length>0&&jam.some(j=>hyp(j.x-T.x,j.y-T.y)<JAM_R);if(T.jam)continue;const r2=T.r*T.r;
+    if(T.type==='mark'){for(const e of this.en){if(e.hp<=0||e.cloak)continue;if(sq(e.x-T.x)+sq(e.y-T.y)<r2+e.r*e.r&&T.fx.mark>e.mark)e.mark=T.fx.mark}continue}
     for(const e of this.en){if(e.hp<=0||e.cloak)continue;const d=sq(e.x-T.x)+sq(e.y-T.y);if(d<r2+e.r*e.r)e.tw.push(T)}}
   // 2) Effekte addieren (max. 3 Türme) und Kombinationen bestimmen
   for(const e of this.en){const tw=e.tw;e.sF=e.sZ=e.sK=false;if(!tw.length)continue;
@@ -179,7 +183,7 @@ updTowers(dt){
 /* ---------- damage ---------- */
 hitE(e,dmg,o={}){if(e.hp<=0||e.cloak)return;
   if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
-  dmg*=e.vuln||1;if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+  dmg*=e.vuln||1;if(o.imp&&e.mark>1)dmg*=e.mark;if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
   if(e.hp<=0)this.kill(e)}
 kill(e){
@@ -242,7 +246,7 @@ spawnEnemy(type,elite,x,y,shiny){const T=ETYPES[type],w=this.w,hm=this.hpScale(w
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
     ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,healT:rnd(0,1),cloak:type==='cloaker',heavy:type==='giant',acc:1,down:0,rev:false,qT:QUEEN_CD,jT:JUMP_CD*rnd(.5,1),phT:PHASE_OFF*rnd(.3,1),eggT:EGG_T,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
     // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
-    spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
+    mute:false,mark:1,spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
 updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Math.min(this.queue.length,1+Math.floor(Math.random()*3));
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
@@ -326,7 +330,7 @@ spawnDrone(){const F=this.save.fleet,S=this.S,ids=F?DRONE_IDS.filter(id=>F[id]&&
 updDrones(dt){const S=this.S,leash=200+(S.droneRange-90);
   if(this.drones.length<S.drones){this.droneT-=dt;if(this.droneT<=0){this.droneT=S.droneSpawn;this.spawnDrone()}}
   if(this.drones.length)for(const e of this.en)e.bd=hyp(e.x,e.y);   // einmal pro Schritt statt einmal pro Drohne
-  const hk=this.en.filter(e=>e.type==='hacker'&&e.hp>0);
+  const hk=this.en.filter(e=>e.type==='hacker'&&e.hp>0&&!e.mute);
   for(const d of this.drones){d.flash-=dt;d.atkT-=dt;d.hack=hk.length>0&&hk.some(e=>hyp(e.x-d.x,e.y-d.y)<HACK_R);
     // Reparaturdrohne: kreist nah an der Basis, repariert sie und heilt Verbündete in ihrer Nähe
     if(d.heal){d.healT-=dt;if(d.healT<=0){d.healT=1;const b=this.base;if(b.hp<b.max)b.hp=Math.min(b.max,b.hp+b.max*REPAIR_BASE*d.heal);
@@ -351,23 +355,23 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
   // Rechteck um alle Verbündeten: Gegner außerhalb können niemanden berühren und überspringen die teure Einzelprüfung
   let ax0=Infinity,ax1=-Infinity,ay0=Infinity,ay1=-Infinity,ar=0;for(const a of allies){if(a.x<ax0)ax0=a.x;if(a.x>ax1)ax1=a.x;if(a.y<ay0)ay0=a.y;if(a.y>ay1)ay1=a.y;if(a.r>ar)ar=a.r}
   const n0=this.en.length;
-  const cmd=this.en.filter(e=>e.type==='commander'&&e.hp>0);
+  const cmd=this.en.filter(e=>e.type==='commander'&&e.hp>0&&!e.mute);
   for(let i=0;i<n0;i++){const e=this.en[i];if(e.hp<=0)continue;e.flash-=dt;
     if(e.down>0){e.down-=dt;if(e.down<=0){e.down=0;e.cloak=false;this.ring(e.x,e.y,4,e.r*3,e.col,.4,4)}continue}
     if(e.type==='egg'){e.eggT-=dt;if(e.eggT<=0){for(let j=0;j<EGG_N;j++)this.pend.push(['swarm',e.x+rnd(-14,14),e.y+rnd(-14,14),0]);e.hp=0;this.ring(e.x,e.y,4,40,e.col,.4,4);this.burst(e.x,e.y,10,e.col,160,.4,2)}continue}
-    if(e.type==='phaser'){e.phT-=dt;if(e.phT<=0){e.cloak=!e.cloak;e.phT=e.cloak?PHASE_ON:PHASE_OFF;this.ring(e.x,e.y,e.r*2,4,e.col,.25,2)}}
+    if(e.type==='phaser'&&!e.mute){e.phT-=dt;if(e.phT<=0){e.cloak=!e.cloak;e.phT=e.cloak?PHASE_ON:PHASE_OFF;this.ring(e.x,e.y,e.r*2,4,e.col,.25,2)}}
     if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;
-    if(e.type==='jumper'){e.jT-=dt;if(e.jT<=0&&d>b.r+e.r+30){e.jT=JUMP_CD;const j=Math.min(JUMP_D,d-b.r-e.r-6);this.ring(e.x,e.y,e.r*2,3,e.col,.3,3);e.x-=e.x/d*j;e.y-=e.y/d*j;this.ring(e.x,e.y,3,e.r*2.4,e.col,.3,3);continue}}
+    if(e.type==='jumper'&&!e.mute){e.jT-=dt;if(e.jT<=0&&d>b.r+e.r+30){e.jT=JUMP_CD;const j=Math.min(JUMP_D,d-b.r-e.r-6);this.ring(e.x,e.y,e.r*2,3,e.col,.3,3);e.x-=e.x/d*j;e.y-=e.y/d*j;this.ring(e.x,e.y,3,e.r*2.4,e.col,.3,3);continue}}
     let buff=false;if(cmd.length)for(const c of cmd)if(c!==e&&hyp(c.x-e.x,c.y-e.y)<CMD_R){buff=true;break}
     if(e.type==='ram')e.acc=Math.min(RAM_MAX,e.acc+RAM_ACC*dt);
-    if(e.type==='queen'){e.qT-=dt;if(e.qT<=0){e.qT=QUEEN_CD;for(let j=0;j<2;j++)this.pend.push(['swarm',e.x+rnd(-20,20),e.y+rnd(-20,20),0])}}
+    if(e.type==='queen'&&!e.mute){e.qT-=dt;if(e.qT<=0){e.qT=QUEEN_CD;for(let j=0;j<2;j++)this.pend.push(['swarm',e.x+rnd(-20,20),e.y+rnd(-20,20),0])}}
     const dm=e.dmg*(e.dmgMul||1)*(buff?CMD_DMG:1),spd=e.sp*(e.spMul||1)*(this.rushT>0?1.5:1)*e.acc*(buff?CMD_SP:1);
     if(e.boss){e.sumT-=dt;if(e.sumT<=0){e.sumT=4;for(let j=0;j<3;j++)this.spawnEnemy('swarm',false,e.x+rnd(-30,30),e.y+rnd(-30,30))}
       if(e.armorT>0)e.armorT-=dt;
       // Fähigkeit: erst in Reichweite der Basis, dann aufladen (Boss steht still), dann auslösen
       if(e.cast>0){e.cast-=dt;if(e.cast<=0){e.cast=0;this.bossAbility(e,dm,allies)}continue}
       e.abT-=dt;if(e.abT<=0&&d<BOSS_ABIL_RANGE){const K=BOSS_KINDS[e.name];e.cast=e.cast0=K.charge;e.abT=K.cd;this.h.sfx&&this.h.sfx('bosswave');continue}}
-    if(e.type==='healer'){e.healT-=dt;if(e.healT<=0){e.healT=1;let any=false;this.query(e.x,e.y,HEAL_R,o=>{if(o===e||o.hp>=o.max||hyp(o.x-e.x,o.y-e.y)>HEAL_R)return;o.hp=Math.min(o.max,o.hp+o.max*HEAL_PCT*(o.boss?.25:1));any=true});if(any)this.ring(e.x,e.y,8,HEAL_R,'#6dffb0',.5,3)}}
+    if(e.type==='healer'&&!e.mute){e.healT-=dt;if(e.healT<=0){e.healT=1;let any=false;this.query(e.x,e.y,HEAL_R,o=>{if(o===e||o.hp>=o.max||hyp(o.x-e.x,o.y-e.y)>HEAL_R)return;o.hp=Math.min(o.max,o.hp+o.max*HEAL_PCT*(o.boss?.25:1));any=true});if(any)this.ring(e.x,e.y,8,HEAL_R,'#6dffb0',.5,3)}}
     if(e.cloak&&e.type==='cloaker'&&d<CLOAK_R){e.cloak=false;this.ring(e.x,e.y,4,e.r*3,'#9aa7ff',.4,4);this.burst(e.x,e.y,10,'#9aa7ff',160,.4,2)}
     let bl=null;const am=e.r+ar+3;if(!e.ranged&&e.type!=='bomber'&&e.x>ax0-am&&e.x<ax1+am&&e.y>ay0-am&&e.y<ay1+am)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
     if(bl){if(e.atkT<=0){this.hurtAlly(bl,dm);e.atkT=1}continue}
@@ -426,16 +430,16 @@ useDrop(d){const D=DROPS[d.kind];this.dropN++;this.h.banner&&this.h.banner(D.nam
 updDrops(dt){const B=this.buff;for(const k in B)if(B[k]>0)B[k]-=dt;
   if(B.repair>0){const b=this.base;if(b.hp<b.max)b.hp=Math.min(b.max,b.hp+b.max*DROP_REPAIR*dt)}
   if(this.drops.length){for(const d of this.drops){d.life-=dt;d.t+=dt;d.flash-=dt}this.drops=this.drops.filter(d=>d.life>0)}}
-shaded(x,y){for(const e of this.en)if(e.type==='shade'&&e.hp>0&&hyp(e.x-x,e.y-y)<SHADE_R)return true;return false}
+shaded(x,y){for(const e of this.en)if(e.type==='shade'&&e.hp>0&&!e.mute&&hyp(e.x-x,e.y-y)<SHADE_R)return true;return false}
 tap(x,y){if(this.over)return;const S=this.S,n=++this.imps;this.taps=n;
   let dmg=S.tapDmg*S.impMul,beat=false;if(S.beat&&n%BEAT_N===0){dmg*=1+S.beat;beat=true}
-  if(S.megaTap&&n%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*MEGA_MUL,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');this.dropTap(null);return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
+  if(S.megaTap&&n%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*MEGA_MUL,{col:'#ffe14f',big:true,imp:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');this.dropTap(null);return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
   const over=S.overload&&n%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
   if(this.shaded(x,y))r*=SHADE_MUL;
-  const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});this.dropTap(x,y,r);
+  const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat,imp:true});this.dropTap(x,y,r);
   this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
   if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=sq(e.x-f.x)+sq(e.y-f.y);if(d<nd){nd=d;nx=e}}
-    if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d'})}
+    if(nx)this.chain([f.x,f.y],nx,dmg*.5,S.chain-1,'#ff8a3d',{col:'#ff8a3d',imp:true})}
   if(hit.length&&this.h.sfx)this.h.sfx(crit||over||beat?'crit':'tap');return hit.length}
 
 /* ---------- main ---------- */

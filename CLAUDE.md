@@ -74,7 +74,7 @@ Wichtige Konzepte:
 - Feste Logik-Taktrate 1/60 s im Spiel, Geschwindigkeit 1×/2×/4×/8× über mehrere Schritte pro Frame. In der Simulation `dt=0.05`. **Nicht 0.1** – dann treffen Projektile nicht mehr zuverlässig.
 - Erweiterungspunkte in `Run`, die `Run2` überschreibt: `reward(e)`, `energyMul(e)`, `towerStats(type,l)`, `towerSlots()`, `hpScale(w)`, `dmgScale(w)`, `milestone(w)`, `updWaves(dt)`, `updTowers(dt)`.
 
-## 5. Gameplay-Systeme (Stand 0.24.0, Beta; live ist 0.19.0)
+## 5. Gameplay-Systeme (Stand 0.25.0, Beta; live ist 0.19.0)
 
 **Welt 1 „Neon-Sektor“:** Basis in der Mitte, Gegner (Schwärmer, Brecher, Fernkämpfer, Elite, Boss alle 10 Wellen, **Doppelboss alle 25 Wellen**) aus allen Richtungen. Drohnen spawnen aus der Basis. Vier Helden (Klinge, Schützin, Arkanist, Wächterin) agieren selbstständig, müssen freigeschaltet werden, haben Stufen (bis 60) und Aufstiege (bis 5). Der **Impuls** ersetzt das Tippen (siehe unten), „Autofeuer“ lässt zusätzlich die Basis selbst schießen. Nächste Welle startet nach 9 s auch mit lebenden Gegnern → Runs enden, wenn die Basis den Schaden gestauter Gegner nicht mehr aushält.
 
@@ -83,6 +83,7 @@ Wichtige Konzepte:
 - **Supernova (Prestige):** ab Welle 25. Quanten = `2·1.1^(w−25)` × Boni. Setzt Baum, Währungen, Helden- und Turmstufen zurück. 9 Quanten-Upgrades (Urkraft ×1,25/Stufe usw.).
 - **Gegner-Skalierung:** Leben `1.15^(w−1)·1.08^max(0,w−35)·1.06^max(0,w−60)`, Schaden `1.06^(w−1)·1.07^max(0,w−35)·1.05^max(0,w−60)`.
 - **Türme (Unterstützung, kein Schaden):** Frost (verlangsamt), Zerfall (mehr Schaden genommen, weniger verursacht), Kryo (friert periodisch ein, danach 2 s Immunität). Bau mit Energie im Run, Antippen öffnet Turm-Menü (Aufwerten, Verschieben, Abbauen). Bauen pausiert das Spiel. Startstufe 1–25 im Turm-Menü.
+- **Hilfstürme** (seit 0.25.0, `aux` in `TOWERS`; stapeln und kombinieren nicht mit den anderen): **Stör-Turm** (25 Kerne; Gegner im Radius verlieren ihre Fähigkeiten – Heiler, Schwarmkönigin, Kommandant, Störsender, Hacker, Schattenwerfer, Springer; Tarner und Phasenläufer werden sichtbar; nicht auf Bosse; lässt sich von Störsendern nicht abschalten, `e.mute`) und **Markier-Turm** (4 Prismen; markierte Gegner nehmen ×(1,5 + 0,05 je Stufe) Schaden durch den Impuls, auch Bosse, `e.mark`, Treffer mit `o.imp`). Der Bot baut den Stör-Turm nie und den Markier-Turm nur mit zielendem Zeiger. Probe (zielt, je 16 Runs, Markier-Turm Stufe 5 statt Frost als zweiter Turm): −1,2 bis +0,2 Wellen, auch mit ×2,4 kein Gewinn – der Bot zielt auf die dichteste Gruppe, nicht in den Turmradius. **Die Wirkung beider Türme für einen Menschen ist nicht gemessen.** Ältere Spielstände der Probe kennen die Türme nicht; `--frei mark --freistufe 5` schaltet für die Probe frei.
 - **Stapeln:** max. 3 Türme pro Gegner, abnehmend (100 % / 50 % / 25 %), Deckel: Verlangsamung 65 %, Schadensreduktion 50 %, Schadensbonus +80 %.
 - **Kombinationen** in Überschneidungen: Sturmfront, Vergiftung, Schwachstelle, Permafrost, Zersplittern, Nullpunkt (Welt 1) plus 9 Schaden×Unterstützung-Kombis (Welt 2).
 

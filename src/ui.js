@@ -453,6 +453,8 @@ function towerFxRows(id,l){const ts=run&&run.towerStats?run.towerStats(id,l):(W.
   if(id==='laser')return[['Schaden pro Sekunde',fmtN(f.dps)],['Reichweite',String(r)]];
   if(id==='rocket')return[['Schaden pro Rakete',fmtN(f.dmg)],['Explosionsradius',String(f.splash)],['Reichweite',String(r)]];
   if(id==='tesla')return[['Schaden pro Blitz',fmtN(f.dmg)],['Ziele',String(f.chain+1)],['Reichweite',String(r)]];
+  if(id==='mute')return[['Wirkung','Fähigkeiten aus'],['Radius',String(r)]];
+  if(id==='mark')return[['Impulsschaden','+'+fmtD((f.mark-1)*100,0)+' %'],['Radius',String(r)]];
   if(id==='frost')return[['Verlangsamung',fmtD(f.slow*100,0)+' %'],['Radius',String(r)]];
   if(id==='weak')return[['Gegner nehmen',`+${fmtD((f.vuln-1)*100,0)} % Schaden`],['Gegner verursachen',`−${fmtD((1-f.weak)*100,0)} % Schaden`],['Radius',String(r)]];
   return[['Einfrieren für',fmtD(f.dur,1)+' s'],['Alle',fmtD(f.cd,1)+' s'],['Radius',String(r)]]}

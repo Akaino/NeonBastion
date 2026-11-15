@@ -58,7 +58,7 @@ Allgemein
 `);process.exit(0)}
 const CORES=Math.max(1,+arg('kerne',Math.max(1,os.cpus().length-1)));
 const OUT=arg('ausgabe',path.join(__dirname,'ergebnisse'));fs.mkdirSync(OUT,{recursive:true});
-const base={zeiger:arg('zeiger','ruht'),kauf:arg('kauf','billig'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
+const base={frei:arg('frei',null),freiStufe:arg('freistufe',1),zeiger:arg('zeiger','ruht'),kauf:arg('kauf','billig'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
 const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h} h ${m} min`:`${m} min`};
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[Math.floor((b.length-1)/2)]:NaN};
 const t0=Date.now(),wall=()=>fmtT((Date.now()-t0)/1000);

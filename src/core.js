@@ -1,4 +1,4 @@
-const VERSION='0.24.0';
+const VERSION='0.25.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -151,7 +151,10 @@ const HERO_MAX=60,ASC_MAX=5;
 const TOWERS={
   frost:{name:'Frost-Turm',col:'#5ab8ff',cost:25,unlock:null,text:'Verlangsamt alle Gegner in seinem Radius. Bosse nur halb so stark.',r:l=>98+3*l,fx:l=>({slow:Math.min(.55,.25+.012*l)})},
   weak:{name:'Zerfall-Turm',col:'#d65cff',cost:40,unlock:['k',10],text:'Gegner in seinem Radius nehmen mehr Schaden und richten weniger an.',r:l=>98+3*l,fx:l=>({vuln:1.12+.012*l,weak:.88-.008*l})},
-  cryo:{name:'Kryo-Turm',col:'#bff4ff',cost:60,unlock:['p',2],text:'Friert regelmäßig alle Gegner im Radius ein. Bosse werden stattdessen verlangsamt.',r:l=>88+3*l,fx:l=>({cd:6.6-.08*l,dur:1.2+.05*l})}};
+  cryo:{name:'Kryo-Turm',col:'#bff4ff',cost:60,unlock:['p',2],text:'Friert regelmäßig alle Gegner im Radius ein. Bosse werden stattdessen verlangsamt.',r:l=>88+3*l,fx:l=>({cd:6.6-.08*l,dur:1.2+.05*l})},
+  // Hilfstürme (aux): stapeln und kombinieren nicht mit den anderen. Stör-Turm nimmt Gegnern die Fähigkeiten, Markier-Turm verstärkt den Impuls.
+  mute:{name:'Stör-Turm',col:'#ffb02e',cost:50,unlock:['k',25],aux:1,text:'Gegner in seinem Radius verlieren ihre Fähigkeiten: Heiler, Schwarmkönigin, Kommandant, Störsender, Hacker, Schattenwerfer und Springer. Tarner und Phasenläufer werden sichtbar. Wirkt nicht auf Bosse.',r:l=>84+3*l,fx:l=>({mute:1})},
+  mark:{name:'Markier-Turm',col:'#ffe14f',cost:45,unlock:['p',4],aux:1,text:'Gegner in seinem Radius sind markiert und nehmen mehr Schaden durch den Impuls. Wirkt auch auf Bosse.',r:l=>92+3*l,fx:l=>({mark:1.5+.05*l})}};
 const COMBOS=[
   {bit:1,need:['frost','frost'],name:'Sturmfront',col:'#7fd0ff',text:'Zusätzlich zur Verlangsamung werden Gegner alle paar Sekunden zurückgestoßen.'},
   {bit:2,need:['frost','weak'],name:'Vergiftung',col:'#8cff4f',text:'Gift frisst 1,5 % des Gegnerlebens pro Sekunde (Bosse 0,3 %).'},
@@ -182,7 +185,7 @@ const freshFleet=()=>({jaeger:{u:1,l:1,p:100},abfang:{u:0,l:1,p:0},schwarm:{u:0,
 
 function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,cur:{s:0,k:0,p:0,d:0},nodes:{root:1},
   heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
-  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,devStart:0,devShiny:false,devDrop:false,devPerf:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},tslots:0,fleet:freshFleet(),kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
+  team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,devStart:0,devShiny:false,devDrop:false,devPerf:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1},mute:{u:0,l:1},mark:{u:0,l:1}},tslots:0,fleet:freshFleet(),kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
 
 // Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).
 // Jede Stufe hat einen eigenen Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.
