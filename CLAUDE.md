@@ -195,7 +195,7 @@ Befunde:
 
 Reihenfolge laut Nutzer (Stand 14.11.2026): erst Welt 1 rund machen, Welt 2 ruht bis dahin.
 
-**`TESTLISTE.md` im Projektordner** enthält die Punkte, die der Nutzer nach der Nachtschicht vom 14./15.11.2026 in der Beta prüfen will, samt offener Entscheidungen (neue Helden, neue Türme, größerer Skilltree, Welten 3–10). Nach seinem Durchgang aktualisieren oder löschen.
+**`TESTLISTE.md` im Projektordner** enthält die Punkte, die der Nutzer nach der Nachtschicht vom 14./15.11.2026 in der Beta prüfen will, samt offener Entscheidungen (neue Helden, neue Türme, größerer Skilltree, Welten 3–10). Nach seinem Durchgang aktualisieren oder löschen. Solange die Datei existiert, baut `build.py` daraus über `testliste.py` die abhakbare Seite `beta/testliste.html` (und `bottest/testliste.html`): Haken und Notizen liegen im Browser je Gerät (`localStorage['neon-bastion-testliste']`), „Ergebnis kopieren“ liefert den Stand als Text für den Chat. Prüfpunkte sind die Zeilen „- [ ] …“; wird ihr Text geändert, verliert der Punkt seinen Haken.
 
 Knotennamen seit 0.21.0: „Impulsstärke“ (früher Fingerspitze), „Impulsgewitter“ (früher Tippgewitter), „Heldenimpuls“ (früher Göttlicher Finger). Ältere Abschnitte nennen noch die alten Namen.
 

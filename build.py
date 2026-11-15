@@ -10,6 +10,7 @@ Beta und Bottest sind dieselbe Datei mit angepassten Pfaden. Die Stufe erkennt d
 (STAGE in core.js): eigener Spielstand, Kennzeichnung an der Version, Knopf „Live-Spielstand übernehmen“.
 """
 import os, re, shutil, sys
+import testliste
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
 ORDER = ['core.js', 'core2.js', 'game.js', 'game2.js', 'render.js', 'audio.js', 'ui.js']
@@ -42,6 +43,10 @@ def write_beta(dst):
         shutil.rmtree(dst)
     os.makedirs(dst)
     open(os.path.join(dst, 'index.html'), 'w', encoding='utf-8').write(beta)
+    # Testliste zum Abhaken: nur solange TESTLISTE.md im Projektordner liegt
+    liste = os.path.join(ROOT, 'TESTLISTE.md')
+    if os.path.isfile(liste):
+        open(os.path.join(dst, 'testliste.html'), 'w', encoding='utf-8').write(testliste.page(open(liste, encoding='utf-8').read()))
 
 write_site(os.path.join(ROOT, 'dist', 'web'))
 print(f'dist/web/ gebaut · Version {version} · {len(web)//1024} KB')
