@@ -33,29 +33,48 @@ function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);docume
 const HITCH_MS=28;
 const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
   /* Ursachensuche: schaltet nacheinander einzelne Teile ab und zählt je Abschnitt die Ruckler. Zeigt, ob Zeichnen, Ton, Animationen oder gar nichts davon schuld ist. */
-  scanRes:null,scanT:0,noDraw:false,
+  scanRes:null,scanT:0,noDraw:false,freeze:false,
+  /* Schalter für die Ursachensuche, auch von Hand in der JavaScript-Konsole bedienbar:
+     Perf.live()        zeigt alle 5 s in der Konsole, wie viele Ruckler es gab (noch einmal aufrufen beendet es)
+     Perf.aus('inp')    schaltet etwas ab, Perf.an('inp') wieder an. Mögliche Namen: frz inp tim fnt fx ani cvo ton leer
+     Perf.aus()         zeigt die Liste der Namen mit Erklärung */
+  NAMEN:{frz:'Anzeigen eingefroren (kein Text ändert sich)',inp:'Eingabefelder entfernt',tim:'Zeitgeber aus (Musik, Aufräumen)',fnt:'Systemschrift statt Spielschrift',fx:'Leuchteffekte aus',ani:'Animationen aus',cvo:'nur das Spielfeld sichtbar',ton:'Ton angehalten',leer:'Seite leer, nichts wird gezeichnet'},
+  sw(){if(this._P)return this._P;
+    // Jeder Abschnitt schaltet genau eine Sache ab und danach wieder an. Gesucht ist, was die Spielseite hat und eine leere Seite nicht.
+    let ins=[],mt=0,tt=0;const H=document.documentElement,au=on=>{if(Snd.ctx)(on?Snd.ctx.resume():Snd.ctx.suspend()).catch(()=>{})};
+    return this._P={frz:[()=>{this.freeze=true},()=>{this.freeze=false}],
+      inp:[()=>{ins=[...document.querySelectorAll('input,textarea,select')].map(e=>[e,e.parentNode,e.nextSibling]);for(const x of ins)x[0].remove()},()=>{for(const [e,pa,nx] of ins)pa.insertBefore(e,nx&&nx.parentNode===pa?nx:null);ins=[]}],
+      tim:[()=>{mt=Music.timer;clearInterval(mt);Music.timer=null;tt=Track.timer;clearInterval(tt);Track.timer=null},()=>{if(mt){Music.timer=null;Music.start()}if(tt)Track.timer=setInterval(()=>Track.sweep(),500)}],
+      fnt:[()=>H.classList.add('nofont'),()=>H.classList.remove('nofont')],
+      fx:[()=>H.classList.add('nofx'),()=>H.classList.remove('nofx')],
+      ani:[()=>H.classList.add('noanim'),()=>H.classList.remove('noanim')],
+      cvo:[()=>H.classList.add('onlycv'),()=>H.classList.remove('onlycv')],
+      ton:[()=>au(false),()=>au(true)],
+      leer:[()=>{this.noDraw=true;H.classList.add('blank')},()=>{this.noDraw=false;H.classList.remove('blank')}]}},
+
+  aus(k){if(!this.NAMEN[k]){console.log(Object.entries(this.NAMEN).map(([a,b])=>a.padEnd(5)+b).join('\n'));return}this.off=this.off||{};if(this.off[k])return k+' ist schon aus';this.off[k]=1;this.sw()[k][0]();return 'aus: '+this.NAMEN[k]},
+  an(k){if(k===undefined){for(const x of Object.keys(this.off||{}))this.an(x);return 'alles wieder an'}if(!this.off||!this.off[k])return k+' ist an';delete this.off[k];this.sw()[k][1]();return 'an: '+this.NAMEN[k]},
+  live(sec=5){if(this.liveT){clearInterval(this.liveT);this.liveT=0;return 'Anzeige beendet'}if(!this.on)this.start();let n0=this.fr.length;
+    this.liveT=setInterval(()=>{const f=this.fr.slice(n0);n0=this.fr.length;const h=f.filter(v=>v>HITCH_MS&&v<5000);console.log('Ruckler in '+sec+' s: '+h.length+(h.length?', längster '+Math.round(Math.max(...h))+' ms':'')+(Object.keys(this.off||{}).length?'   [aus: '+Object.keys(this.off).join(', ')+']':''))},sec*1000);return 'Anzeige läuft, alle '+sec+' s eine Zeile'},
   scan(sec=8){if(this.scanT)return;const cv=R.cv,pf=$('#perf'),au=on=>{if(Snd.ctx)(on?Snd.ctx.resume():Snd.ctx.suspend()).catch(()=>{})},H=document.documentElement;
-    const ph=[['alles an',()=>{},()=>{}],
-      ['Messanzeige aus',()=>{pf.style.visibility='hidden'},()=>{pf.style.visibility=''}],
-      ['Zeichnen aus',()=>{this.noDraw=true},()=>{this.noDraw=false}],
-      ['Spielfeld unsichtbar',()=>{this.noDraw=true;cv.style.visibility='hidden'},()=>{this.noDraw=false;cv.style.visibility=''}],
-      ['Ton angehalten',()=>au(false),()=>au(true)],
-      ['Animationen aus',()=>H.classList.add('noanim'),()=>H.classList.remove('noanim')],
-      ['alles aus',()=>{this.noDraw=true;cv.style.visibility='hidden';pf.style.visibility='hidden';au(false);H.classList.add('noanim')},()=>{this.noDraw=false;cv.style.visibility='';pf.style.visibility='';au(true);H.classList.remove('noanim')}],
-      ['alles an (Kontrolle)',()=>{},()=>{}]];
+    const P=this.sw();
+    const one=(name,k)=>[this.NAMEN[k],P[k][0],P[k][1]],ks=Object.keys(P);
+    const ph=[['alles an',()=>{},()=>{}],one('Anzeigen eingefroren (kein Text ändert sich)','frz'),one('Eingabefelder entfernt','inp'),one('Zeitgeber aus (Musik, Aufräumen)','tim'),
+      one('Systemschrift statt Spielschrift','fnt'),one('Leuchteffekte aus','fx'),one('Animationen aus','ani'),one('nur das Spielfeld sichtbar','cvo'),one('Ton angehalten','ton'),one('Seite leer, nichts wird gezeichnet','leer'),
+      ['alles zusammen',()=>{for(const k of ks)P[k][0]()},()=>{for(const k of ks.slice().reverse())P[k][1]()}],['alles an (Kontrolle)',()=>{},()=>{}]];
     if(!this.on)this.start();this.scanRes=[];let i=0;
     const next=()=>{if(i>0){const p=ph[i-1],f=this.fr.slice(this.scanN+40),hits=f.filter(v=>v>HITCH_MS&&v<5000);p[2]();this.scanRes.push({name:p[0],n:f.length,hits:hits.length,max:f.length?Math.max(...f):0,sec})}
       if(i>=ph.length){this.scanT=0;toast('Ursachensuche fertig');$('#bDev').onclick();return}
-      ph[i][1]();this.scanN=this.fr.length;toast('Ursachensuche '+(i+1)+' von '+ph.length+': '+ph[i][0]);i++;this.scanT=setTimeout(next,sec*1000)};
+      ph[i][1]();this.scanN=this.fr.length;i++;this.scanT=setTimeout(next,sec*1000)};
     next()},
   scanText(){if(!this.scanRes||!this.scanRes.length)return'';let o='\nUrsachensuche (je Abschnitt '+this.scanRes[0].sec+' s)\n';
-    for(const r of this.scanRes)o+='  '+r.name.padEnd(22)+String(r.hits).padStart(3)+' Ruckler, '+r.n+' Bilder, längstes '+Math.round(r.max)+' ms\n';return o},
+    for(const r of this.scanRes)o+='  '+r.name.padEnd(46)+String(r.hits).padStart(3)+' Ruckler, '+r.n+' Bilder, längstes '+Math.round(r.max)+' ms\n';return o},
   start(){this.on=true;this.fr=[];this.hit=[];this.t0=performance.now();this.mus=this.sv=0;this.pw=null;$('#perf').hidden=false;$('#perf').textContent='Messung läuft …'},
   stop(){this.on=false;$('#perf').hidden=true},
   frame(now,raw,work){const mus=this.mus,sv=this.sv,pw=this.pw;this.mus=this.sv=0;this.pw=work;
     if(this.fr.length<60000)this.fr.push(raw);
     if(raw>HITCH_MS&&raw<5000&&pw&&this.hit.length<400)this.hit.push({t:(now-this.t0)/1000,raw,st:pw.st,hud:pw.hud,draw:pw.draw,mus,sv,ns:pw.ns,en:pw.en,w:pw.w,sp:pw.sp});
-    if(now-this.lastUi>500){this.lastUi=now;const n=Math.min(this.fr.length,60);let s=0;for(let i=this.fr.length-n;i<this.fr.length;i++)s+=this.fr[i];const h=this.hit[this.hit.length-1];
+    if(now-this.lastUi>500&&!this.freeze){this.lastUi=now;const n=Math.min(this.fr.length,60);let s=0;for(let i=this.fr.length-n;i<this.fr.length;i++)s+=this.fr[i];const h=this.hit[this.hit.length-1];
       $('#perf').textContent=(n?Math.round(1000*n/s):0)+' Bilder/s · Ruckler '+this.hit.length+(h?'\nletzter '+Math.round(h.raw)+' ms: Spiel '+(h.st+h.hud+h.draw+h.mus).toFixed(0)+', Rest '+Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus).toFixed(0):'')}},
   report(){const f=this.fr.slice().sort((a,b)=>a-b),n=f.length,q=p=>n?f[Math.min(n-1,Math.floor(n*p))].toFixed(1):'–',H=this.hit,f1=v=>v.toFixed(1).padStart(6);
     let gap=0;for(let i=1;i<H.length;i++)gap+=H[i].t-H[i-1].t;
@@ -119,7 +138,7 @@ function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curI
     (w1?`<button type="button" class="dwide${save.devDrop?' on':''}" data-dt="devDrop">Abwurf in jeder Welle: ${save.devDrop?'an':'aus'}</button>`:'')+
     `<button type="button" class="dwide${save.devPerf?' on':''}" data-dt="devPerf">Leistungsmessung: ${save.devPerf?'an':'aus'}</button>`+
     (save.devPerf?`<button type="button" class="dwide" data-dp="copy">Messung kopieren (${Perf.hit.length} Ruckler)</button><button type="button" class="dwide" data-dp="clear">Messung neu beginnen</button>`:'')+
-    `<button type="button" class="dwide" data-dp="scan">Ursachensuche starten (etwa 1 Minute)</button>`+(Perf.scanRes&&Perf.scanRes.length&&!Perf.scanT?`<button type="button" class="dwide" data-dp="copy">Ergebnis kopieren</button><p style="white-space:pre;font:11px/1.4 ui-monospace,Menlo,monospace;overflow-x:auto">${Perf.scanText()}</p>`:'')+
+    `<button type="button" class="dwide" data-dp="scan">Ursachensuche starten (etwa 2 Minuten, Bild und Ton setzen zwischendurch aus)</button>`+(Perf.scanRes&&Perf.scanRes.length&&!Perf.scanT?`<button type="button" class="dwide" data-dp="copy">Ergebnis kopieren</button><p style="white-space:pre;font:11px/1.4 ui-monospace,Menlo,monospace;overflow-x:auto">${Perf.scanText()}</p>`:'')+
     `<p>Die Testhilfen ändern den Spielstand dieser Seite${STAGE?' ('+STAGE+')':''} und gelten nur, solange der Entwicklermodus an ist.</p>`;
   $('#devBody').innerHTML=h}
 $('#bDev').onclick=()=>{$('#devOut').hidden=true;renderDev();$('#dev').hidden=false};
@@ -591,7 +610,7 @@ function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf
     if(run.over&&run.overT>(run.quit?1.2:2.3)&&!endShown)showEnd();
     pendT+=dt;if(pendT>2&&!run.over){pendT=0;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w};persist()}
     if(pf)p1=performance.now();
-    hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}
+    hudT+=dt;if(hudT>.1&&!Perf.freeze){hudT=0;updHud();updBuildBtn();musicState()}}
   else if(!run)Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:W.id===2?5:0});
   if(pf)p2=performance.now();
   if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden&&$('#fleet').hidden&&!Perf.noDraw)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
