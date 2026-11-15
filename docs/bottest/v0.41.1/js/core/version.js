@@ -1,4 +1,4 @@
-export const VERSION = '0.41.0';
+export const VERSION = '0.41.1';
 
 // Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).
 // Jede Stufe hat einen eigenen Spielstand, damit Tests den echten Fortschritt nie berühren. In Node (Simulation) gibt es kein location.

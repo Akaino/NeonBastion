@@ -102,7 +102,8 @@ let invDirty = false,
   lastBox = null, // Inhalt der zuletzt geöffneten Ausrüstungsbox
   gearHero = null, // Held, dessen Ausrüstung gerade offen ist (Reiter Helden)
   gearSlot = 'waffe', // dort gewählter Platz
-  invType = 'alle'; // Filter im Inventar
+  invType = 'alle', // Filter im Inventar
+  heroOrder = null; // Reihenfolge der Heldenübersicht; null = beim nächsten Aufbau neu nach UP sortieren
 const W = () => save.w5;
 const tag = (rar, extra) =>
   `<span class="tag" style="--c:${RARITY5[rar].col}">${RARITY5[rar].name}${extra || ''}</span>`;
@@ -125,6 +126,7 @@ export function openW5() {
     }),
   );
   setW5On(true);
+  heroOrder = null;
   show('w5');
   $('#w5Note').hidden = !got;
   if (got)
@@ -161,6 +163,7 @@ $('#w5tabs').addEventListener('click', e => {
   const b = e.target.closest('[data-t]');
   if (!b) return;
   setW5Tab(b.dataset.t);
+  if (b.dataset.t === 'helden') heroOrder = null; // Klick auf „Helden“ sortiert neu – auch wenn der Reiter schon offen ist
   lastRes = lastBox = null;
   gearHero = null;
   renderW5();
@@ -407,12 +410,16 @@ function panelInv() {
 }
 function panelHelden() {
   if (gearHero && W().heroes[gearHero]) return panelGear(gearHero);
-  const own = ownedSorted(),
+  // Die Reihenfolge bleibt stehen, solange man in der Übersicht arbeitet (Rückmeldung des Nutzers: Beim Aufwerten sprangen die
+  // Karten hin und her). Neu sortiert wird nur beim Betreten der Welt und beim Klick auf den Reiter; neue Helden kommen ans Ende.
+  if (!heroOrder) heroOrder = ownedSorted();
+  else heroOrder = heroOrder.filter(id => W().heroes[id]).concat(ownedSorted().filter(id => !heroOrder.includes(id)));
+  const own = heroOrder,
     rest = HERO_IDS5.filter(id => !W().heroes[id]).sort(
       (a, b) => RARITY_IDS5.indexOf(HEROES5[a].rar) - RARITY_IDS5.indexOf(HEROES5[b].rar),
     );
   return (
-    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden, der stärkste zuerst. <b>UP</b> ist die Wertung eines Helden aus Leben, Schaden, Stufe, Rang und Seltenheit. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}<br>${cur5('d', 'Synchron-Staub')} ersetzt fehlende Kerne beim Rang. Du bekommst ihn, indem du Kerne von Basishelden synchronisierst (Knopf auf ihrer Karte), und selten als Beute: 1 % je gewonnener Welle, 25 % je besiegtem Boss.</p>` +
+    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden, der stärkste zuerst (sortiert wird beim Öffnen und beim Tippen auf „Helden“). <b>UP</b> ist die Wertung eines Helden aus Leben, Schaden, Stufe, Rang und Seltenheit. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}<br>${cur5('d', 'Synchron-Staub')} ersetzt fehlende Kerne beim Rang. Du bekommst ihn, indem du Kerne von Basishelden synchronisierst (Knopf auf ihrer Karte), und selten als Beute: 1 % je gewonnener Welle, 25 % je besiegtem Boss.</p>` +
     own.map(heroCard).join('') +
     rest.map(heroCard).join('')
   );
