@@ -190,12 +190,12 @@ export function renderSheet() {
   else if (st.max)
     h += `<div class="act"><button class="btn" disabled style="--c:${br.col}">Maximal ausgebaut</button></div>`;
   else {
-    h += `<div class="act"><button class="btn ${st.aff ? '' : 'poor'}" id="bBuy" style="--c:${br.col}">${st.l ? 'Verbessern' : 'Freischalten'} für ${costsOf(
+    h += `<div class="act"><button class="btn ${st.aff ? '' : 'poor'}" id="bBuy" style="--c:${br.col}"><span class="price"><span>${st.l ? 'Verbessern' : 'Freischalten'} für</span>${costsOf(
       n,
       st.l,
     )
-      .map(([cu, c]) => curHTML(cu, c).replace('class="cur"', 'class="cur" style="margin-left:4px"'))
-      .join(' + ')}</button></div>`;
+      .map(([cu, c]) => curHTML(cu, c))
+      .join('<span class="plus">+</span>')}</span></button></div>`;
   }
   if (W.id === 1 && n.id === 'e2b' && st.l > 0) h += startStepper();
   sh.innerHTML = h;

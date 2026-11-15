@@ -305,6 +305,17 @@
 .sheet .act .btn {
   flex: 1;
 }
+/* Kaufknopf: Text, Preise und Pluszeichen in einer Zeile, gemeinsam mittig */
+.btn .price {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.btn .price .plus {
+  line-height: 1;
+}
 .cmp {
   display: flex;
   flex-direction: column;
