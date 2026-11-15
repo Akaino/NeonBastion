@@ -17,7 +17,7 @@ with sync_playwright() as p:
     check(n>5,f'{n} Prüfpunkte')
     check(pg.inner_text('#total')==f'0 von {n} geprüft','Zähler am Anfang: '+pg.inner_text('#total'))
     check(pg.evaluate("()=>document.documentElement.scrollWidth<=window.innerWidth"),'kein seitliches Scrollen')
-    pg.locator('.checks li label').nth(0).tap();pg.locator('.checks li label').nth(2).tap()
+    pg.locator('.checks li .box').nth(0).tap();pg.locator('.checks li .box').nth(2).tap()
     pg.locator('.checks li .nb').nth(1).tap();pg.locator('.checks li textarea').nth(1).fill('zu klein')
     check(pg.inner_text('#total')==f'2 von {n} geprüft','Zähler nach zwei Haken: '+pg.inner_text('#total'))
     pg.screenshot(path='tl1_testliste.png',full_page=True)
