@@ -4,7 +4,7 @@ Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel st
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (33 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (32 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
 ## 1. Ruckeln und Ton in Safari (wichtig zuerst)
 
