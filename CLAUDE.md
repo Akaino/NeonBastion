@@ -210,6 +210,9 @@ Knotennamen seit 0.21.0: „Impulsstärke“ (früher Fingerspitze), „Impulsge
      - Fernkampf: Mörser (Flächenschaden auf Helden), Scharfschütze (ein Ziel, sehr hoher Schaden, lange Ladezeit mit Anzeige).
      - Tod und Nachwirkung: Brüter (hinterlässt ein Ei, aus dem später Gegner schlüpfen), Giftwolke (hinterlässt ein Feld, das Verbündete schwächt).
      - Schwergewichte: Zwilling (zwei Gegner, die sich gegenseitig heilen, solange beide leben).
+   - **Abwürfe für den Zeiger** (Wunsch des Nutzers vom 15.11.2026, Einzelheiten noch besprechen): Gegner lassen selten Dinge fallen (Bomben, andere Verstärker), die zeitweise Boni bringen, wenn man sie zerstört. Nur der Impuls kann sie zerstören, und es braucht 5 aufeinanderfolgende Impulse.
+   - **Zerstörung der Basis zeigen** (15.11.2026): Fällt die Basis, soll sie sichtbar zerfallen (ordentlicher Effekt). Bisher endet nur das Spiel, die Basis sieht aus wie immer.
+   - **Basis verändert sich mit Upgrades** (15.11.2026): Die größeren Basis-Upgrades aus dem Skilltree sollen die Basis optisch verändern; nicht jedes Upgrade braucht einen sichtbaren Unterschied.
    - Erfolge ausbauen, wenn neue Inhalte dazukommen (neue Gegner, Helden, Welten); Ideen: Runs ohne bestimmten Ast, Boss ohne Basisschaden besiegt.
    - **Balancing-Ziel: Der Zeiger (Impuls) soll nicht weniger wichtig sein als Einheiten, Türme und Helden** – und umgekehrt. Stand Upgrade-Messung 0.12.0: Der Fokus-Ast dominiert über das Autofeuer, Basis-Verteidigung (Panzerung, Schild, Reparatur, Geschütze) bringt bei Welle 25 +0,0 Wellen. Eher die anderen Äste aufwerten als den Fokus schwächen.
    - Turm-Menü (erledigt in 0.13.0): öffnet sich nur noch bei kurzem Antippen ohne Bewegung (`towerTap`, `TAP_MOVE`, `TAP_MS` in `ui.js`); aufsetzen und ziehen bewegt den Impuls-Zeiger. Beim Nutzer nachfragen, ob das versehentliche Öffnen damit weg ist.
