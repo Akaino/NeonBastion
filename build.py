@@ -23,7 +23,7 @@ dev = open(os.path.join(SRC, 'dev.js'), encoding='utf-8').read()
 html = shell.replace('/*JS*/', js)
 full = shell.replace('/*JS*/', js + '\n' + dev)
 assert not [w for w in ('renderDev', 'devCode', 'Perf.scan', 'bW2Test') if w in html], 'Entwicklermodus ist im echten Spiel gelandet'
-version = re.search(r"const VERSION='([^']+)'", js).group(1)
+version = re.search(r"const VERSION\s*=\s*'([^']+)'", js).group(1)
 
 fonts = ''.join("@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:%d;font-display:swap;src:url(fonts/chakra-petch-latin-%d-normal.woff2) format('woff2')}" % (w, w) for w in (400, 500, 600, 700))
 head = lambda h: h.replace('<style>', '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" type="image/png" href="icon-32.png">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<style>' + fonts, 1)
