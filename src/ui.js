@@ -355,6 +355,8 @@ const PREV={
  h7b:[['Heldenschaden',S=>S.heroDmg,'x']],h8:[['Heldenschaden',S=>S.heroDmg,'x']],h9:[['Stärke der Fähigkeiten',S=>S.abilPow,'x']],
  f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n'],['Schaden pro Schuss',S=>S.autoRate?S.turretDmg*S.autoDmg:0,'n']],f3c:[['Schaden pro Schuss',S=>S.turretDmg*S.autoDmg,'n'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
  f6:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],
+ h5c:[['Klinge-Schaden',S=>S.heroDmg*S.heroSelf*HEROES.klinge.dmg,'n']],
+ b5c:[['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n'],['Schaden der Schockwelle',S=>S.pulseDmg,'n']],u5c:[['Drohnenschaden',S=>S.droneDmg,'n']],
  b6b:[['Schaden durch Geschosse',S=>S.rangedRes*100,'pct']],b8b:[['Geschützreichweite',S=>S.turretRange,'i']],u5b:[['Reparatur der Drohnen pro Sekunde',S=>S.droneRegen*100,'pct']],u8b:[['Tempo der Drohnen',S=>S.droneSp,'x']],
  h5b:[['Heilung der Helden pro Sekunde',S=>S.heroRegen*100,'pct']],h8b:[['Heldenplätze',S=>S.slots,'i']],f5b:[['Impulsschaden gegen Elite und Bosse',S=>1+S.impBig,'x']],
  f7b:[['Impulsradius im Schatten',S=>S.tapR*S.shadeMul,'i']],e4c:[['Energie aus Gegnern',S=>S.energyGain,'x']],f8:[['Weltenbrecher alle … Impulse',S=>S.megaTap||'–','t']],

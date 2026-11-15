@@ -24,7 +24,7 @@ function aimPointer(r){if(r.drops&&r.drops.length){r.cx=r.drops[0].x;r.cy=r.drop
   if(best){r.cx=best.x;r.cy=best.y}}
 
 // Einen Run spielen. Türme werden automatisch gebaut, Tippen gibt es nicht.
-function playRun(X,save,opt){const r=new X.Run(save,{});r.headless=opt.headless!==false;r.hw=330;r.hh=700;r.noImpulse=opt.zeiger==='aus';const aimS=opt.zeiger==='zielt';let aimT=0;const ang=[.8,2.4,4,5.5,1.6,3.2];let ti=0;
+function playRun(X,save,opt){const r=new X.Run(save,{});if(opt.anteile)r.tally={};r.headless=opt.headless!==false;r.hw=330;r.hh=700;r.noImpulse=opt.zeiger==='aus';const aimS=opt.zeiger==='zielt';let aimT=0;const ang=[.8,2.4,4,5.5,1.6,3.2];let ti=0;
   const types=X.TOWER_IDS.filter(t=>save.towers[t].u),pref=(aimS?['weak','mark','frost','cryo']:['weak','frost','cryo']).filter(t=>types.includes(t));
   while(!r.over&&r.t<opt.maxRunSec){r.step(opt.dt);
     if(aimS&&(aimT-=opt.dt)<=0){aimT=.25;aimPointer(r)}
@@ -127,9 +127,10 @@ function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.fres
   if(job.opt.frei)for(const id of String(job.opt.frei).split(','))if(save.towers[id]){save.towers[id].u=1;save.towers[id].l=Math.max(save.towers[id].l,+job.opt.freiStufe||1)}   // --frei mark: Turm für die Probe freischalten
   save.heroes=Object.assign(X.freshSave().heroes,save.heroes);
   if(save.nodes.f5===1&&!save.ver&&X.NODES.f5.max>1)save.nodes.f5=X.NODES.f5.max;   // wie loadSave: alte Stände behalten den vollen Heldenimpuls
+  if(job.opt.knoten)for(const kv of String(job.opt.knoten).split(',')){const [k,v]=kv.split('=');if(X.NODES[k])save.nodes[k]=+v}   // --knoten b5c=5,u5c=5: Knotenstufen für die Probe setzen
   const S=X.stats(save);save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
   // --held kopfjaeger: ersetzt den letzten Helden im Team, mit dessen Stufe und Aufstieg
   if(job.opt.held&&save.team.length)for(const id of String(job.opt.held).split(','))if(save.heroes[id]&&!save.team.includes(id)){const o=save.heroes[save.team[save.team.length-1]];save.heroes[id]={u:1,l:o.l,a:o.a};save.team[save.team.length-1]=id}
   const pick=Math.max(1,Math.min(S.startMax,(save.best||0)-10));save.startPick=pick>=S.startMax?0:pick;
-  const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick}}
+  const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick,tally:r.tally||null}}
 module.exports={simulate,benchmark,probe,candidates,WEIGHT};

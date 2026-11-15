@@ -43,6 +43,7 @@ Ast-Vergleich (aeste): Karriere mit jeder Kombination erlaubter Skilltree-Äste,
   --seeds 3          Durchläufe je Kombination
   --stunden 2        Spielzeit (1×) je Durchlauf
   --groesse 1,2,3,4,5  nur Kombinationen mit so vielen Ästen
+  --anteile          (nur probe) zeigt je Spielstand, welcher Anteil des Schadens von Basis, Flotte, Helden, Impuls und Türmen kommt
   --tuerme an        an oder aus: darf der Bot Türme freischalten und aufwerten
 
 Probe (probe): derselbe Spielstand spielt wenige Runs, wahlweise gegen zwei Fassungen des Spielcodes
@@ -58,7 +59,7 @@ Allgemein
 `);process.exit(0)}
 const CORES=Math.max(1,+arg('kerne',Math.max(1,os.cpus().length-1)));
 const OUT=arg('ausgabe',path.join(__dirname,'ergebnisse'));fs.mkdirSync(OUT,{recursive:true});
-const base={held:arg('held',null),frei:arg('frei',null),freiStufe:arg('freistufe',1),zeiger:arg('zeiger','ruht'),kauf:arg('kauf','billig'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
+const base={anteile:argv.includes('--anteile'),knoten:arg('knoten',null),held:arg('held',null),frei:arg('frei',null),freiStufe:arg('freistufe',1),zeiger:arg('zeiger','ruht'),kauf:arg('kauf','billig'),dt:+arg('dt',.05),maxRunSec:4000,stallRuns:+arg('stall',4),milestones:[25,50,75,100,150,200]};
 const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h} h ${m} min`:`${m} min`};
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[Math.floor((b.length-1)/2)]:NaN};
 const t0=Date.now(),wall=()=>fmtT((Date.now()-t0)/1000);
@@ -163,7 +164,9 @@ async function probe(){const at=String(arg('at','25,45,70')).split(',').map(Numb
   for(const m of at){if(!fs.existsSync(file(m)))continue;const save=JSON.parse(fs.readFileSync(file(m),'utf8'));
     const out=await Promise.all(vars.map(([name,src])=>Promise.all(Array.from({length:REP},(_,i)=>P.run({type:'probe',job:{save,seed:1000+i,src,opt:{...base}}}).then(x=>x.res)))));
     out.forEach((rs,vi)=>{const w=rs.map(r=>r.wave),avg=w.reduce((a,b)=>a+b,0)/w.length;
-      md+=`| Rekord ${save.best} | ${vars[vi][0]} | ${avg.toFixed(1)} | ${Math.min(...w)} – ${Math.max(...w)} | ${fmtT(rs.reduce((a,r)=>a+r.sec,0)/rs.length)} |\n`})}
+      md+=`| Rekord ${save.best} | ${vars[vi][0]} | ${avg.toFixed(1)} | ${Math.min(...w)} – ${Math.max(...w)} | ${fmtT(rs.reduce((a,r)=>a+r.sec,0)/rs.length)} |\n`;
+      if(rs[0].tally){const t={};let sum=0;for(const r of rs)for(const k in r.tally){t[k]=(t[k]||0)+r.tally[k];sum+=r.tally[k]}
+        md+=`|  | Schadensanteile | ${['basis','flotte','helden','impuls','tuerme'].map(k=>k+' '+(100*(t[k]||0)/sum).toFixed(0)+' %').join(' · ')} | | |\n`}})}
   P.close();md+=`\nRechenzeit ${wall()}.\n`;fs.writeFileSync(path.join(OUT,'probe.md'),md);console.log('\n'+md)}
 
 ({upgrades,aeste,probe}[mode]||karriere)().catch(e=>{console.error(e);process.exit(1)});

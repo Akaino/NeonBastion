@@ -1,4 +1,4 @@
-const VERSION='0.28.1';
+const VERSION='0.29.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -50,6 +50,7 @@ const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=2.6,MEGA_
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
 const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
+const HERO_SELF=.35;   // Kampfrausch: Exponent auf Stufe 5
 const F5_MAX=5;   // Heldenimpuls: früher ein Knoten mit einer Stufe (Sprung), seit 0.27.0 fünf Stufen
 const NODE_DEFS=[
  // ---- Basis ----
@@ -61,6 +62,7 @@ const NODE_DEFS=[
  ['b4a','b','b3a',4,-1.6,'Kaliber',10,'p',1,1.35,l=>`+${l*40} % Schaden für Geschütze und Autofeuer`],
  ['b4c','b','b3a',4,-.3,'Feuerleitung',10,'k',4,1.4,l=>`+${l*10} % Feuerrate der Geschütze`],
  ['b4b','b','b3b',4,1.4,'Resonanz',4,'p',1,1.6,l=>`−${l*12} % Abklingzeit der Schockwelle`],
+ ['b5c','b','b4c',5,0,'Feuerleitstand',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Geschütze, Autofeuer und Schockwelle wachsen mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Geschütze, Autofeuer und Schockwelle wachsen noch nicht mit dem Heldenschaden-Bonus mit'],
  ['b5','b','b4a',5,-1,'Bollwerk',1,'d',3,1,l=>'Doppeltes Basisleben, +50 % Geschützreichweite'],
  ['b5b','b','b4b',5,1.2,'Nova-Ring',5,'k',8,1.6,l=>`+${l*15} % Radius der Schockwelle`],
  ['b6b','b','b5b',6,1.5,'Bunker',10,'k',12,1.4,l=>`−${l*4} % Schaden durch Geschosse von Fernkämpfern und Belagerern`],
@@ -79,6 +81,7 @@ const NODE_DEFS=[
  ['u3b','u','u2b',3,1.3,'Schwarm',4,'k',4,1.8,l=>`+${l*2} zusätzliche Drohnen`],
  ['u4','u','u3a',4,-1,'Lanzenstrahl',3,'p',1,1.8,l=>l?`Strahlwaffen, +${l*50} % Reichweite`:'Normale Bordkanonen'],
  ['u4b','u','u3b',4,1.3,'Schwarmintelligenz',10,'k',6,1.45,l=>`+${l*2} % Drohnenschaden pro aktiver Drohne`],
+ ['u5c','u','u4b',5,.4,'Heldengeschwader',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Drohnen wachsen mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Drohnen wachsen noch nicht mit dem Heldenschaden-Bonus mit'],
  ['u5b','u','u4b',5,1.3,'Feldreparatur',5,'k',10,1.5,l=>`Drohnen reparieren sich um ${l*2} % ihres Lebens pro Sekunde`],
  ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Schaltet in der Flotte die Klasse Kreuzer frei'],
  ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden und -leben`],
@@ -96,6 +99,7 @@ const NODE_DEFS=[
  ['h3c','h','h2b',3,1.8,'Kampftempo',15,'s',150,1.3,l=>`+${l*6} % Angriffstempo der Helden`],
  ['h4','h','h3a',4,-1,'Fähigkeitsfokus',4,'p',1,1.7,l=>`−${l*10} % Abklingzeit der Fähigkeiten`],
  ['h4b','h','h3b',4,1,'Heldenkrit',10,'k',5,1.45,l=>`${l*4} % Chance auf 2,5-fachen Heldenschaden`],
+ ['h5c','h','h4b',5,.35,'Kampfrausch',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Die Treffer der Helden selbst werden mit wachsendem Heldenschaden-Bonus zusätzlich stärker`:'Kein Kampfrausch'],
  ['h5b','h','h4b',5,1.2,'Feldsanitäter',10,'k',8,1.4,l=>`Helden heilen sich um ${l} % ihres Lebens pro Sekunde`],
  ['h5','h','h4',5,-.5,'Vierter Platz',1,'d',4,1,l=>'Vierter Heldenplatz'],
  ['h6','h','h5',6,0,'Kampfgeist',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Heldenschaden`],
@@ -115,7 +119,7 @@ const NODE_DEFS=[
  ['f3c','b','f2c',3.5,.5,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
  ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
  ['f4b','f','f3b',4,1,'Impulsgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Impulsschaden`],
- ['f5','f','f4',5,-.5,'Heldenimpuls',F5_MAX,'d',.7,1.25,l=>`Dein Impuls erhält ${l*100/F5_MAX} % des Heldenschaden-Bonus`],
+ ['f5','f','f4',5,-.5,'Heldenimpuls',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Dein Impuls wächst mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Dein Impuls wächst noch nicht mit dem Heldenschaden-Bonus mit'],
  ['f5b','f','f4b',5,1,'Brennpunkt',10,'p',2,1.4,l=>`+${l*8} % Impulsschaden gegen Elite-Gegner und Bosse`],
  ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Impulsschaden`],
  ['f7','b','f3c',4.5,.6,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
@@ -251,7 +255,14 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
-  if(L('f5'))S.tapDmg*=1+S.heroDmg*Math.min(1,L('f5')/F5_MAX);
+  // Verbund mit den Helden: Der Heldenschaden-Bonus wächst spät sehr stark (Knoten und Supernova). Impuls, Basis und Flotte bekommen je einen Knoten, der ihn in fünf Stufen übernimmt –
+  // sonst trägt ab Welle 70 allein der Impuls (gemessen: 65–86 % des Schadens).
+  // Jede Stufe ist derselbe Faktor (geometrisch), damit keine Stufe einen Sprung macht: Stufe l gibt (1+Bonus)^(l/5), Stufe 5 den vollen Bonus.
+  const bond=id=>Math.pow(1+S.heroDmg,Math.min(1,L(id)/F5_MAX));
+  if(L('f5'))S.tapDmg*=bond('f5');
+  if(L('b5c')){const m=bond('b5c');S.turretDmg*=m;S.pulseDmg*=m}
+  if(L('u5c'))S.droneDmg*=bond('u5c');
+  S.heroSelf=Math.pow(1+S.heroDmg,HERO_SELF*L('h5c')/F5_MAX);   // Kampfrausch: nur die eigenen Treffer der Helden, nicht der Bonus, den die anderen übernehmen
   S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
 

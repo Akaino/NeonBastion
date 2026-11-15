@@ -13,14 +13,14 @@ with sync_playwright() as p:
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     pg.add_init_script("if(!sessionStorage.x){sessionStorage.x=1;localStorage.setItem('neon-bastion-v1',"+json.dumps(json.dumps(old))+")}")
     pg.goto(GAME);pg.wait_for_timeout(300)
-    check(pg.evaluate("()=>Object.keys(NODES).length")==79,'78 Knoten und der Kern: '+str(pg.evaluate("()=>Object.keys(NODES).length")))
+    check(pg.evaluate("()=>Object.keys(NODES).length")==82,'81 Knoten und der Kern: '+str(pg.evaluate("()=>Object.keys(NODES).length")))
     check(pg.evaluate("n=>n.every(id=>NODES[id]&&NODES[NODES[id].parent]&&typeof PREVIEW!=='undefined'||NODES[id])",NEW),'alle neuen Knoten hängen an einem Elternknoten')
     # kein Knoten liegt auf einem anderen
     d=pg.evaluate("()=>{const a=Object.values(NODES);let m=1e9,w=null;for(let i=0;i<a.length;i++)for(let j=i+1;j<a.length;j++){const q=Math.hypot(a[i].x-a[j].x,a[i].y-a[j].y);if(q<m){m=q;w=[a[i].id,a[j].id]}}return [Math.round(m),w]}")
     check(d[0]>=40,'kleinster Abstand zweier Knoten: '+str(d))
     # alter Spielstand mit Heldenimpuls: volle Wirkung bleibt
     v=pg.evaluate("()=>{const full=stats(save).tapDmg,l=save.nodes.f5;const o=JSON.parse(JSON.stringify(save));o.nodes.f5=0;const none=stats(o).tapDmg;o.nodes.f5=1;const one=stats(o).tapDmg;return [l,+(full/none).toFixed(3),+(one/none).toFixed(3),stats(save).heroDmg]}")
-    check(v[0]==5 and abs(v[1]-(1+v[3]))<.01 and abs(v[2]-(1+v[3]/5))<.01,'alter Spielstand: Heldenimpuls steht auf Stufe 5 mit voller Wirkung, eine Stufe gibt ein Fünftel: '+str(v))
+    check(v[0]==5 and abs(v[1]-(1+v[3]))<.01 and abs(v[2]-(1+v[3])**.2)<.01,'alter Spielstand: Heldenimpuls steht auf Stufe 5 mit voller Wirkung, jede Stufe ist derselbe Faktor: '+str(v))
     pg.evaluate("()=>{persist()}");pg.reload();pg.wait_for_timeout(300)
     pg.evaluate("()=>{save.nodes.f5=1;persist()}");pg.reload();pg.wait_for_timeout(300)
     check(pg.evaluate("()=>save.nodes.f5")==1,'neuer Spielstand ab 0.27.0: Stufe 1 bleibt Stufe 1')
@@ -28,6 +28,10 @@ with sync_playwright() as p:
     s=pg.evaluate("""()=>{const o=JSON.parse(JSON.stringify(save));const a=stats(o);Object.assign(o.nodes,{b6b:10,b8b:5,u5b:5,u8b:5,h5b:10,h8b:1,f5b:10,f7b:5,e4c:10});const b=stats(o);
       return {ranged:[a.rangedRes,+b.rangedRes.toFixed(2)],range:+(b.turretRange/a.turretRange).toFixed(2),dreg:[a.droneRegen,+b.droneRegen.toFixed(2)],dsp:[a.droneSp,b.droneSp],hreg:[a.heroRegen,+b.heroRegen.toFixed(2)],slots:b.slots-a.slots,big:[a.impBig,+b.impBig.toFixed(2)],shade:[a.shadeMul,b.shadeMul],en:[a.energyGain,b.energyGain]}}""")
     check(s=={'ranged':[1,0.6],'range':1.5,'dreg':[0,0.1],'dsp':[1,1.5],'hreg':[0,0.1],'slots':1,'big':[0,0.8],'shade':[0.5,1],'en':[1,2]},'Werte der neuen Knoten auf höchster Stufe: '+str(s))
+    # Verbund-Knoten: Basis, Flotte und Helden wachsen in fünf gleichen Schritten mit dem Heldenschaden-Bonus mit
+    q=pg.evaluate("""()=>{const o=JSON.parse(JSON.stringify(save));const a=stats(o),r={};for(const l of [1,5]){Object.assign(o.nodes,{b5c:l,u5c:l,h5c:l});const b=stats(o);r[l]=[b.turretDmg/a.turretDmg,b.pulseDmg/a.pulseDmg,b.droneDmg/a.droneDmg,b.heroSelf,b.heroDmg/a.heroDmg]}return [r,a.heroDmg,a.heroSelf]}""")
+    H=1+q[1];ok=all(abs(x-H**.2)<1e-6 for x in q[0]['1'][:3]) and all(abs(x-H)<1e-6 for x in q[0]['5'][:3]) and abs(q[0]['5'][3]-H**.35)<1e-6 and q[0]['5'][4]==1 and q[2]==1
+    check(ok,'Feuerleitstand, Heldengeschwader, Kampfrausch: Stufe 1 gibt den fünften Teil der Wirkung als Faktor, Stufe 5 die volle; der Heldenschaden-Bonus selbst bleibt gleich')
     # im Baum kaufbar, mit Vorschau
     pg.evaluate("()=>{Object.assign(save.nodes,{b1:5,b2b:3,b3b:2,b4b:1,b5b:1,f2b:1,f3b:1,f4b:1});persist()}");pg.reload();pg.wait_for_timeout(300)
     pg.click('#bTree');pg.wait_for_timeout(300)

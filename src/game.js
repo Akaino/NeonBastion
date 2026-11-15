@@ -112,7 +112,7 @@ constructor(save,hooks){
 }
 makeHero(id,i,n){const d=HEROES[id],st=this.save.heroes[id],lm=1+.12*(st.l-1),a=i/Math.max(1,n)*TAU-PI/2;
   const max=d.hp*lm*this.S.heroHp;
-  return{id,d,col:d.col,x:Math.cos(a)*55,y:Math.sin(a)*55,r:11,max,hp:max,dmg:d.dmg*lm*this.S.heroDmg,rate:d.rate*this.S.heroRate,range:d.range,
+  return{id,d,col:d.col,x:Math.cos(a)*55,y:Math.sin(a)*55,r:11,max,hp:max,dmg:d.dmg*lm*this.S.heroDmg*(this.S.heroSelf||1),rate:d.rate*this.S.heroRate,range:d.range,
     sp:d.speed,cd:d.cd*this.S.abilityCd*(1-.08*st.a),pow:(1+.35*st.a)*this.S.abilPow,abT:d.cd*.5,atkT:0,dead:0,face:a,idleA:a,flash:0,healT:1,lunge:0,spin:0,hits:0,swDir:1}}
 
 /* ---------- helpers ---------- */
@@ -138,7 +138,7 @@ burst(x,y,n,col,sp=180,life=.5,size=3){if(this.headless)return;if(this.parts.len
   for(let i=0;i<n;i++){const a=rnd(0,TAU),s=rnd(.3,1)*sp;this.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:0,m:life*rnd(.6,1.2),col,s:size*rnd(.7,1.3)})}}
 num(x,y,t,col,big){if(this.headless)return;if(this.nums.length<70)this.nums.push({x:x+rnd(-6,6),y,v:-46,l:0,t,col,big})}
 ring(x,y,r0,r1,col,m=.35,w=6){if(this.headless)return;if(this.rings.length<40)this.rings.push({x,y,r0,r1,col,l:0,m,w})}
-shoot(x,y,a,sp,dmg,col,o={}){if(this.pr.length>320)return;this.pr.push({x,y,tx:x,ty:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,dmg,col,tg:o.tg||null,size:o.size||3,pierce:o.pierce||0,hitSet:o.pierce?new Set():null,life:1.6,o})}
+shoot(x,y,a,sp,dmg,col,o={}){if(this.pr.length>320)return;this.pr.push({x,y,tx:x,ty:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,dmg,col,tg:o.tg||null,size:o.size||3,pierce:o.pierce||0,hitSet:o.pierce?new Set():null,life:1.6,o,src:this.src})}
 shootAt(x,y,tg,sp,dmg,col,o={}){o.tg=tg;this.shoot(x,y,Math.atan2(tg.y-y,tg.x-x),sp,dmg,col,o)}
 
 /* ---------- towers ---------- */
@@ -198,7 +198,7 @@ updTowers(dt){
 /* ---------- damage ---------- */
 hitE(e,dmg,o={}){if(e.hp<=0||e.cloak)return;
   if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
-  dmg*=e.vuln||1;if(o.imp){if(e.mark>1)dmg*=e.mark;if(e.boss||e.elite)dmg*=1+(this.S.impBig||0)}if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+  dmg*=e.vuln||1;if(o.imp){if(e.mark>1)dmg*=e.mark;if(e.boss||e.elite)dmg*=1+(this.S.impBig||0)}if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}if(this.tally)this.tally[this.src]=(this.tally[this.src]||0)+Math.min(dmg,e.hp)/e.max;e.hp-=dmg;e.flash=.08;
   if(e.type==='mirror'&&!e.mute&&this.t-e.mirT>MIRROR_CD){e.mirT=this.t;let a=null,bd=MIRROR_R*MIRROR_R;for(const h of this.heroes){if(h.dead>0)continue;const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}for(const h of this.drones){const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}
     if(a){this.hurtAlly(a,a.max*MIRROR_PCT);this.headless||this.bolts.push({pts:[[e.x,e.y],[a.x,a.y]],l:0,m:.15,col:e.col,w:2})}}
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
@@ -440,7 +440,7 @@ updProj(dt){const lim=Math.max(this.hw,this.hh)+120;
     p.tx+=(p.x-p.tx)*Math.min(1,dt*18);p.ty+=(p.y-p.ty)*Math.min(1,dt*18);p.x+=p.vx*dt;p.y+=p.vy*dt;
     let hitE=null;this.query(p.x,p.y,p.size+20,e=>{if(hitE||(p.hitSet&&p.hitSet.has(e)))return;if(hyp(e.x-p.x,e.y-p.y)<e.r+p.size)hitE=e});
     if(hitE&&p.o.splash&&this.explodeAt){this.explodeAt(p,hitE);p.life=0}
-    else if(hitE){this.hitE(hitE,p.dmg,{num:p.o.num,col:p.col});this.burst(p.x,p.y,3,p.col,120,.25,2);
+    else if(hitE){this.src=p.src;this.hitE(hitE,p.dmg,{num:p.o.num,col:p.col});this.burst(p.x,p.y,3,p.col,120,.25,2);
       if(p.pierce>0){p.pierce--;p.hitSet.add(hitE)}else p.life=0}
     if(Math.abs(p.x)>lim||Math.abs(p.y)>lim)p.life=0}
   this.pr=this.pr.filter(p=>p.life>0);
@@ -501,11 +501,11 @@ step(dt){if(this.over){this.overT+=dt;this.fx(dt);this.shake=Math.max(0,this.sha
       this.ring(0,0,10,360,'#3df5ff',1.1,16);this.ring(0,0,10,240,'#ff4fd8',.9,10);this.ring(0,0,6,130,'#ffffff',.5,8);this.shake=26;this.h.sfx&&this.h.sfx('boss')}
     return}
   this.t+=dt;if(this.rushT>0)this.rushT-=dt;
-  this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
-  this.updHeroes(dt);this.updDrones(dt);
+  this.src='basis';this.updBase(dt);this.updWaves(dt);this.src='tuerme';this.updTowers(dt);
+  this.src='helden';this.updHeroes(dt);this.src='flotte';this.updDrones(dt);this.src='basis';
   if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.autoShot(tg.x,tg.y);this.autoT=1/this.S.autoRate}}}
   // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
-  if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt*(this.buff.haste>0?DROP_HASTE:1);this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
+  this.src='impuls';if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt*(this.buff.haste>0?DROP_HASTE:1);this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updDrops(dt);
   this.updEnemies(dt);this.updZones(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
