@@ -1,6 +1,6 @@
 import { Dev } from '../core/dev-hooks.js';
 import { setDevTaps } from './mode.js';
-import { updW2Btn } from './tools.js';
+import { updDevBtns } from './tools.js';
 import { $ } from '../ui/dom.js';
 
 /* ---------- Haken ins Spiel ---------- */
@@ -19,12 +19,10 @@ Dev.wave = run =>
       }
     : null; // ein schillernder Gegner bzw. ein Abwurf je Welle
 
-Dev.w2 = save => !!save.w2test; // Test-Freischaltung der Gitterfestung
-
 Dev.openSettings = () => {
   setDevTaps(0);
   $('#devCode').hidden = true;
-  updW2Btn();
+  updDevBtns();
 };
 
 /* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.

@@ -77,7 +77,7 @@ def write_variant(dst, dev, up, expose):
         for d, _, fs in os.walk(vdir):
             for f in fs:
                 txt = open(os.path.join(d, f), encoding='utf-8').read()
-                bad = [w for w in ('renderDev', 'devCode', 'Perf.scan', 'bW2Test') if w in txt]
+                bad = [w for w in ('renderDev', 'devCode', 'Perf.scan', 'bDevOff') if w in txt]
                 assert not bad, 'Entwicklermodus ist im echten Spiel gelandet: %s in %s' % (bad, f)
 
 

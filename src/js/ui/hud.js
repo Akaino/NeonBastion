@@ -106,7 +106,6 @@ export function showEnd() {
   ws.cycleBest = Math.max(ws.cycleBest || 0, run.w);
   save.pending = null;
   persist();
-  if (W.id === 1 && prev < 100 && run.w >= 100) setTimeout(() => toast('Neue Welt freigeschaltet: Gitterfestung'), 800);
   $('#eWave').innerHTML =
     `<p style="margin:0;font-size:18px">Welle <b>${run.w}</b> erreicht</p>` +
     (run.w > prev && prev > 0 ? '<p class="rec" style="margin:4px 0 0">Neuer Rekord</p>' : '') +

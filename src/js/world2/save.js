@@ -1,4 +1,4 @@
-import { Dev } from '../core/dev-hooks.js';
+import { STAGE } from '../core/version.js';
 
 export function freshW2() {
   return {
@@ -40,10 +40,7 @@ export function freshW2() {
     runs: 0,
   };
 }
-// Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
-
-// Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
-export const WORLD_MAX = 10,
-  worldUnlockWave = id => (id - 1) * 100;
-
-export const w2Unlocked = save => (save.best || 0) >= worldUnlockWave(2) || !!(Dev.w2 && Dev.w2(save));
+/* Welche Welten sich betreten lassen (Vorgabe des Nutzers vom 15.11.2026, ersetzt „alle 100 Wellen eine neue Welt“):
+   Welten sind von Anfang an da. Der Neon-Sektor ist immer offen. Die Gitterfestung steht im echten Spiel vorerst auf „Demnächst“
+   und ist nur in Beta und Bottest spielbar, bis sie nachgezogen ist. Alles Weitere zeigt die Weltenkarte (ui/worlds.js). */
+export const worldOpen = id => id === 1 || (id === 2 && !!STAGE);

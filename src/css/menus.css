@@ -25,6 +25,7 @@
   height: 14px;
 }
 #tree,
+#worlds,
 #heroes,
 #codex,
 #achv,
@@ -1126,4 +1127,112 @@
   transition:
     transform 0.55s ease-out,
     opacity 0.55s ease-out;
+}
+
+/* Weltenkarte: Kern in der Mitte, fünf Welten im Kreis, außen die verdeckten zweiten Versionen */
+#wmap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+#wmap svg {
+  position: absolute;
+  inset: 6px 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 12px);
+}
+#wmap text {
+  font-family: 'Chakra Petch', system-ui, sans-serif;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.wsec {
+  opacity: 0.05;
+}
+.wring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+}
+.wline {
+  stroke-width: 2;
+  opacity: 0.3;
+  stroke-dasharray: 4 5;
+}
+.wline.on {
+  opacity: 0.9;
+  stroke-dasharray: none;
+  stroke-width: 2.5;
+}
+.wline.dim {
+  opacity: 0.18;
+  stroke-width: 1.5;
+}
+.wcore circle {
+  fill: rgba(6, 10, 36, 0.95);
+  stroke: #eaf0ff;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px rgba(234, 240, 255, 0.7));
+}
+.wcore text {
+  fill: #eaf0ff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.wnode {
+  cursor: pointer;
+}
+.wnode .hit {
+  fill: transparent;
+}
+.wnode .body {
+  fill: rgba(6, 10, 36, 0.95);
+  stroke: var(--c);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px var(--c));
+}
+.wnode .num {
+  fill: var(--c);
+  font-size: 22px;
+  font-weight: 700;
+}
+.wnode .num.small {
+  font-size: 14px;
+}
+.wnode .lab {
+  fill: #eaf0ff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.wnode .tag {
+  fill: var(--c);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wnode.soon .body {
+  stroke-dasharray: 5 4;
+  filter: none;
+  opacity: 0.85;
+}
+.wnode.soon .num {
+  opacity: 0.6;
+}
+.wnode.hidden .body {
+  stroke: #5f5c8c;
+  stroke-dasharray: 3 4;
+  filter: none;
+}
+.wnode.hidden .num {
+  fill: #8a86c0;
+}
+.wnode.sel .body {
+  stroke-width: 4.5;
+  stroke-dasharray: none;
+}
+#wsheet .tag {
+  font-size: 12px;
 }

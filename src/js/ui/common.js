@@ -61,7 +61,7 @@ export const DYN = {
   heroes: ['#hlist', '#slots'],
   nova: ['#novaList', '#novaTop'],
   towers: ['#tlist', '#tslots'],
-  worlds: ['#wlist'],
+  worlds: ['#wmap', '#wsheet'],
   codex: ['#clist'],
   achv: ['#alist'],
   fleet: ['#flist', '#fbar'],

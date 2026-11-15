@@ -7,21 +7,9 @@ import { CUR } from '../data/currencies.js';
 import { curIcon, toast } from '../ui/common.js';
 import { $ } from '../ui/dom.js';
 import { renderHub } from '../ui/hub.js';
-import { Perf, W, persist, run, save, setWorld } from '../ui/state.js';
-import { w2Unlocked } from '../world2/save.js';
+import { Perf, W, persist, run, save } from '../ui/state.js';
 
-$('#bW2Test').onclick = () => {
-  save.w2test = !save.w2test;
-  if (!save.w2test && W.id === 2 && !w2Unlocked(save)) setWorld(1);
-  persist();
-  updW2Btn();
-  renderHub();
-};
-
-export function updW2Btn() {
-  const b = $('#bW2Test');
-  b.textContent = save.w2test ? 'Test-Freischaltung Gitterfestung: an' : 'Gitterfestung testweise freischalten';
-  b.hidden = !save.dev || !!run || (save.best || 0) >= 100;
+export function updDevBtns() {
   $('#bDevOff').hidden = !save.dev || !!run;
   $('#bDev').hidden = !save.dev;
 }
@@ -79,7 +67,7 @@ $('#bDevClose').onclick = () => {
   $('#dev').hidden = true;
   persist();
   if (!run) renderHub();
-  updW2Btn();
+  updDevBtns();
 };
 
 $('#devBody').addEventListener('click', e => {

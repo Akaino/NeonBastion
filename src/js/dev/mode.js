@@ -1,5 +1,5 @@
 import { Snd } from '../audio/sound.js';
-import { updW2Btn } from './tools.js';
+import { updDevBtns } from './tools.js';
 import { toast } from '../ui/common.js';
 import { $ } from '../ui/dom.js';
 import { Perf, persist, run, save } from '../ui/state.js';
@@ -36,7 +36,7 @@ export function devTry() {
     d.hidden = true;
     save.dev = true;
     persist();
-    updW2Btn();
+    updDevBtns();
     Snd.play('buy');
     toast('Entwicklermodus aktiv');
   } else {
@@ -62,7 +62,7 @@ $('#bDevOff').onclick = () => {
   save.dev = false;
   Perf.stop();
   persist();
-  updW2Btn();
+  updDevBtns();
   toast('Entwicklermodus beendet');
 };
 

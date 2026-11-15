@@ -37,7 +37,7 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
   $('#bLiveCopy').insertAdjacentHTML(
     'beforebegin',
     `<button class="btn" id="bDev" style="--c:#ff8a3d" hidden>Testhilfen</button>
-    <button class="btn" id="bW2Test" style="--c:#ff8a3d" hidden></button><button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button>`,
+    <button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button>`,
   );
   $('#toast').insertAdjacentHTML(
     'beforebegin',

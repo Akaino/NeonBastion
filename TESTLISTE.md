@@ -1,10 +1,18 @@
-# Testliste für Welt 1 (Beta 0.32.0)
+# Testliste für Welt 1 (Beta 0.33.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (35 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (36 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 00. Neu in 0.33.0: Weltenkarte
+
+- [ ] Knopf „Welten“ ist von Anfang an im Hauptmenü. Die Karte zeigt den Kern in der Mitte und fünf Welten darum, ähnlich dem Skilltree. Gefällt dir die Anordnung?
+- [ ] Neon-Sektor ist offen, in der Beta auch die Gitterfestung („Welt betreten“). Arcade und Classic Tower Defense stehen auf „Demnächst“, die fünfte Welt ist verdeckt.
+- [ ] Hinter jeder Welt liegt außen ein verdecktes „?“ für ihre zweite Version. Passt das als Andeutung, oder soll dort mehr stehen (zum Beispiel die Bedingung)?
+- [ ] Beschreibungstexte von Arcade und Classic Tower Defense: stimmen sie mit deiner Vorstellung überein?
+- [ ] Wechsel Neon-Sektor ↔ Gitterfestung funktioniert, Rekord und Weltenbonus stehen auf der Karte.
 
 ## 0. Neu in 0.32.0 (aus deiner Rückmeldung)
 

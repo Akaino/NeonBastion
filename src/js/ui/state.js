@@ -10,7 +10,7 @@ import { $, UI } from './dom.js';
 import { Run2 } from '../world2/Run2.js';
 import { CUR_IDS2, T2_UNLOCK, TOWER_IDS2, towerLvlCost2 } from '../world2/data.js';
 import { BR2, NODES2 } from '../world2/nodes.js';
-import { w2Unlocked } from '../world2/save.js';
+import { worldOpen } from '../world2/save.js';
 import { stats2 } from '../world2/stats.js';
 
 export let save = loadSave(),
@@ -77,7 +77,7 @@ export const WORLDS = {
   },
 };
 
-export let W = WORLDS[save.world === 2 && w2Unlocked(save) ? 2 : 1];
+export let W = WORLDS[save.world === 2 && worldOpen(2) ? 2 : 1];
 
 export function setWorld(id) {
   save.world = id;

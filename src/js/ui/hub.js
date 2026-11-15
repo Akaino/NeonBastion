@@ -7,7 +7,6 @@ import { canPay, curIcon, renderCurs, show, toast } from './common.js';
 import { $, $$ } from './dom.js';
 import { R, W, persist, run, save, setPaused, setRun } from './state.js';
 import { nodeState, renderSheet } from './tree.js';
-import { w2Unlocked } from '../world2/save.js';
 
 /* ---------- Startwelle wählen ---------- */
 export function startStepper() {
@@ -39,7 +38,6 @@ export function renderHub() {
   $('#hubWorld').textContent = W.name;
   $('#bHeroes').hidden = !w1;
   $('#bFleet').hidden = !w1;
-  $('#bWorlds').hidden = !w2Unlocked(save);
   const treeAff = Object.values(W.nodes).some(n => n.id !== 'root' && nodeState(n).aff),
     heroAff = w1 && HERO_IDS.some(id => !save.heroes[id].u && canPay(...HEROES[id].unlock));
   $('#bTree').classList.toggle('ping', treeAff);
