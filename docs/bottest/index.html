@@ -355,7 +355,7 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.29.1';
+const VERSION='0.29.2';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1883,7 +1883,10 @@ const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
 const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};/*}DEV*//*REL{const Perf={on:false,noDraw:false};const persist=()=>Store.save(save);}REL*/
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
-function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
+// Menüs werden bei jedem Öffnen neu aufgebaut. Verlässt man sie, wird ihr Inhalt geleert: Die Seite bleibt klein (rund 350 statt über 2.000 Elemente),
+// das hält Werbeblocker, die jede Sekunde die ganze Seite absuchen, kurz (gemessen beim Nutzer: 45 bis 145 ms Hänger je Sekunde mit „AdBlock for Safari“).
+const DYN={tree:['#tw','#sheet'],heroes:['#hlist','#slots'],nova:['#novaList','#novaTop'],towers:['#tlist','#tslots'],worlds:['#wlist'],codex:['#clist'],achv:['#alist'],fleet:['#flist','#fbar']};
+function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet']){const el=$('#'+s);if(s!==id&&!el.hidden&&DYN[s])for(const q of DYN[s]){const c=$(q);if(c)c.textContent=''}el.hidden=s!==id}if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
 function renderCurs(){const ws=W.s(),h=W.curIds.map(c=>curHTML(c,ws.cur[c])).join('')+(W.id===1&&(save.nova||save.q)?curHTML('q',save.q):'');$('#hubCur').innerHTML=h;$$('[data-cur]').forEach(e=>e.innerHTML=h)}
 function canPay(c,a){return (W.s().cur[c]||0)>=a}
 function pay(c,a,btn){if(!canPay(c,a)){Snd.play('no');if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake')}
@@ -2411,6 +2414,9 @@ function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf
   requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 
+// Der Skripttext wird nach dem Start nicht mehr gebraucht. Er bleibt aber als 250 KB Text im Dokument stehen und macht jede Suche über die Seite teuer
+// (Werbeblocker durchsuchen Seiten im Sekundentakt). Deshalb nimmt sich das Skript selbst aus dem Dokument.
+;document.currentScript&&document.currentScript.remove();
 </script>
 </body>
 </html>

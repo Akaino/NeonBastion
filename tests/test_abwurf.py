@@ -28,7 +28,7 @@ with sync_playwright() as p:
       run.spawnDrop(120,0,'haste');for(let i=0;i<5;i++)run.tap(120,0);run.noImpulse=false;const a=run.imps;for(let i=0;i<80;i++)run.step(.05);o.imps=run.imps-a;run.noImpulse=true;
       run.spawnDrop(120,0,'gain');for(let i=0;i<5;i++)run.tap(120,0);run.spawnEnemy('swarm',false,300,0);const g0=run.gain.s;run.kill(run.en[run.en.length-1]);const g2=run.gain.s-g0;
       run.buff.gain=0;run.spawnEnemy('swarm',false,300,0);const g1=run.gain.s;run.kill(run.en[run.en.length-1]);o.gain=+(g2/(run.gain.s-g1)).toFixed(2);
-      run.spawnDrop(0,0,'bomb');o.off=Math.round(Math.hypot(run.drops[0].x,run.drops[0].y));return o}""")
+      run.drops.length=0;run.spawnDrop(0,0,'bomb');o.off=Math.round(Math.hypot(run.drops[0].x,run.drops[0].y));return o}""")
     check(r['h4']==4 and r['miss']==0,'vier Treffer zählen, ein Impuls daneben setzt auf 0: '+str([r['h4'],r['miss']]))
     check(r['life2']==1.0 and r['reset']==3 and r['h1']==1,'Frist läuft ab und wird vom Treffer zurückgesetzt: '+str([r['life2'],r['reset']]))
     check(r['left']==0 and r['buff']==5 and r['n']==1,'fünf Treffer hintereinander lösen den Bonus aus')

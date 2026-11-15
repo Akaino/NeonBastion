@@ -353,6 +353,9 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 </div>
 <script>
 /*JS*/
+// Der Skripttext wird nach dem Start nicht mehr gebraucht. Er bleibt aber als 250 KB Text im Dokument stehen und macht jede Suche über die Seite teuer
+// (Werbeblocker durchsuchen Seiten im Sekundentakt). Deshalb nimmt sich das Skript selbst aus dem Dokument.
+;document.currentScript&&document.currentScript.remove();
 </script>
 </body>
 </html>
