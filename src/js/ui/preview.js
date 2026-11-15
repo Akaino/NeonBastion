@@ -1,8 +1,9 @@
 import { fmtD, fmtN } from '../core/format.js';
 import { HEROES } from '../data/heroes.js';
 
-export /* ---------- before/after previews ---------- */
-const fv = v => (typeof v === 'string' ? v : v >= 100 ? fmtN(v) : fmtD(v, Math.abs(v - Math.round(v)) < 0.005 ? 0 : 1));
+/* ---------- before/after previews ---------- */
+export const fv = v =>
+  typeof v === 'string' ? v : v >= 100 ? fmtN(v) : fmtD(v, Math.abs(v - Math.round(v)) < 0.005 ? 0 : 1);
 
 export const FMT = {
   n: fv,
@@ -114,6 +115,7 @@ export const PREV = {
   f6: [['Schaden pro Impuls', S => S.tapDmg * S.impMul, 'n']],
   f7: [['Autofeuer pro Sekunde', S => S.autoRate, 'n']],
   h5c: [['Klinge-Schaden', S => S.heroDmg * S.heroSelf * HEROES.klinge.dmg, 'n']],
+  h7c: [['Klinge-Schaden', S => S.heroDmg * S.heroSelf * HEROES.klinge.dmg, 'n']],
   b5c: [
     ['Schaden pro Geschütz- und Autofeuer-Schuss', S => S.turretDmg, 'n'],
     ['Schaden der Schockwelle', S => S.pulseDmg, 'n'],

@@ -4,8 +4,8 @@ import { toast } from '../ui/common.js';
 import { $ } from '../ui/dom.js';
 import { Perf, persist, run, save } from '../ui/state.js';
 
-export /* ---------- Entwicklermodus: 7× auf die Version tippen, dann Code eingeben ---------- */
-let devTaps = 0,
+/* ---------- Entwicklermodus: 7× auf die Version tippen, dann Code eingeben ---------- */
+export let devTaps = 0,
   devT = 0;
 
 export const devHash = s => {

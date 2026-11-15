@@ -11,8 +11,8 @@ export function makeImpulse(ctx, sec, decay) {
 
 // Baut den Mischpult-Graphen auf einem (Offline-)AudioContext
 
-export // Baut den Mischpult-Graphen auf einem (Offline-)AudioContext
-function buildBus(ctx, dest) {
+// Baut den Mischpult-Graphen auf einem (Offline-)AudioContext
+export function buildBus(ctx, dest) {
   const B = {
     ctx,
   };

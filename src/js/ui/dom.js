@@ -1,9 +1,9 @@
-export /* Schattenbaum für die gesamte Oberfläche (alles außer dem Spielfeld).
+/* Schattenbaum für die gesamte Oberfläche (alles außer dem Spielfeld).
    Hintergrund (15.11.2026, beim Nutzer in Safari gemessen und mit Perf.aus('frz') bestätigt): Ein fremdes Skript im Browser beobachtet die Seite und arbeitet nach jeder Änderung
    am Dokument einmal pro Sekunde 50 bis 150 ms lang – das waren die Ruckler im Sekundentakt, im Run durch die laufende Anzeige, in den Menüs durch jeden Kauf.
    Änderungen innerhalb eines Schattenbaums sieht ein solcher Beobachter nicht. Deshalb ziehen beim Start alle Bildschirme in einen Schattenbaum um; die Stilregeln der Seite
    werden übernommen (Regeln, die am <html>-Element hängen, stehen in den CSS-Dateien zusätzlich für den Träger: :host(…)). $ und $$ suchen in beiden Bäumen. */
-const UI = (() => {
+export const UI = (() => {
   const app = document.querySelector('#app'),
     host = document.createElement('div');
   host.id = 'ui';

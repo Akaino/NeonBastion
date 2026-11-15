@@ -1,6 +1,16 @@
 import { Dev } from './dev-hooks.js';
 import { clamp } from './util.js';
-import { BASE_GUN, DRONE_DMG, F5_MAX, HERO_SELF, IMP_BASE, IMP_MUL, PULSE_PCT, impInterval } from '../data/balance.js';
+import {
+  BASE_GUN,
+  DRONE_DMG,
+  F5_MAX,
+  HERO_SAGA,
+  HERO_SELF,
+  IMP_BASE,
+  IMP_MUL,
+  PULSE_PCT,
+  impInterval,
+} from '../data/balance.js';
 import { w2BonusForW1 } from '../world2/stats.js';
 
 export function stats(save) {
@@ -108,7 +118,8 @@ export function stats(save) {
     S.pulseDmg *= m;
   }
   if (L('u5c')) S.droneDmg *= bond('u5c');
-  S.heroSelf = Math.pow(1 + S.heroDmg, (HERO_SELF * L('h5c')) / F5_MAX); // Kampfrausch: nur die eigenen Treffer der Helden, nicht der Bonus, den die anderen übernehmen
+  // Kampfrausch und Heldensaga: nur die eigenen Treffer der Helden, nicht der Bonus, den die anderen übernehmen
+  S.heroSelf = Math.pow(1 + S.heroDmg, (HERO_SELF * L('h5c') + HERO_SAGA * L('h7c')) / F5_MAX);
   S.impInt = impInterval(L('f1b'));
   S.impMul = IMP_MUL * Math.sqrt(S.impInt / IMP_BASE);
   return S;

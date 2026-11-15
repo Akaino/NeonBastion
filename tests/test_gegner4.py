@@ -15,7 +15,7 @@ with sync_playwright() as p:
     pg.goto(GAME);pg.wait_for_timeout(300)
     sh=pg.evaluate("()=>Object.fromEntries([27,28,37,38,57,58,67,68,89,90].map(w=>[w,WAVE_MIX.filter(t=>waveShare(t,w)>0)]))")
     check(all(t not in sh[str(w-1)] and t in sh[str(w)] for t,w in(('jumper',28),('shade',38),('phaser',58),('hacker',68),('brooder',90))),'Einstieg: Springer 28, Schattenwerfer 38, Phasenläufer 58, Hacker 68, Brüter 90')
-    check(pg.evaluate("()=>['jumper','shade','phaser','hacker','brooder','egg'].every(t=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))") and pg.evaluate("()=>CODEX_TYPES.length")==30,'alle stehen in der Enzyklopädie, zusammen 24 Einträge')
+    check(pg.evaluate("()=>['jumper','shade','phaser','hacker','brooder','egg'].every(t=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))") and pg.evaluate("()=>CODEX_TYPES.length")==31,'alle stehen in der Enzyklopädie, zusammen 24 Einträge')
     check(all(pg.evaluate("w=>waveMix(w).reduce((s,x)=>s+x[1],0)",w)<=.8501 for w in (60,100,300)),'mindestens 15 % Schwärmer bleiben')
     check(pg.evaluate("()=>new Set(WAVE_MIX.map(t=>ETYPES[t].from)).size")==pg.evaluate("()=>WAVE_MIX.length"),'jede Einstiegswelle ist nur einmal vergeben')
     pg.evaluate("()=>{save.startPick=95;persist()}");pg.click('#bStart');pg.wait_for_timeout(300)

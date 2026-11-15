@@ -16,8 +16,8 @@ $('#bNova').onclick = () => {
   renderNova();
 };
 
-export /* ---------- supernova (prestige) ---------- */
-function renderNova() {
+/* ---------- supernova (prestige) ---------- */
+export function renderNova() {
   renderCurs();
   const qg = quantaFor(save.cycleBest, save),
     cb = save.cycleBest || 0;
@@ -53,7 +53,7 @@ function renderNova() {
       }, 4000);
       return;
     }
-    supernova();
+    supernovaShow();
   };
   $('#novaList').innerHTML = Object.values(PRES)
     .map(p => {
@@ -140,9 +140,10 @@ $('#novaList').addEventListener('click', e => {
   renderNova();
 });
 
-export function supernova() {
+// Setzt den Zyklus zurück und schreibt die Quanten gut. Liefert die gewonnenen Quanten (0, wenn noch keine Supernova möglich ist).
+function novaReset() {
   const g = quantaFor(save.cycleBest, save);
-  if (g <= 0) return;
+  if (g <= 0) return 0;
   save.q += g;
   save.nova = (save.nova || 0) + 1;
   save.cur = {
@@ -170,13 +171,90 @@ export function supernova() {
   save.cycleBest = 0;
   save.team = save.team.slice(0, stats(save).slots);
   persist();
+  return g;
+}
+const novaFlash = () => {
   const f = $('#flash');
   f.classList.remove('go');
   void f.offsetWidth;
   f.classList.add('go');
+};
+// Supernova ohne Schauspiel (für Tests und wenn der Browser um weniger Bewegung bittet)
+export function supernova() {
+  const g = novaReset();
+  if (!g) return;
+  novaFlash();
   Snd.play('nova');
   renderNova();
   toast(`Supernova! +${fmtN(g)} Quanten`);
+}
+/* Supernova mit Schauspiel (Wunsch des Nutzers): erst die Nova, dann zieht ein schwarzes Loch alle Elemente des Menüs in die Mitte,
+   dort wird zurückgesetzt, und das Loch spuckt das Menü mit den Quanten-Upgrades wieder aus. Dauer etwa 2,8 Sekunden. */
+let novaBusy = false;
+const novaParts = () => [...$('#nova').querySelectorAll('.head, #novaTop > *, #novaList > *')];
+const toCenter = el => {
+  const r = el.getBoundingClientRect(),
+    s = $('#nova').getBoundingClientRect(),
+    dx = s.left + s.width / 2 - (r.left + r.width / 2),
+    dy = s.top + s.height / 2 - (r.top + r.height / 2);
+  return [
+    `translate(${dx.toFixed(0)}px,${dy.toFixed(0)}px) scale(.04) rotate(${dx > 0 ? 220 : -220}deg)`,
+    Math.hypot(dx, dy),
+  ];
+};
+export function supernovaShow() {
+  if (novaBusy) return;
+  if (quantaFor(save.cycleBest, save) <= 0) return;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return supernova();
+  novaBusy = true;
+  const scr = $('#nova');
+  let hole = $('#bhole');
+  if (!hole) {
+    hole = document.createElement('div');
+    hole.id = 'bhole';
+    scr.appendChild(hole);
+  }
+  scr.classList.add('novabusy');
+  novaFlash();
+  Snd.play('nova');
+  // 1) Sog: Elemente wandern gestaffelt in die Mitte, das Loch wächst
+  setTimeout(() => {
+    hole.className = 'on';
+    for (const el of novaParts()) {
+      const [tf, dist] = toCenter(el);
+      el.style.transition = `transform .95s cubic-bezier(.55,0,.9,.35) ${(dist / 2600).toFixed(2)}s, opacity .9s ease-in ${(dist / 2600).toFixed(2)}s`;
+      el.style.transform = tf;
+      el.style.opacity = '0';
+    }
+  }, 350);
+  // 2) In der Mitte: zurücksetzen, Menü neu aufbauen (noch im Loch verborgen)
+  setTimeout(() => {
+    const g = novaReset();
+    renderNova();
+    const parts = novaParts();
+    for (const el of parts) {
+      el.style.transition = 'none';
+      el.style.transform = toCenter(el)[0];
+      el.style.opacity = '0';
+    }
+    void scr.offsetWidth;
+    // 3) Ausstoß: Loch platzt, Elemente fliegen an ihren Platz
+    hole.className = 'pop';
+    novaFlash();
+    Snd.play('nova');
+    for (const el of parts) {
+      el.style.transition = 'transform .75s cubic-bezier(.15,1.25,.4,1), opacity .35s ease-out';
+      el.style.transform = '';
+      el.style.opacity = '';
+    }
+    setTimeout(() => {
+      for (const el of novaParts()) el.style.transition = '';
+      hole.className = '';
+      scr.classList.remove('novabusy');
+      novaBusy = false;
+      if (g) toast(`Supernova! +${fmtN(g)} Quanten`);
+    }, 850);
+  }, 1750);
 }
 
 /* ---------- boot + loop ---------- */

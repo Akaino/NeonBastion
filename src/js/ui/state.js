@@ -28,8 +28,8 @@ Vol.sfx = save.volSfx;
 
 /* ---------- icons ---------- */
 
-export /* ---------- Welten ---------- */
-const WORLDS = {
+/* ---------- Welten ---------- */
+export const WORLDS = {
   1: {
     id: 1,
     name: 'Neon-Sektor',
@@ -91,9 +91,9 @@ export function setWorld(id) {
 /* ---------- helpers ---------- */
 /* Perf ist im echten Spiel nur ein leeres Objekt. Beta und Bottest füllen es in dev.js mit der Leistungsmessung. */
 
-export /* ---------- helpers ---------- */
+/* ---------- helpers ---------- */
 /* Perf ist im echten Spiel nur ein leeres Objekt. Beta und Bottest füllen es in dev.js mit der Leistungsmessung. */
-const Perf = {
+export const Perf = {
   on: false,
   noDraw: false,
   freeze: false,
@@ -101,8 +101,8 @@ const Perf = {
 };
 // Gibt Grafik und Ton, was sie aus dem Spielstand brauchen (sie greifen nicht selbst darauf zu).
 
-export // Gibt Grafik und Ton, was sie aus dem Spielstand brauchen (sie greifen nicht selbst darauf zu).
-const syncSound = () => {
+// Gibt Grafik und Ton, was sie aus dem Spielstand brauchen (sie greifen nicht selbst darauf zu).
+export const syncSound = () => {
   Vol.mus = save.volMus;
   Vol.sfx = save.volSfx;
 };

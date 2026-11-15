@@ -1,7 +1,6 @@
-export // sq statt **2: die Potenz ist in den innersten Schleifen spürbar langsamer
 // Gegnertypen. from = erste Welle, share = Anteil an der Welle (wächst ab from um step je Welle bis max), bar = Lebensbalken zeigen.
 // Die Reihenfolge in WAVE_MIX bestimmt, wer bei der Auswahl zuerst drankommt; der Rest der Welle sind Schwärmer.
-const ETYPES = {
+export const ETYPES = {
   swarm: {
     name: 'Schwärmer',
     hp: 8,
@@ -356,6 +355,21 @@ const ETYPES = {
     max: 0.025,
     text: 'Kommt immer zu zweit. Solange beide leben, heilen sie sich gegenseitig. Fällt einer, rast der andere los.',
   },
+  // Magnet: zieht den Impuls-Zeiger zu sich
+  magnet: {
+    name: 'Magnet',
+    hp: 40,
+    sp: 30,
+    r: 12,
+    dmg: 6,
+    val: 6,
+    col: '#4fd2ff',
+    bar: 1,
+    from: 83,
+    step: 0.006,
+    max: 0.03,
+    text: 'Zieht deinen Impuls-Zeiger langsam zu sich, solange er lebt und der Zeiger in seiner Nähe ist.',
+  },
   // Schwarmkönigin: bringt laufend Schwärmer hervor
   queen: {
     name: 'Schwarmkönigin',
@@ -445,14 +459,12 @@ export const SHIELD_HITS = 4,
   SHIELD_PER = 30,
   MITE_HP = 0.15; // Schildladungen: Grundwert + 1 je SHIELD_PER Wellen; Splitterling: Anteil am Leben des Spalters
 // Schillernde Gegner: sehr selten (etwa einer je zwei bis drei Runs bis Welle 50), deutlich zäher, sonst ohne Wirkung aufs Spiel. Nie Bosse oder Splitterlinge.
-/* Abwürfe: Je Welle lässt mit DROP_P einer ihrer Gegner beim Tod etwas fallen. Nur der Impuls zerstört es: DROP_HITS Treffer hintereinander,
-   ein Impuls daneben setzt den Zähler zurück. Ohne Treffer verschwindet es nach DROP_LIFE Sekunden, jeder Treffer setzt die Frist zurück. */
 
+// Schillernde Gegner: sehr selten (etwa einer je zwei bis drei Runs bis Welle 50), deutlich zäher, sonst ohne Wirkung aufs Spiel. Nie Bosse oder Splitterlinge.
 export const SHINY_P = 1 / 5000,
   SHINY_HP = 3.5;
 
-export // Sekunden vom Fall der Basis bis zur Explosion
-const WAVE_MIX = [
+export const WAVE_MIX = [
   'brute',
   'shooter',
   'sprinter',
@@ -480,6 +492,7 @@ const WAVE_MIX = [
   'sniper',
   'mirror',
   'pair',
+  'magnet',
 ];
 
 export const waveShare = (t, w) => {
@@ -488,8 +501,8 @@ export const waveShare = (t, w) => {
 };
 // Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
 
-export // Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
-const JUMP_CD = 3,
+// Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
+export const JUMP_CD = 3,
   JUMP_D = 90,
   SHADE_R = 130,
   SHADE_MUL = 0.5,
@@ -516,7 +529,9 @@ export const THIEF_PCT = 0.2,
   MIRROR_R = 220,
   MIRROR_CD = 0.3,
   PAIR_HEAL = 0.08,
-  PAIR_RAGE = 1.6;
+  PAIR_RAGE = 1.6,
+  MAG_R = 280,
+  MAG_PULL = 70;
 
 export const MIX_MAX = 0.85,
   HEAL_R = 110,

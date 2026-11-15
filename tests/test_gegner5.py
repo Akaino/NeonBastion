@@ -15,8 +15,8 @@ with sync_playwright() as p:
     pg.add_init_script("if(!sessionStorage.x){sessionStorage.x=1;localStorage.setItem('neon-bastion-v1',"+json.dumps(json.dumps(save))+")}")
     pg.goto(GAME);pg.wait_for_timeout(300)
     check(all(pg.evaluate("([t,w])=>waveShare(t,w-1)===0&&waveShare(t,w)>0",[t,w]) for t,w in NEW),'Einstieg: Dieb 33, Mörser 48, Giftträger 63, Scharfschütze 73, Spiegel 78, Gespann 95')
-    check(pg.evaluate("n=>n.every(([t])=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))",NEW) and pg.evaluate("()=>CODEX_TYPES.length")==30 and pg.evaluate("()=>WAVE_MIX.length")==27,'30 Einträge in der Enzyklopädie, 28 Gegnerarten mit Schwärmer')
-    check(pg.evaluate("()=>new Set(WAVE_MIX.map(t=>ETYPES[t].from)).size")==27 and all(pg.evaluate("w=>waveMix(w).reduce((s,x)=>s+x[1],0)",w)<=.8501 for w in (60,100,300)),'jede Einstiegswelle einmal, mindestens 15 % Schwärmer')
+    check(pg.evaluate("n=>n.every(([t])=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))",NEW) and pg.evaluate("()=>CODEX_TYPES.length")==31 and pg.evaluate("()=>WAVE_MIX.length")==28,'31 Einträge in der Enzyklopädie, 29 Gegnerarten mit Schwärmer')
+    check(pg.evaluate("()=>new Set(WAVE_MIX.map(t=>ETYPES[t].from)).size")==28 and all(pg.evaluate("w=>waveMix(w).reduce((s,x)=>s+x[1],0)",w)<=.8501 for w in (60,100,300)),'jede Einstiegswelle einmal, mindestens 15 % Schwärmer')
     pg.evaluate("()=>{save.startPick=99;persist()}");pg.click('#bStart');pg.wait_for_timeout(300)
     r=pg.evaluate("""()=>{paused=true;run.noImpulse=true;run.base.max=run.base.hp=1e15;run.queue.length=0;const out={};
       const H=run.heroes[0];

@@ -12,8 +12,8 @@ $('#bHeroes').onclick = () => {
   renderHeroes();
 };
 
-export /* ---------- heroes ---------- */
-function renderHeroes() {
+/* ---------- heroes ---------- */
+export function renderHeroes() {
   renderCurs();
   const S = stats(save);
   save.team = save.team.filter(id => save.heroes[id].u).slice(0, S.slots);

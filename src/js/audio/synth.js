@@ -1,5 +1,5 @@
-export /* ---- Synth-Bausteine (zeitgesteuert, funktionieren auch offline) ---- */
-function osc(B, out, t, { type = 'sine', f0, f1, dur, vol, att = 0.003, det = 0, ft, fq }) {
+/* ---- Synth-Bausteine (zeitgesteuert, funktionieren auch offline) ---- */
+export function osc(B, out, t, { type = 'sine', f0, f1, dur, vol, att = 0.003, det = 0, ft, fq }) {
   const c = B.ctx,
     o = c.createOscillator(),
     g = c.createGain();
@@ -49,9 +49,14 @@ export function noise(B, out, t, { dur, vol, type = 'bandpass', f0, f1, q = 1, a
 /* ---- Zusatz-Bausteine für knackige Sci-Fi-Sounds ---- */
 // FM-Synthese: Träger + Modulator, Index fällt ab → metallischer Laser-Charakter
 
-export /* ---- Zusatz-Bausteine für knackige Sci-Fi-Sounds ---- */
+/* ---- Zusatz-Bausteine für knackige Sci-Fi-Sounds ---- */
 // FM-Synthese: Träger + Modulator, Index fällt ab → metallischer Laser-Charakter
-function fm(B, out, t, { f0, f1, ratio = 2, idx0 = 8, idx1 = 0, dur, vol, att = 0.001, type = 'sine', pan = 0 }) {
+export function fm(
+  B,
+  out,
+  t,
+  { f0, f1, ratio = 2, idx0 = 8, idx1 = 0, dur, vol, att = 0.001, type = 'sine', pan = 0 },
+) {
   const c = B.ctx,
     car = c.createOscillator(),
     mod = c.createOscillator(),
@@ -85,8 +90,8 @@ function fm(B, out, t, { f0, f1, ratio = 2, idx0 = 8, idx1 = 0, dur, vol, att = 
 }
 // harter Klick als Transiente
 
-export // harter Klick als Transiente
-const click = (B, o, t, v = 0.35, f = 6000) =>
+// harter Klick als Transiente
+export const click = (B, o, t, v = 0.35, f = 6000) =>
   noise(B, o, t, {
     dur: 0.012,
     vol: v,
@@ -96,8 +101,8 @@ const click = (B, o, t, v = 0.35, f = 6000) =>
   });
 // kurzer Sub-Kick für Punch
 
-export // kurzer Sub-Kick für Punch
-const thump = (B, o, t, v = 0.6, f0 = 170, f1 = 42, d = 0.12) =>
+// kurzer Sub-Kick für Punch
+export const thump = (B, o, t, v = 0.6, f0 = 170, f1 = 42, d = 0.12) =>
   osc(B, o, t, {
     type: 'sine',
     f0,
@@ -109,8 +114,8 @@ const thump = (B, o, t, v = 0.6, f0 = 170, f1 = 42, d = 0.12) =>
 
 // Klassische Analog-Stimme: verstimmte Oszillatoren → resonanter Tiefpass mit Hüllkurve, Tonhöhe fällt
 
-export // Klassische Analog-Stimme: verstimmte Oszillatoren → resonanter Tiefpass mit Hüllkurve, Tonhöhe fällt
-function synth(
+// Klassische Analog-Stimme: verstimmte Oszillatoren → resonanter Tiefpass mit Hüllkurve, Tonhöhe fällt
+export function synth(
   B,
   out,
   t,
@@ -159,8 +164,8 @@ function synth(
   n.connect(out);
 }
 
-export // Explosion: v = Lautstärke, size = Länge/Größe (0.1 klein … 1 riesig), pan = Stereoposition
-function explode(B, t, v, size, pan = 0) {
+// Explosion: v = Lautstärke, size = Länge/Größe (0.1 klein … 1 riesig), pan = Stereoposition
+export function explode(B, t, v, size, pan = 0) {
   const d = 0.08 + size * 0.7;
   noise(B, B.dist, t, {
     dur: 0.02 + size * 0.03,
@@ -201,8 +206,8 @@ function explode(B, t, v, size, pan = 0) {
 }
 // Knistern: viele winzige, zufällige Klicks im Nachhall
 
-export // Knistern: viele winzige, zufällige Klicks im Nachhall
-function crackle(B, t, dur, n, v) {
+// Knistern: viele winzige, zufällige Klicks im Nachhall
+export function crackle(B, t, dur, n, v) {
   for (let i = 0; i < n; i++) {
     const tt = t + Math.pow(Math.random(), 1.6) * dur;
     noise(B, B.crush, tt, {

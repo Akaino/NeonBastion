@@ -28,6 +28,7 @@ import {
   SNIPE_T,
   THIEF_PCT,
 } from '../data/enemies.js';
+import { MAG_PULL, MAG_R } from '../data/enemies.js';
 
 /* Methoden der Klasse Run (werden in Run.js an die Klasse gehängt). */
 export const runEnemiesMethods = {
@@ -104,6 +105,17 @@ export const runEnemiesMethods = {
             buff = true;
             break;
           }
+      // Magnet: zieht den Zeiger des Impulses zu sich, solange der in Reichweite ist
+      if (e.type === 'magnet' && !e.mute) {
+        const mx = e.x - this.cx,
+          my = e.y - this.cy,
+          L = hyp(mx, my);
+        if (L > 4 && L < MAG_R) {
+          const s = Math.min(L, MAG_PULL * dt);
+          this.cx += (mx / L) * s;
+          this.cy += (my / L) * s;
+        }
+      }
       if (e.mate) {
         if (e.mate.hp > 0) {
           if (!e.mute && e.hp < e.max) e.hp = Math.min(e.max, e.hp + e.max * PAIR_HEAL * dt);

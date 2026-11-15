@@ -7,8 +7,8 @@ import { cmpRows } from './preview.js';
 import { R, W, persist, save } from './state.js';
 import { stats2 } from '../world2/stats.js';
 
-export /* ---------- Türme: Menü ---------- */
-function renderTowers() {
+/* ---------- Türme: Menü ---------- */
+export function renderTowers() {
   renderCurs();
   const ex = save.tslots || 0,
     TS = W.ts();

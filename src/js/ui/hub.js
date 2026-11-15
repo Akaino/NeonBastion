@@ -9,8 +9,8 @@ import { R, W, persist, run, save, setPaused, setRun } from './state.js';
 import { nodeState, renderSheet } from './tree.js';
 import { w2Unlocked } from '../world2/save.js';
 
-export /* ---------- Startwelle wählen ---------- */
-function startStepper() {
+/* ---------- Startwelle wählen ---------- */
+export function startStepper() {
   const S = stats(save);
   return `<div class="stepper"><span>Gewählte Startwelle</span><button class="btn icon sm" data-sw="-1" aria-label="Früher starten">−</button><b>${S.startWave}</b><button class="btn icon sm" data-sw="1" aria-label="Später starten">+</button><small>max. ${S.startMax}</small></div>`;
 }
@@ -31,8 +31,8 @@ export function bindStepper() {
 }
 /* ---------- hub ---------- */
 
-export /* ---------- hub ---------- */
-function renderHub() {
+/* ---------- hub ---------- */
+export function renderHub() {
   R.hubNodes = save.nodes;
   renderCurs();
   const w1 = W.id === 1;

@@ -48,5 +48,5 @@ export function stats2(save) {
 }
 // Bonus, den die Gitterfestung dem Neon-Sektor gibt
 
-export // Bonus, den die Gitterfestung dem Neon-Sektor gibt
-const w2BonusForW1 = save => 1 + 0.02 * ((save.w2 && save.w2.best) || 0);
+// Bonus, den die Gitterfestung dem Neon-Sektor gibt
+export const w2BonusForW1 = save => 1 + 0.02 * ((save.w2 && save.w2.best) || 0);

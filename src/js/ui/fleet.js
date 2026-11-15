@@ -18,8 +18,8 @@ import { $, $$ } from './dom.js';
 import { cmpRows, fv } from './preview.js';
 import { R, persist, save } from './state.js';
 
-export /* ---------- Flotte: Drohnenklassen freischalten, aufwerten und ihre Verteilung einstellen ---------- */
-const fleetOn = id => droneUnlocked(save, id);
+/* ---------- Flotte: Drohnenklassen freischalten, aufwerten und ihre Verteilung einstellen ---------- */
+export const fleetOn = id => droneUnlocked(save, id);
 
 export const fleetSum = () => DRONE_IDS.reduce((s, id) => s + (fleetOn(id) ? save.fleet[id].p : 0), 0);
 
@@ -35,7 +35,7 @@ export function renderFleet() {
       .map(id => `<i style="width:${F[id].p}%;background:${DRONES[id].col}"></i>`)
       .join(
         '',
-      )}</div>${sum ? (sum < 100 ? '<p class="hint">Gebaut wird im Verhältnis der eingestellten Anteile.</p>' : '') : '<p class="hint">Nichts verteilt. Die Basis baut dann nur Jäger.</p>'}`;
+      )}</div>${sum ? (sum < 100 ? '<p class="hint">Gebaut wird im Verhältnis der eingestellten Anteile.</p>' : '') : '<p class="hint">Nichts verteilt. Die Basis baut keine Drohnen.</p>'}`;
   $('#flist').innerHTML = DRONE_IDS.map(id => {
     const D = DRONES[id],
       st = F[id],

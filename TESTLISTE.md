@@ -1,36 +1,26 @@
-# Abschluss-Testliste für Welt 1 (Beta 0.31.0)
+# Testliste für Welt 1 (Beta 0.32.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (34 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (35 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
-## 1. Ruckeln und Ton in Safari (wichtig zuerst)
+## 0. Neu in 0.32.0 (aus deiner Rückmeldung)
 
-Die Ursache ist gefunden: Ein fremdes Skript in deinem Safari reagiert auf jede Textänderung der Seite mit einem Hänger pro Sekunde. Seit 0.30.1 liegt die gesamte Oberfläche so, dass es ihre Änderungen nicht mehr sieht, im Run und in den Menüs.
-
-- [ ] Beta 0.30.1 laden, ein paar Runs auf 4× oder 8× spielen, zwischendurch die Seite neu laden: Bleibt es flüssig, bleibt der Ton sauber?
-- [ ] In der Konsole `Perf.live()`: Steht dort dauerhaft „Ruckler in 5 s: 0“, auch beim Klicken durch die Menüs und beim schnellen Kaufen im Skilltree?
-- [ ] Sehen alle Menüs aus wie vorher (Hub, Skilltree, Helden, Flotte, Türme, Enzyklopädie, Erfolge, Supernova, Welten, Einstellungen, Pause, Endbildschirm)?
-- [ ] Schnellstart: Die Startwelle lässt sich nie höher stellen als deine Rekordwelle, auch mit vielen Stufen.
-- [ ] Sieht die Anzeige im Run aus wie vorher (Welle, Lebensbalken, Währungen, Bossbalken, Heldenkreise, Bauen-Knopf, Banner, Hinweise)?
-- [ ] Funktionieren Pause, Tempo, Bauen und das Turm-Menü wie vorher?
-
-## 1b. Umbau des Quelltexts (0.31.0, nur in der Beta)
-
-Das Spiel wird jetzt aus getrennten Dateien geladen (68 Module statt einer großen Datei). Am Spiel selbst ist nichts geändert; die Simulation rechnet exakt dieselben Zahlen wie vorher.
-
-- [ ] Die Beta lädt wie gewohnt, auf dem iPhone und dem MacBook, auch nach „Zum Home-Bildschirm“.
-- [ ] Erster Start nach dem Update: Dauert das Laden spürbar länger als bisher?
-- [ ] Spielstand der Beta ist noch da.
-- [ ] Ton, Musik und alle Menüs funktionieren wie vorher.
-- [ ] Mit eingeschalteter Erweiterung in Safari weiterhin keine Ruckler.
+- [ ] Flotte: Alle Klassen auf 0 % stellen, einen Run starten: Es wird keine Drohne gebaut.
+- [ ] Reparaturdrohnen: Jede Heilung zeigt einen kurzen grünen Strahl zum geheilten Ziel. Sieht man jetzt, was sie tun?
+- [ ] Supernova: Nova, Sog aller Menüelemente in ein schwarzes Loch, Ausstoß, dann das Fenster mit den Quanten-Upgrades. Spektakulär genug? Zu lang (knapp 3 Sekunden)?
+- [ ] Abwurf-Boni wirken jetzt 10 Sekunden. Spürbar?
+- [ ] Enzyklopädie: Knopf „Werte und Verhalten“ an jedem besiegten Eintrag. Stimmen Umfang und Ton der Texte?
+- [ ] Zweite Währung im Skilltree: Späte Knoten und einige wichtige frühe kosten zusätzlich die nächsthäufigere Währung (z. B. Kernreaktor 20 Kerne + 25 Tsd. Splitter). Fühlen sich die späten Upgrades jetzt wichtig an? Ist etwas zu teuer?
+- [ ] Neuer Knoten „Heldensaga“ (Helden, Tiefe 7): fünf Stufen, macht die Helden spät stärker. Merkt man es?
+- [ ] Magnet (ab Welle 83, blaues Hufeisen): zieht deinen Zeiger zu sich, eine gestrichelte Linie zeigt es. Lästig oder interessant?
+- [ ] Sechs neue Erfolge für Mörser, Giftträger, Scharfschütze, Spiegel, Gespann und Magnet.
 
 ## 2. Flotte
 
 - [ ] Anteile in 5er-Schritten, nichts wird automatisch umverteilt. Plus geht nur, solange Prozente frei sind. So gewollt?
-- [ ] Alle Klassen auf 0 % stellen: Die Basis baut dann nur Jäger. In Ordnung?
 - [ ] Je 20 % für fünf Klassen lässt sich einstellen.
 - [ ] Eine neu freigeschaltete Klasse startet mit 0 %.
 - [ ] Sehen die fünf Drohnen im Run unterschiedlich genug aus?
@@ -94,7 +84,6 @@ Mit der Testhilfe „Startwelle“ kommst du direkt zu den späten Arten.
 - [ ] Fünf Impulse hintereinander zerstören ihn, ein Impuls daneben setzt zurück. Verständlich?
 - [ ] Frist von 3 Sekunden, jeder Treffer setzt sie zurück. Passt das, auch ohne „Taktgeber“?
 - [ ] Bombe (40 % Leben im Umkreis, Bosse 8 %): stark genug?
-- [ ] Doppelter Schaden, schneller Impuls, Reparatur, Splitterregen: Merkt man die 5 Sekunden?
 - [ ] Ohne Testhilfe 10 % je Welle: zu selten, zu oft?
 
 ## 7. Basis

@@ -1,8 +1,8 @@
 export const NUM_UNITS = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
 // Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
 
-export // Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
-const numUnit = e =>
+// Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
+export const numUnit = e =>
   e < NUM_UNITS.length
     ? NUM_UNITS[e]
     : (k => String.fromCharCode(97 + (Math.floor(k / 26) % 26)) + String.fromCharCode(97 + (k % 26)))(

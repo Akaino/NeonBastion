@@ -42,8 +42,8 @@ export function freshW2() {
 }
 // Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
 
-export // Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
-const WORLD_MAX = 10,
+// Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
+export const WORLD_MAX = 10,
   worldUnlockWave = id => (id - 1) * 100;
 
 export const w2Unlocked = save => (save.best || 0) >= worldUnlockWave(2) || !!(Dev.w2 && Dev.w2(save));

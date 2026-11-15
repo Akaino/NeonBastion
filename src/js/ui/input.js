@@ -52,11 +52,11 @@ $('#cv').addEventListener('pointerdown', e => {
    Finger: wie ein Trackpad – Wischen irgendwo auf dem Feld schiebt den Zeiger um die gewischte Strecke × AIM_GAIN, damit der Finger nichts verdeckt.
    Kurzes Antippen ohne Bewegung setzt ihn direkt an die Stelle. Beim Loslassen bleibt er liegen. */
 
-export /* Zeiger für den Impuls. Klicken macht keinen Schaden mehr.
+/* Zeiger für den Impuls. Klicken macht keinen Schaden mehr.
    Maus: der Zeiger folgt ihr direkt.
    Finger: wie ein Trackpad – Wischen irgendwo auf dem Feld schiebt den Zeiger um die gewischte Strecke × AIM_GAIN, damit der Finger nichts verdeckt.
    Kurzes Antippen ohne Bewegung setzt ihn direkt an die Stelle. Beim Loslassen bleibt er liegen. */
-let aimDown = false,
+export let aimDown = false,
   aimDrag = false,
   aimStart = null,
   aimLast = null,

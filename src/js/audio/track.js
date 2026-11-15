@@ -1,9 +1,9 @@
-export /* ---- Aufräumen ----
+/* ---- Aufräumen ----
    Jeder Effekt und jede Musiknote baut mehrere Ton-Bausteine (Oszillator, Filter, Lautstärke) und hängt sie ans Mischpult. Safari gibt solche Bausteine nicht frei,
    solange sie verbunden sind – auch wenn der Ton längst verklungen ist. Nach einigen Minuten sind es Zehntausende, und der Browser hängt etwa einmal pro Sekunde
    für 60 bis 150 ms (vom Nutzer gemessen, wächst mit der Spieldauer). Deshalb merkt sich Track alle Bausteine, die während eines Aufrufs entstehen, und trennt sie,
    sobald die letzte Tonquelle dieses Aufrufs zu Ende ist. */
-const Track = {
+export const Track = {
   cur: null,
   list: [],
   made: 0,

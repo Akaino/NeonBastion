@@ -11,8 +11,8 @@ import { show, toast } from './common.js';
 import { $ } from './dom.js';
 import { persist, save } from './state.js';
 
-export /* ---------- Erfolge: jeweils Bronze, Silber, Gold. Rein zum Sammeln, ohne Belohnung. ---------- */
-const achKills = s => {
+/* ---------- Erfolge: jeweils Bronze, Silber, Gold. Rein zum Sammeln, ohne Belohnung. ---------- */
+export const achKills = s => {
   const K = s.kills || {};
   let n = K.boss || 0;
   for (const t of CODEX_TYPES) n += K[t] || 0;
@@ -155,6 +155,18 @@ export const ACH = [
     val: achK('thief'),
     tiers: [25, 1000, 25000],
   },
+  { id: 'moerser', name: 'Granatenfänger', text: 'Besiegte Mörser', val: achK('mortar'), tiers: [25, 1000, 25000] },
+  { id: 'gift', name: 'Entgifter', text: 'Besiegte Giftträger', val: achK('gas'), tiers: [25, 1000, 25000] },
+  {
+    id: 'schuetze',
+    name: 'Gegenschütze',
+    text: 'Besiegte Scharfschützen',
+    val: achK('sniper'),
+    tiers: [25, 1000, 25000],
+  },
+  { id: 'spiegel', name: 'Spiegelbrecher', text: 'Besiegte Spiegel', val: achK('mirror'), tiers: [10, 500, 10000] },
+  { id: 'gespann', name: 'Trennmeister', text: 'Besiegte Gespann-Hälften', val: achK('pair'), tiers: [10, 500, 10000] },
+  { id: 'magnet', name: 'Entmagnetisierer', text: 'Besiegte Magneten', val: achK('magnet'), tiers: [10, 500, 10000] },
   {
     id: 'helden',
     name: 'Heldenriege',
@@ -228,8 +240,8 @@ export const achTier = a => {
 };
 // Einzel-Erfolge mit nur einer Stufe zählen als Gold
 
-export // Einzel-Erfolge mit nur einer Stufe zählen als Gold
-const achMedal = (a, i) => MEDALS[a.tiers.length === 1 ? 2 : i];
+// Einzel-Erfolge mit nur einer Stufe zählen als Gold
+export const achMedal = (a, i) => MEDALS[a.tiers.length === 1 ? 2 : i];
 
 export function achCheck() {
   const A = save.ach || (save.ach = {});
@@ -251,8 +263,8 @@ export function achCheck() {
 }
 // Ein Erfolg bleibt verdeckt (kein Name, keine Beschreibung, keine Schwellen), bis seine erste Stufe erreicht ist. Danach sind auch die weiteren Stufen sichtbar.
 
-export // Ein Erfolg bleibt verdeckt (kein Name, keine Beschreibung, keine Schwellen), bis seine erste Stufe erreicht ist. Danach sind auch die weiteren Stufen sichtbar.
-function renderAchv() {
+// Ein Erfolg bleibt verdeckt (kein Name, keine Beschreibung, keine Schwellen), bis seine erste Stufe erreicht ist. Danach sind auch die weiteren Stufen sichtbar.
+export function renderAchv() {
   let got = 0,
     all = 0,
     open = 0;

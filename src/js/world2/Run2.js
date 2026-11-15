@@ -5,8 +5,8 @@ import { Run } from '../run/Run.js';
 import { W2_SUPPORT_R } from './data.js';
 import { stats2 } from './stats.js';
 
-export /* ================= WELT 2: Gitterfestung (Spiellogik) ================= */
-class Run2 extends Run {
+/* ================= WELT 2: Gitterfestung (Spiellogik) ================= */
+export class Run2 extends Run {
   constructor(save, hooks) {
     super(save, hooks);
     const S = (this.S = stats2(save));

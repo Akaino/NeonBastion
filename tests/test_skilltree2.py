@@ -14,7 +14,7 @@ with sync_playwright() as p:
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     pg.add_init_script("if(!sessionStorage.x){sessionStorage.x=1;localStorage.setItem('neon-bastion-v1',"+json.dumps(json.dumps(old))+")}")
     pg.goto(GAME);pg.wait_for_timeout(300)
-    check(pg.evaluate("()=>Object.keys(NODES).length")==82,'81 Knoten und der Kern: '+str(pg.evaluate("()=>Object.keys(NODES).length")))
+    check(pg.evaluate("()=>Object.keys(NODES).length")==83,'82 Knoten und der Kern: '+str(pg.evaluate("()=>Object.keys(NODES).length")))
     check(pg.evaluate("n=>n.every(id=>NODES[id]&&NODES[NODES[id].parent]&&typeof PREVIEW!=='undefined'||NODES[id])",NEW),'alle neuen Knoten hängen an einem Elternknoten')
     # kein Knoten liegt auf einem anderen
     d=pg.evaluate("()=>{const a=Object.values(NODES);let m=1e9,w=null;for(let i=0;i<a.length;i++)for(let j=i+1;j<a.length;j++){const q=Math.hypot(a[i].x-a[j].x,a[i].y-a[j].y);if(q<m){m=q;w=[a[i].id,a[j].id]}}return [Math.round(m),w]}")
@@ -36,6 +36,15 @@ with sync_playwright() as p:
     # Schnellstart: nie höher als die Rekordwelle
     sw=pg.evaluate("""()=>{const o=JSON.parse(JSON.stringify(save));o.dev=false;o.startPick=0;o.pr={warp:20};const r=[];for(const [b,l] of [[0,30],[10,30],[10,2],[60,30],[61,60]]){o.best=b;o.nodes.e2b=l;const S=stats(o);r.push([S.startWave,S.startMax])}o.best=10;o.nodes.e2b=30;o.startPick=40;r.push([stats(o).startWave]);return r}""")
     check(sw==[[1,1],[10,10],[6,6],[60,60],[61,61],[10]],'Schnellstart startet nie höher als die Rekordwelle: '+str(sw))
+    # Zweite Währung: späte Knoten und einige wichtige frühe kosten zusätzlich die nächsthäufigere Währung
+    z=pg.evaluate("""()=>{const c=(id,l)=>nodeCosts(NODES[id],l).map(x=>x[0]+':'+x[1]).join('+');return [c('b1',0),c('h2a',0),c('b6',0),c('b6',1),c('b7a',0),c('b8',0),c('f5',0),c('f5',4),c('h7c',0),Object.values(NODES).filter(n=>n.extra).length,Object.values(NODES).filter(n=>n.extra&&n.extra[0]===n.cur).length]}""")
+    check(z[:9]==['s:8','s:120+k:3','k:20+s:25000','k:27+s:33500','p:3+k:150','d:2+p:30','d:1+p:6','d:2+p:15','d:1+p:15'] and z[9]>=30 and z[10]==0,'zweite Währung: Mengen wie festgelegt, nie dieselbe Währung doppelt: '+str(z))
+    pg.evaluate("()=>{selNode='b6';save.nodes.b5=1;save.nodes.b4a=1;save.nodes.b3a=1;save.nodes.b2a=1;save.nodes.b6=0;save.cur.k=1e6;save.cur.s=24000;persist();show('tree');renderTree()}")
+    t0=pg.inner_text('#sheet');k0=pg.evaluate("()=>save.cur.k");pg.click('#bBuy');pg.wait_for_timeout(100)
+    check('25,0K' in t0 and pg.evaluate("()=>save.nodes.b6||0")==0 and pg.evaluate("()=>save.cur.k")==k0 and 'Splitter' in pg.inner_text('#toast'),'fehlt die zweite Währung, wird nichts abgezogen und der Hinweis nennt sie: '+pg.inner_text('#toast'))
+    pg.evaluate("()=>{save.cur.s=1e9;renderTree()}");pg.click('#bBuy');pg.wait_for_timeout(100)
+    check(pg.evaluate("()=>save.nodes.b6")==1 and pg.evaluate("()=>save.cur.k")==k0-20 and pg.evaluate("()=>save.cur.s")==1e9-25000,'reicht beides, werden beide Währungen abgezogen')
+    pg.evaluate("()=>{goHub()}")
     # im Baum kaufbar, mit Vorschau
     pg.evaluate("()=>{Object.assign(save.nodes,{b1:5,b2b:3,b3b:2,b4b:1,b5b:1,f2b:1,f3b:1,f4b:1});persist()}");pg.reload();pg.wait_for_timeout(300)
     pg.click('#bTree');pg.wait_for_timeout(300)

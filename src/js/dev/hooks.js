@@ -11,7 +11,6 @@ Dev.stats = (save, S) => {
   }
 }; // Testhilfe: Startwelle frei wählbar
 
-// Testhilfe: Startwelle frei wählbar
 Dev.wave = run =>
   run.save && run.save.dev
     ? {
@@ -20,10 +19,8 @@ Dev.wave = run =>
       }
     : null; // ein schillernder Gegner bzw. ein Abwurf je Welle
 
-// ein schillernder Gegner bzw. ein Abwurf je Welle
 Dev.w2 = save => !!save.w2test; // Test-Freischaltung der Gitterfestung
 
-// Test-Freischaltung der Gitterfestung
 Dev.openSettings = () => {
   setDevTaps(0);
   $('#devCode').hidden = true;

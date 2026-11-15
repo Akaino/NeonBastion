@@ -6,9 +6,9 @@ import { toast } from '../ui/common.js';
 import { $, $$, UI } from '../ui/dom.js';
 import { Perf, R } from '../ui/state.js';
 
-export /* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
+/* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
    Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
-const HITCH_MS = 28;
+export const HITCH_MS = 28;
 
 Object.assign(Perf, {
   on: false,

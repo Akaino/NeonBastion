@@ -1,7 +1,6 @@
 import { hyp, rnd } from '../core/util.js';
 
-export // AUTO_R: Trefferradius eines Autofeuer-Schusses   // AIM_STICK: so viel näher an der Basis muss ein anderer Gegner sein, damit ein Held das Ziel wechselt
-function jag(x1, y1, x2, y2, n, amp) {
+export function jag(x1, y1, x2, y2, n, amp) {
   const p = [[x1, y1]],
     dx = x2 - x1,
     dy = y2 - y1,

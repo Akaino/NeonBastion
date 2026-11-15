@@ -9,9 +9,9 @@ import { R, W, run, save } from './state.js';
 import { Run2 } from '../world2/Run2.js';
 import { stats2 } from '../world2/stats.js';
 
-export /* ---------- Türme im Run: Bauen, Aufwerten, Verschieben, Abbauen ---------- */
+/* ---------- Türme im Run: Bauen, Aufwerten, Verschieben, Abbauen ---------- */
 // Solange gebaut oder ein Turm bearbeitet wird, ist das Spiel pausiert.
-let buildSel = null,
+export let buildSel = null,
   trayOpen = false,
   buildDown = false,
   moveT = null,
@@ -208,8 +208,8 @@ export function ghostAt(e) {
 }
 /* Turm-Menü im Run */
 
-export /* Turm-Menü im Run */
-function openTower(T) {
+/* Turm-Menü im Run */
+export function openTower(T) {
   endBuild();
   towerSel = T;
   R.selTower = T;

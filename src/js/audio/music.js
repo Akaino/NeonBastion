@@ -18,8 +18,8 @@ import { click, noise, osc } from './synth.js';
 import { Track } from './track.js';
 import { clamp } from '../core/util.js';
 
-export // Melodie für 4 Takte: Akkordtöne auf betonten Zählzeiten, Schritte dazwischen, Phrase endet auf dem Grundton
-function makeMelody(prog) {
+// Melodie für 4 Takte: Akkordtöne auf betonten Zählzeiten, Schritte dazwischen, Phrase endet auf dem Grundton
+export function makeMelody(prog) {
   const LO = 64,
     HI = 81,
     rA = rpick(MEL_R),

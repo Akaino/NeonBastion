@@ -1,12 +1,12 @@
 import { $, UI } from '../ui/dom.js';
 
-export /* Entwicklermodus: nur in Beta und Bottest. build.py hängt diese Datei dort hinter ui.js; das echte Spiel enthält sie nicht.
+/* Entwicklermodus: nur in Beta und Bottest. build.py hängt diese Datei dort hinter ui.js; das echte Spiel enthält sie nicht.
    Inhalt: Bedienelemente (werden beim Laden in die Einstellungen eingesetzt), Code-Abfrage, Test-Freischaltung der Gitterfestung,
    Testhilfen (Ressourcen, Rekord, Startwelle, erzwungene Gegner), Leistungsmessung mit Ursachensuche.
    Verbindung zum Spiel: das Objekt Dev (Haken in core.js) und das Objekt Perf (in ui.js nur leer angelegt). */
 
 /* ---------- Bedienelemente und Stilregeln einsetzen ---------- */
-const DEV_CSS = `/* Testhilfen (Entwicklermodus): Zeilen mit Wert und kleinen Knöpfen, Anzeige der Leistungsmessung unten links */
+export const DEV_CSS = `/* Testhilfen (Entwicklermodus): Zeilen mit Wert und kleinen Knöpfen, Anzeige der Leistungsmessung unten links */
 #dev{z-index:7}#dev .mbox{background:#100e30;text-align:left;max-height:calc(100dvh - 40px);overflow-y:auto;gap:10px}#dev h2{text-align:center}
 #devBody h3{margin:8px 0 2px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#ff8a3d}#devBody p{margin:0;color:var(--muted);font-size:13px}
 .drow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}.drow>span:first-child{flex:1;min-width:96px}.drow>b{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}

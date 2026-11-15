@@ -5,8 +5,8 @@ import { SFX } from './sfx.js';
 import { Track } from './track.js';
 import { clamp } from '../core/util.js';
 
-export /* ---- Steuerung ---- */
-const Snd = {
+/* ---- Steuerung ---- */
+export const Snd = {
   ctx: null,
   B: null,
   last: {},

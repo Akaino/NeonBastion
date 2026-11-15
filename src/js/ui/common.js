@@ -4,8 +4,8 @@ import { CUR } from '../data/currencies.js';
 import { $, $$ } from './dom.js';
 import { W, persist, save } from './state.js';
 
-export /* ---------- icons ---------- */
-function curIcon(c) {
+/* ---------- icons ---------- */
+export function curIcon(c) {
   const col = CUR[c].col;
   const p = {
     s: `<path d="M10 1.5 16.5 8 11 18.5 3.5 9z" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/>`,
@@ -54,9 +54,9 @@ export function banner(t, sub) {
 // Menüs werden bei jedem Öffnen neu aufgebaut. Verlässt man sie, wird ihr Inhalt geleert: Die Seite bleibt klein (rund 350 statt über 2.000 Elemente),
 // das hält Werbeblocker, die jede Sekunde die ganze Seite absuchen, kurz (gemessen beim Nutzer: 45 bis 145 ms Hänger je Sekunde mit „AdBlock for Safari“).
 
-export // Menüs werden bei jedem Öffnen neu aufgebaut. Verlässt man sie, wird ihr Inhalt geleert: Die Seite bleibt klein (rund 350 statt über 2.000 Elemente),
+// Menüs werden bei jedem Öffnen neu aufgebaut. Verlässt man sie, wird ihr Inhalt geleert: Die Seite bleibt klein (rund 350 statt über 2.000 Elemente),
 // das hält Werbeblocker, die jede Sekunde die ganze Seite absuchen, kurz (gemessen beim Nutzer: 45 bis 145 ms Hänger je Sekunde mit „AdBlock for Safari“).
-const DYN = {
+export const DYN = {
   tree: ['#tw', '#sheet'],
   heroes: ['#hlist', '#slots'],
   nova: ['#novaList', '#novaTop'],
@@ -113,6 +113,16 @@ export function pay(c, a, btn) {
   return true;
 }
 
+// Mehrere Währungen auf einmal: costs = [[Währung, Menge], …]. Bezahlt wird nur, wenn alles reicht.
+export function canPayAll(costs) {
+  return costs.every(([c, a]) => canPay(c, a));
+}
+export function payAll(costs, btn) {
+  const miss = costs.find(([c, a]) => !canPay(c, a));
+  if (miss) return pay(miss[0], miss[1], btn); // meldet, was fehlt
+  for (const [c, a] of costs.slice(1)) W.s().cur[c] -= a;
+  return pay(costs[0][0], costs[0][1], btn);
+}
 export function costBtn(label, c, a) {
   return `${label}<small>${curIcon(c)}${fmtN(a)}</small>`;
 }

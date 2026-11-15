@@ -1,6 +1,6 @@
-export // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
+// Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
 // Boss-Arten: jede hat eine Fähigkeit. Der Boss bleibt stehen und lädt sie charge Sekunden lang sichtbar auf (Ring + Name), danach cd Sekunden Pause.
-const BOSS_KINDS = {
+export const BOSS_KINDS = {
   Titan: {
     abil: 'Erdstoß',
     charge: 2.5,

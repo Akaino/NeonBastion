@@ -1,20 +1,22 @@
 import { PI, clamp } from '../core/util.js';
 import { CUR, CUR_SRC } from '../data/currencies.js';
-import { nodeCost } from '../data/nodes.js';
-import { canPay, curHTML, curIcon, glyph, pay, renderCurs, show } from './common.js';
+import { nodeCost, nodeCosts } from '../data/nodes.js';
+import { canPayAll, curHTML, curIcon, glyph, payAll, renderCurs, show } from './common.js';
 import { $ } from './dom.js';
 import { bindStepper, startStepper } from './hub.js';
 import { FMT, PREV, PREV2, cmpRows } from './preview.js';
 import { W, persist, selNode, setSelNode } from './state.js';
 
+// Kosten einer Stufe. Welt 1 hat für manche Knoten eine zweite Währung, Welt 2 nicht.
+const costsOf = (n, l) => (W.id === 1 ? nodeCosts(n, l) : [[n.cur, nodeCost(n, l)]]);
 $('#bTree').onclick = () => {
   show('tree');
   renderTree();
   treeHome();
 };
 
-export /* ---------- skill tree ---------- */
-const tv = $('#tv'),
+/* ---------- skill tree ---------- */
+export const tv = $('#tv'),
   tw = $('#tw');
 
 export let tz = 1,
@@ -52,7 +54,7 @@ export function nodeState(n) {
     l = N[n.id] || 0,
     lock = !((N[n.parent] || 0) > 0) && !l,
     max = l >= n.max; // bereits gekaufte Knoten bleiben sichtbar, auch wenn sich ihr Vorgänger geändert hat
-  const aff = !lock && !max && canPay(n.cur, nodeCost(n, l));
+  const aff = !lock && !max && canPayAll(costsOf(n, l));
   return {
     l,
     lock,
@@ -64,9 +66,9 @@ export function nodeState(n) {
 // Hintergrund des Skilltrees: ein farbiger Sektor je Ast mit dem Astnamen an einer Sektorgrenze, Ringe für die Tiefe, feines Punktraster.
 // Rein dekorativ und statisch (ein SVG, keine Animation pro Frame).
 
-export // Hintergrund des Skilltrees: ein farbiger Sektor je Ast mit dem Astnamen an einer Sektorgrenze, Ringe für die Tiefe, feines Punktraster.
+// Hintergrund des Skilltrees: ein farbiger Sektor je Ast mit dem Astnamen an einer Sektorgrenze, Ringe für die Tiefe, feines Punktraster.
 // Rein dekorativ und statisch (ein SVG, keine Animation pro Frame).
-function treeBackdrop() {
+export function treeBackdrop() {
   const BRS = W.br,
     ids = Object.keys(BRS),
     half = PI / ids.length,
@@ -188,8 +190,12 @@ export function renderSheet() {
   else if (st.max)
     h += `<div class="act"><button class="btn" disabled style="--c:${br.col}">Maximal ausgebaut</button></div>`;
   else {
-    const c = nodeCost(n, st.l);
-    h += `<div class="act"><button class="btn ${st.aff ? '' : 'poor'}" id="bBuy" style="--c:${br.col}">${st.l ? 'Verbessern' : 'Freischalten'} für ${curHTML(n.cur, c).replace('class="cur"', 'class="cur" style="margin-left:4px"')}</button></div>`;
+    h += `<div class="act"><button class="btn ${st.aff ? '' : 'poor'}" id="bBuy" style="--c:${br.col}">${st.l ? 'Verbessern' : 'Freischalten'} für ${costsOf(
+      n,
+      st.l,
+    )
+      .map(([cu, c]) => curHTML(cu, c).replace('class="cur"', 'class="cur" style="margin-left:4px"'))
+      .join(' + ')}</button></div>`;
   }
   if (W.id === 1 && n.id === 'e2b' && st.l > 0) h += startStepper();
   sh.innerHTML = h;
@@ -198,7 +204,7 @@ export function renderSheet() {
   if (b)
     b.onclick = () => {
       const l = SN[n.id] || 0;
-      if (pay(n.cur, nodeCost(n, l), b)) {
+      if (payAll(costsOf(n, l), b)) {
         SN[n.id] = l + 1;
         persist();
         renderTree();

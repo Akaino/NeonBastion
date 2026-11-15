@@ -27,8 +27,8 @@ export function updW2Btn() {
 }
 /* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
 
-export /* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
-function renderDev() {
+/* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
+export function renderDev() {
   const ws = W.s(),
     w1 = W.id === 1,
     S = w1 ? stats(save) : null,

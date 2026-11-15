@@ -1,9 +1,9 @@
-export /* ================= AUDIO ================= */
-const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
+/* ================= AUDIO ================= */
+export const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
 // A-Moll: Am – F – C – G, jeweils als MIDI-Noten
 
-export // A-Moll: Am – F – C – G, jeweils als MIDI-Noten
-const PROG = [
+// A-Moll: Am – F – C – G, jeweils als MIDI-Noten
+export const PROG = [
   {
     root: 45,
     ch: [57, 60, 64],
@@ -26,15 +26,15 @@ export const PENTA = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91];
 
 // Lautstärken in Prozent. Die Oberfläche trägt hier die Werte aus dem Spielstand ein (syncSound in ui.js); der Ton kennt den Spielstand nicht.
 
-export // Lautstärken in Prozent. Die Oberfläche trägt hier die Werte aus dem Spielstand ein (syncSound in ui.js); der Ton kennt den Spielstand nicht.
-const Vol = {
+// Lautstärken in Prozent. Die Oberfläche trägt hier die Werte aus dem Spielstand ein (syncSound in ui.js); der Ton kennt den Spielstand nicht.
+export const Vol = {
   mus: 70,
   sfx: 80,
 };
 
-export /* ---- Generativer Synthwave-Komponist (harmonisch sauber) ---- */
+/* ---- Generativer Synthwave-Komponist (harmonisch sauber) ---- */
 // Akkorde relativ zu A (MIDI 57); V nutzt harmonisch Moll (G#)
-const CHORDS = {
+export const CHORDS = {
   i: [0, 3, 7],
   iv: [5, 8, 12],
   v: [7, 10, 14],
@@ -65,8 +65,8 @@ export const scaleFor = ch => (ch === 'V' ? SC_HARM : SC_NAT);
 export const inSet = (m, set) => set.includes((((m - 57) % 12) + 12) % 12);
 // singbare Rhythmen (betonte Zählzeiten 0/4/8/12 meist belegt)
 
-export // singbare Rhythmen (betonte Zählzeiten 0/4/8/12 meist belegt)
-const MEL_R = [
+// singbare Rhythmen (betonte Zählzeiten 0/4/8/12 meist belegt)
+export const MEL_R = [
   'x...x...x.x.x...',
   'x.x.x...x...x...',
   'x...x.x.x...x...',

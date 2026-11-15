@@ -81,6 +81,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const base = {
   anteile: argv.includes('--anteile'),
   knoten: arg('knoten', null),
+  flotte: arg('flotte', null),
   held: arg('held', null),
   frei: arg('frei', null),
   freiStufe: arg('freistufe', 1),
@@ -468,6 +469,8 @@ async function probe() {
       const w = rs.map(r => r.wave),
         avg = w.reduce((a, b) => a + b, 0) / w.length;
       md += `| Rekord ${save.best} | ${vars[vi][0]} | ${avg.toFixed(1)} | ${Math.min(...w)} – ${Math.max(...w)} | ${fmtT(rs.reduce((a, r) => a + r.sec, 0) / rs.length)} |\n`;
+      if (base.flotte)
+        md += `|  | Flotte ${base.flotte} | ${(rs.reduce((a, r) => a + r.built / (r.sec / 60), 0) / rs.length).toFixed(1)} Drohnen gebaut je Minute | | |\n`;
       if (rs[0].tally) {
         const t = {};
         let sum = 0;

@@ -2,8 +2,8 @@ import { fmtD, fmtN } from '../core/format.js';
 import { PI } from '../core/util.js';
 import { BASE_GUN, BEAT_N, F5_MAX, IMP_LV, LADDER, PULSE_PCT, QUICK_G, impInterval } from './balance.js';
 
-export // ls = an welcher Grenze seines Sektors der Astname im Skilltree steht: 1 = im Uhrzeigersinn, -1 = dagegen (vom Nutzer so festgelegt)
-const BR = {
+// ls = an welcher Grenze seines Sektors der Astname im Skilltree steht: 1 = im Uhrzeigersinn, -1 = dagegen (vom Nutzer so festgelegt)
+export const BR = {
   b: {
     name: 'Basis',
     col: '#3df5ff',
@@ -38,8 +38,8 @@ const BR = {
 
 // Leitern ohne Obergrenze: bis Stufe LADDER[0] normales Wachstum, darüber zusätzlich ×LADDER[1] je Stufe
 
-export // Heldenimpuls: früher ein Knoten mit einer Stufe (Sprung), seit 0.27.0 fünf Stufen
-const NODE_DEFS = [
+// Aufbau einer Zeile: id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
+export const NODE_DEFS = [
   // ---- Basis ----
   [
     'b1',
@@ -276,6 +276,22 @@ const NODE_DEFS = [
   ['h3c', 'h', 'h2b', 3, 1.8, 'Kampftempo', 15, 's', 150, 1.3, l => `+${l * 6} % Angriffstempo der Helden`],
   ['h4', 'h', 'h3a', 4, -1, 'Fähigkeitsfokus', 4, 'p', 1, 1.7, l => `−${l * 10} % Abklingzeit der Fähigkeiten`],
   ['h4b', 'h', 'h3b', 4, 1, 'Heldenkrit', 10, 'k', 5, 1.45, l => `${l * 4} % Chance auf 2,5-fachen Heldenschaden`],
+  [
+    'h7c',
+    'h',
+    'h6',
+    7,
+    0,
+    'Heldensaga',
+    F5_MAX,
+    'd',
+    0.7,
+    1.25,
+    l =>
+      l
+        ? `Stufe ${l} von ${F5_MAX}: Die Treffer der Helden selbst wachsen noch stärker mit dem Heldenschaden-Bonus`
+        : 'Keine Heldensaga',
+  ],
   [
     'h5c',
     'h',
@@ -522,6 +538,42 @@ export const NODES = {
   },
 };
 
+/* Zweite Währung (seit 0.32.0, Wunsch des Nutzers): Späte Knoten kosteten beim Freischalten nur wenige Kerne oder Prismen und ließen sich sofort
+   hochkaufen. Jetzt verlangt jede Stufe zusätzlich die nächsthäufigere Währung in einer Menge, die zu dieser Stelle des Spiels passt.
+   - Ab Tiefe 6 automatisch: Kerne-Knoten zusätzlich Splitter, Prismen-Knoten zusätzlich Kerne, Sternenstaub-Knoten zusätzlich Prismen (EXTRA_DEEP).
+   - Einzelne wichtige Knoten davor stehen ausdrücklich in EXTRA.
+   Die Zusatzkosten wachsen je Stufe mit demselben Faktor wie die Hauptkosten. Grundlage der Mengen: Ertrag je Run an fünf Spielständen
+   (Rekord 52: 146 Tsd. Splitter, 480 Kerne, 39 Prismen; Rekord 76: 3,4 Mio., 2.200, 216). */
+const LOWER = { k: 's', p: 'k', d: 'p' };
+const EXTRA_DEEP = {
+  6: { s: 25e3, k: 80, p: 8 },
+  7: { s: 80e3, k: 150, p: 15 },
+  8: { s: 300e3, k: 300, p: 30 },
+  9: { s: 800e3, k: 500, p: 50 },
+};
+const EXTRA = {
+  h2a: ['k', 3], // Zweiter Platz
+  h3a: ['s', 1500], // Dritter Platz
+  b3a: ['s', 300], // Geschütze
+  u3b: ['s', 400], // Schwarm
+  f3b: ['s', 400], // Überladung
+  b4b: ['k', 12], // Resonanz
+  u4: ['k', 15], // Lanzenstrahl
+  h4: ['k', 12], // Fähigkeitsfokus
+  f4: ['k', 15], // Kettenblitz
+  e4: ['k', 20], // Sternenkunde
+  b5: ['k', 150], // Bollwerk
+  u5: ['k', 150], // Mutterschiff
+  h5: ['p', 12], // Vierter Platz
+  e5: ['p', 15], // Singularität
+  f5: ['p', 6], // Heldenimpuls
+  b5c: ['p', 6], // Feuerleitstand
+  u5c: ['p', 6], // Heldengeschwader
+  h5c: ['p', 6], // Kampfrausch
+};
+const extraOf = (id, depth, cur) =>
+  EXTRA[id] || (depth >= 6 && LOWER[cur] ? [LOWER[cur], EXTRA_DEEP[Math.min(9, Math.floor(depth))][LOWER[cur]]] : null);
+
 for (const [id, br, parent, depth, lat, name, max, cur, base, g, fx, steep] of NODE_DEFS) {
   const a = (BR[br].a * PI) / 180,
     R = 118 * depth,
@@ -538,6 +590,7 @@ for (const [id, br, parent, depth, lat, name, max, cur, base, g, fx, steep] of N
     g,
     fx,
     steep,
+    extra: extraOf(id, depth, cur),
     x: Math.cos(a) * R - Math.sin(a) * L,
     y: Math.sin(a) * R + Math.cos(a) * L,
   };
@@ -545,3 +598,13 @@ for (const [id, br, parent, depth, lat, name, max, cur, base, g, fx, steep] of N
 
 export const nodeCost = (n, l) =>
   Math.ceil(n.base * Math.pow(n.g, l) * (n.steep && l > n.steep[0] ? Math.pow(n.steep[1], l - n.steep[0]) : 1));
+
+// Zusatzkosten einer Stufe in der zweiten Währung: [Währung, Menge] oder null. Bei Einmal-Knoten ist es ein fester Betrag.
+export const nodeCost2 = (n, l) => (n.extra ? [n.extra[0], Math.ceil(n.extra[1] * Math.pow(n.g, l))] : null);
+// Alle Kosten einer Stufe als Liste [[Währung, Menge], …]
+export const nodeCosts = (n, l) => {
+  const c = [[n.cur, nodeCost(n, l)]],
+    x = nodeCost2(n, l);
+  if (x) c.push(x);
+  return c;
+};

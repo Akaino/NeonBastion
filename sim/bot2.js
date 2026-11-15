@@ -144,6 +144,7 @@ function options(X, save, opt) {
       name: n.name,
       cur: n.cur,
       cost: X.nodeCost(n, l),
+      cost2: X.nodeCost2 ? X.nodeCost2(n, l) : null, // zweite Währung (seit 0.32.0)
       apply: () => (save.nodes[n.id] = l + 1),
       undo: () => (save.nodes[n.id] = l),
     });
@@ -332,7 +333,10 @@ function buy(X, save, spend, opt) {
     save.team = Object.keys(X.HEROES)
       .filter(id => save.heroes[id].u)
       .slice(0, S.slots);
-    let o = options(X, save, opt).filter(op => save.cur[op.cur] >= Math.ceil(op.cost));
+    let o = options(X, save, opt).filter(
+      op => save.cur[op.cur] >= Math.ceil(op.cost) && (!op.cost2 || save.cur[op.cost2[0]] >= op.cost2[1]),
+    );
+    const total = op => op.cost * WEIGHT[op.cur] + (op.cost2 ? op.cost2[1] * WEIGHT[op.cost2[0]] : 0); // Gesamtpreis in Splitter-Einheiten
     if (!o.length) break;
     let pick;
     if (smart) {
@@ -345,17 +349,21 @@ function buy(X, save, spend, opt) {
           g = power(X, save, opt) - p0;
           op.undo();
         }
-        const v = (Math.max(g, 0) + 1e-6) / (op.cost * WEIGHT[op.cur]);
+        const v = (Math.max(g, 0) + 1e-6) / total(op);
         if (v > best) {
           best = v;
           pick = op;
         }
       }
-    } else pick = o.sort((a, b) => a.cost * WEIGHT[a.cur] - b.cost * WEIGHT[b.cur])[0];
+    } else pick = o.sort((a, b) => total(a) - total(b))[0];
     const cst = Math.ceil(pick.cost);
     save.cur[pick.cur] -= cst;
     pick.apply();
     track(spend, pick.id, pick.name, pick.cur, cst);
+    if (pick.cost2) {
+      save.cur[pick.cost2[0]] -= pick.cost2[1];
+      track(spend, pick.id + '+', pick.name + ' (zweite Währung)', pick.cost2[0], pick.cost2[1]);
+    }
   }
 }
 function buyPrestige(X, save, spend) {
@@ -519,7 +527,12 @@ function candidates(save, N) {
     out.push({
       mod: { kind: 'node', id: n.id, n: k },
       name: n.name,
-      cost: costOf(i => [n.cur, X.nodeCost(n, i)], l, k),
+      cost: (() => {
+        const c = costOf(i => [n.cur, X.nodeCost(n, i)], l, k);
+        if (X.nodeCost2 && X.nodeCost2(n, l))
+          for (let i = 0; i < k; i++) c[X.nodeCost2(n, l + i)[0]] += X.nodeCost2(n, l + i)[1];
+        return c;
+      })(),
     });
   }
   for (const id of Object.keys(X.HEROES)) {
@@ -582,6 +595,15 @@ function probe(job) {
       const [k, v] = kv.split('=');
       if (X.NODES[k]) save.nodes[k] = +v;
     } // --knoten b5c=5,u5c=5: Knotenstufen für die Probe setzen
+  // --flotte jaeger=40,repair=0: Anteile der Drohnenklassen für die Probe setzen (schaltet die genannten Klassen frei)
+  if (job.opt.flotte && save.fleet)
+    for (const kv of String(job.opt.flotte).split(',')) {
+      const [k, v] = kv.split('=');
+      if (save.fleet[k]) {
+        save.fleet[k].p = +v;
+        if (+v > 0) save.fleet[k].u = 1;
+      }
+    }
   const S = X.stats(save);
   save.team = Object.keys(X.HEROES)
     .filter(id => save.heroes[id].u)
@@ -597,6 +619,13 @@ function probe(job) {
   const pick = Math.max(1, Math.min(S.startMax, (save.best || 0) - 10));
   save.startPick = pick >= S.startMax ? 0 : pick;
   const r = playRun(X, save, job.opt);
-  return { wave: r.w, sec: r.t, start: pick, tally: r.tally || null };
+  return {
+    wave: r.w,
+    sec: r.t,
+    start: pick,
+    tally: r.tally || null,
+    built: r.droneIdx || 0,
+    baseLeft: r.base.hp / r.base.max,
+  };
 }
 module.exports = { prepare, simulate, benchmark, probe, candidates, WEIGHT };

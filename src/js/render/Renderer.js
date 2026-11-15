@@ -1,8 +1,8 @@
-import { PI, TAU, clamp, rnd } from '../core/util.js';
+import { PI, TAU, clamp, hyp, rnd } from '../core/util.js';
 import { BEAT_N } from '../data/balance.js';
 import { bossLabel } from '../data/bosses.js';
 import { DROPS, DROP_DUR, DROP_HITS, DROP_LIFE } from '../data/drops.js';
-import { CMD_R, ETYPES, HACK_R, JAM_R, SHADE_MUL, SHADE_R, SNIPE_T } from '../data/enemies.js';
+import { CMD_R, ETYPES, HACK_R, JAM_R, MAG_R, SHADE_MUL, SHADE_R, SNIPE_T } from '../data/enemies.js';
 import { TOWERS } from '../data/towers.js';
 import { rendererBaseMethods } from './base.js';
 import { rendererSpritesMethods } from './sprites.js';
@@ -388,6 +388,18 @@ export class Renderer {
         c.beginPath();
         c.moveTo(e.x, e.y);
         c.lineTo(e.mate.x, e.mate.y);
+        c.stroke();
+        c.setLineDash([]);
+      }
+      // Magnet: gestrichelte Linie zum Zeiger, solange er ihn zieht
+      if (e.type === 'magnet' && !e.mute && hyp(e.x - run.cx, e.y - run.cy) < MAG_R) {
+        c.strokeStyle = 'rgba(79,210,255,.55)';
+        c.lineWidth = 1.5;
+        c.setLineDash([3, 5]);
+        c.lineDashOffset = this.t * 30;
+        c.beginPath();
+        c.moveTo(e.x, e.y);
+        c.lineTo(run.cx, run.cy);
         c.stroke();
         c.setLineDash([]);
       }

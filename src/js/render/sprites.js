@@ -602,6 +602,35 @@ export const rendererSpritesMethods = {
           1.3,
           4,
         );
+      } else if (type === 'magnet') {
+        this.neon(
+          c,
+          K,
+          c => {
+            c.beginPath();
+            c.arc(0, 0, r * 0.95, PI * 0.75, PI * 2.25);
+            c.arc(0, 0, r * 0.45, PI * 2.25, PI * 0.75, true);
+            c.closePath();
+          },
+          C,
+          2.2,
+          12,
+          F,
+        );
+        this.neon(
+          c,
+          K,
+          c => {
+            c.beginPath();
+            c.moveTo(-r * 0.2, r * 0.9);
+            c.lineTo(-r * 0.75, r * 0.45);
+            c.moveTo(r * 0.2, r * 0.9);
+            c.lineTo(r * 0.75, r * 0.45);
+          },
+          '#ffffff',
+          1.6,
+          6,
+        );
       } else if (type === 'pair') {
         this.neon(
           c,

@@ -13,8 +13,8 @@ import { goHub } from './hub.js';
 import { aimPos, setAimDown } from './input.js';
 import { R, W, persist, run, save, setEndShown, setPaused, setRun, setSpeed, speed } from './state.js';
 
-export /* ---------- run ---------- */
-function startRun() {
+/* ---------- run ---------- */
+export function startRun() {
   Snd.init();
   const S = stats(save);
   save.team = save.team.filter(id => save.heroes[id] && save.heroes[id].u).slice(0, S.slots);

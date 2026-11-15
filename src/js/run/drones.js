@@ -20,6 +20,7 @@ export const runDronesMethods = {
     const F = this.save.fleet,
       S = this.S,
       ids = F ? DRONE_IDS.filter(id => F[id] && F[id].p > 0 && droneUnlocked(this.save, id)) : [];
+    if (F && !ids.length) return; // nichts verteilt: es wird nichts gebaut (Vorgabe des Nutzers)
     let id = 'jaeger';
     const tot = ++this.droneIdx;
     if (ids.length) {
@@ -86,13 +87,33 @@ export const runDronesMethods = {
         if (d.healT <= 0) {
           d.healT = 1;
           const b = this.base;
-          if (b.hp < b.max) b.hp = Math.min(b.max, b.hp + b.max * REPAIR_BASE * d.heal);
+          // Jede Heilung zeigt einen kurzen grünen Strahl von der Drohne zum Ziel (nur Anzeige)
+          const beam = (x, y) =>
+            this.headless ||
+            this.bolts.push({
+              pts: [
+                [d.x, d.y],
+                [x, y],
+              ],
+              l: 0,
+              m: 0.3,
+              col: d.col,
+              w: 2,
+            });
+          if (b.hp < b.max) {
+            b.hp = Math.min(b.max, b.hp + b.max * REPAIR_BASE * d.heal);
+            beam(0, 0);
+          }
           for (const a of this.heroes)
-            if (!(a.dead > 0) && a.hp < a.max && hyp(a.x - d.x, a.y - d.y) < REPAIR_R)
+            if (!(a.dead > 0) && a.hp < a.max && hyp(a.x - d.x, a.y - d.y) < REPAIR_R) {
               a.hp = Math.min(a.max, a.hp + a.max * REPAIR_ALLY * d.heal);
+              beam(a.x, a.y);
+            }
           for (const a of this.drones)
-            if (a !== d && a.hp < a.max && hyp(a.x - d.x, a.y - d.y) < REPAIR_R)
+            if (a !== d && a.hp < a.max && hyp(a.x - d.x, a.y - d.y) < REPAIR_R) {
               a.hp = Math.min(a.max, a.hp + a.max * REPAIR_ALLY * d.heal);
+              beam(a.x, a.y);
+            }
           this.ring(d.x, d.y, 4, 26, d.col, 0.4, 2);
         }
         d.orb += dt * 0.9;

@@ -1,7 +1,7 @@
 import { heroLvlCost } from './heroes.js';
 
-export // Flotte: Drohnenklassen. dmg/hp/rate sind Faktoren auf die Werte aus dem Skilltree. unlock: null = von Anfang an, [Währung, Kosten] oder die ID eines Skilltree-Knotens.
-const DRONES = {
+// Flotte: Drohnenklassen. dmg/hp/rate sind Faktoren auf die Werte aus dem Skilltree. unlock: null = von Anfang an, [Währung, Kosten] oder die ID eines Skilltree-Knotens.
+export const DRONES = {
   jaeger: {
     name: 'Jäger',
     role: 'Allrounder',
@@ -82,11 +82,9 @@ export const droneLvlCost = l => heroLvlCost(l);
 export const DRONE_LV = 0.08,
   droneLm = l => 1 + DRONE_LV * (l - 1); // Stufenfaktor auf Schaden und Leben (flacher als bei Helden: mit +12 % je Stufe kam die Flotte allein auf Welle 51 statt 30)
 
-export // Stufenfaktor auf Schaden und Leben (flacher als bei Helden: mit +12 % je Stufe kam die Flotte allein auf Welle 51 statt 30)
-const repairMul = l => 1 + 0.04 * (l - 1); // Stufenfaktor der Reparaturleistung
+export const repairMul = l => 1 + 0.04 * (l - 1); // Stufenfaktor der Reparaturleistung
 
-export // Stufenfaktor der Reparaturleistung
-const droneUnlocked = (save, id) => {
+export const droneUnlocked = (save, id) => {
   const D = DRONES[id],
     st = save.fleet && save.fleet[id];
   return (
@@ -97,8 +95,8 @@ const droneUnlocked = (save, id) => {
 };
 // p = eingestellter Anteil an den gebauten Drohnen in Prozentpunkten (wird über die freigeschalteten Klassen normiert)
 
-export // p = eingestellter Anteil an den gebauten Drohnen in Prozentpunkten (wird über die freigeschalteten Klassen normiert)
-const freshFleet = () => ({
+// p = eingestellter Anteil an den gebauten Drohnen in Prozentpunkten (wird über die freigeschalteten Klassen normiert)
+export const freshFleet = () => ({
   jaeger: {
     u: 1,
     l: 1,
