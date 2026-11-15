@@ -6,7 +6,7 @@ Zum schnellen Einstieg: In der Beta unter „Einstellungen“ den Knopf „Live-
 
 Zum Testen später Inhalte: Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle).
 
-Alles hier ist automatisch getestet (26 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+Alles hier ist automatisch getestet (25 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
 
 ## 0. Abwürfe (neu in 0.22.0)
 
