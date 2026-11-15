@@ -1,5 +1,6 @@
 import { STAGE } from '../core/version.js';
 import {
+  CLASSES5,
   CLASS_IDS5,
   CRYSTALS5,
   DUST_P5,
@@ -167,6 +168,13 @@ export function setSlot5(w5, slot, id) {
   return true;
 }
 
+// Steht der Held auf diesem Platz zu weit hinten, um im Nahkampf zu treffen? Nahkämpfer erreichen Gegner nur vom vordersten
+// besetzten Platz und dem direkt dahinter; weiter hinten greifen sie erst ein, wenn die Helden vor ihnen gefallen sind.
+export function tooFar5(w5, slot) {
+  const id = w5.team[slot];
+  if (!id || !CLASSES5[HEROES5[id].cls].melee) return false;
+  return slot - w5.team.findIndex(Boolean) >= 2;
+}
 // Zwei Plätze tauschen (auch mit einem leeren Platz). Die Gruppe bleibt dieselbe, deshalb gibt es hier nichts zu prüfen.
 export function swapSlots5(w5, a, b) {
   if (a === b || !(w5.team[a] || w5.team[b])) return false;

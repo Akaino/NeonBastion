@@ -545,6 +545,7 @@ export function drawRun5(c, w, h, run, hue) {
       y = FEET(lane),
       H = HEROES5[hr.id];
     if (H.rar === 'champ' && !hr.dead) c.drawImage(aura(H.hue), x - 34, y - 56, 68, 68);
+    if (hr.out && !hr.dead) c.globalAlpha = 0.5;
     drawHero5(c, hr.id, x, y, 1, {
       ph: run.moving && !hr.dead ? run.t * 11 + hr.slot * 1.3 : null,
       atk: hr.at > 0 ? Math.sin((1 - hr.at / 0.28) * Math.PI) : 0,
@@ -552,6 +553,7 @@ export function drawRun5(c, w, h, run, hue) {
       t: run.t,
       dead: hr.dead,
     });
+    c.globalAlpha = 1;
     if (hr.dead) continue;
     if (hr.flash > 0) {
       c.globalAlpha = 0.45;
@@ -570,6 +572,20 @@ export function drawRun5(c, w, h, run, hue) {
     }
     bar(x, y - 62, 26, hr.hp / hr.max, hr.hp < hr.max * 0.35 ? '#ff4f6d' : '#6dffb0');
     bar(x, y - 58, 26, hr.en / 100, '#ffe14f');
+    if (hr.out) {
+      // Nahkämpfer außer Reichweite: durchgestrichene Klinge und Hinweis
+      c.strokeStyle = '#ff4f6d';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.arc(x, y - 74, 6, 0, TAU);
+      c.moveTo(x - 4.2, y - 78.2);
+      c.lineTo(x + 4.2, y - 69.8);
+      c.stroke();
+      c.font = '600 9px "Chakra Petch", system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.fillStyle = '#ff8fa3';
+      c.fillText('zu weit hinten', Math.max(34, x), y - 84);
+    }
     if (hr.cast > 0 && hr.castName) {
       c.globalAlpha = Math.min(1, hr.cast * 2);
       c.font = '600 11px "Chakra Petch", system-ui, sans-serif';

@@ -38,6 +38,7 @@ import {
   setSlot5,
   slotBlock5,
   swapSlots5,
+  tooFar5,
   sync5,
 } from '../world5/save.js';
 import { show, toast } from './common.js';
@@ -262,17 +263,25 @@ function panelHelden() {
       (a, b) => RARITY_IDS5.indexOf(HEROES5[a].rar) - RARITY_IDS5.indexOf(HEROES5[b].rar),
     );
   return (
-    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}</p>` +
+    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}<br>${cur5('d', 'Synchron-Staub')} ersetzt fehlende Kerne beim Rang. Du bekommst ihn, indem du Kerne von Basishelden synchronisierst (Knopf auf ihrer Karte), und selten als Beute: 1 % je gewonnener Welle, 25 % je besiegtem Boss.</p>` +
     own.map(heroCard).join('') +
     rest.map(heroCard).join('')
   );
 }
+// Hinweis, wenn ein Nahkämpfer auf einem Platz landet, von dem aus er nicht trifft
+function warnFar(slot) {
+  if (!tooFar5(W(), slot)) return false;
+  const H = HEROES5[W().team[slot]];
+  toast(`${H.name} kämpft im Nahkampf und trifft von Platz ${slot + 1} aus nicht`);
+  return true;
+}
 function panelTeam() {
   const w = W();
-  let h = `<p class="w5hint">Platz 1 steht vorn und fängt die Gegner ab, Platz 5 ganz hinten. <b>Verteidiger und Angreifer treffen nur von Platz 1 und 2 aus.</b> In der Gruppe sind höchstens ein Champion und zwei Legendäre erlaubt. Zieh einen Helden auf einen anderen Platz, um zu tauschen – oder tippe erst den Platz, dann den Helden an. Eine Änderung beginnt die Welle neu.</p><div class="w5slots">`;
+  let h = `<p class="w5hint">Platz 1 steht vorn und fängt die Gegner ab, Platz 5 ganz hinten. <b>Verteidiger und Angreifer kämpfen im Nahkampf: Sie treffen nur vom vordersten besetzten Platz und dem direkt dahinter.</b> Weiter hinten greifen sie erst ein, wenn die Helden vor ihnen gefallen sind – solche Plätze sind rot markiert. In der Gruppe sind höchstens ein Champion und zwei Legendäre erlaubt. Zieh einen Helden auf einen anderen Platz, um zu tauschen – oder tippe erst den Platz, dann den Helden an. Eine Änderung beginnt die Welle neu.</p><div class="w5slots">`;
   for (let i = 0; i < TEAM_SIZE5; i++) {
     const id = w.team[i];
-    h += `<button class="w5slot${i === w5Slot ? ' sel' : ''}" data-slot="${i}"><small>Platz ${i + 1}${i === 0 ? ' · vorn' : i === TEAM_SIZE5 - 1 ? ' · hinten' : ''}</small>${id ? portrait(id, 18) + `<b>${HEROES5[id].name}</b>` : '<span class="w5q sm">–</span><b>leer</b>'}</button>`;
+    const far = tooFar5(w, i);
+    h += `<button class="w5slot${i === w5Slot ? ' sel' : ''}${far ? ' far' : ''}" data-slot="${i}"><small>Platz ${i + 1}${i === 0 ? ' · vorn' : i === TEAM_SIZE5 - 1 ? ' · hinten' : ''}</small>${id ? portrait(id, 18) + `<b>${HEROES5[id].name}</b>` : '<span class="w5q sm">–</span><b>leer</b>'}${far ? '<em>trifft von hier nicht</em>' : ''}</button>`;
   }
   h += `</div><div class="w5acts"><button class="btn" data-act="clear" style="--c:#ff6b84"${w.team[w5Slot] && w.team.filter(Boolean).length > 1 ? '' : ' disabled'}>Platz ${w5Slot + 1} leeren</button></div><div class="w5chips">`;
   for (const id of ownedSorted()) {
@@ -382,7 +391,9 @@ $('#w5panel').addEventListener('click', e => {
       if (!rankUp5(w, id)) {
         Snd.play('no');
         const n = rankNeed5(w, id);
-        return toast(`Dir fehlen ${n.need - n.have} Kerne oder ${n.dust - w.cur.d} Synchron-Staub`);
+        return toast(
+          `Dir fehlen ${n.need - n.have} Kerne oder ${n.dust - w.cur.d} Synchron-Staub (aus Kernen von Basishelden oder selten als Beute)`,
+        );
       }
       Snd.play('nova');
     } else if (a === 'sync') {
@@ -422,6 +433,7 @@ $('#w5panel').addEventListener('click', e => {
     setSlot5(w, w5Slot, id);
     run5.begin(true);
     Snd.play('buy');
+    warnFar(w5Slot);
     return again();
   }
   const wv = t.closest('[data-stage]');
@@ -487,6 +499,7 @@ function dragEnd(e) {
       setW5Slot(to);
       run5.begin(true);
       Snd.play('buy');
+      warnFar(to) || (d.from != null && warnFar(d.from));
       persist();
     } else Snd.play('no');
   }

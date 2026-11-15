@@ -344,3 +344,16 @@
   z-index: 50;
   filter: drop-shadow(0 0 8px #fff);
 }
+
+/* Nahkämpfer auf einem Platz, von dem aus er nicht trifft */
+.w5slot.far {
+  border-color: #ff4f6d;
+  box-shadow: 0 0 10px -3px #ff4f6d;
+}
+.w5slot em {
+  font-style: normal;
+  font-size: 9px;
+  line-height: 1.1;
+  color: #ff8fa3;
+  text-align: center;
+}

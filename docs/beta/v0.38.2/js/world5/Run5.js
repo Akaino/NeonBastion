@@ -88,6 +88,7 @@ export class Run5 {
         cast: 0,
         tr: H.trait, // Eigenheit des Helden
         hits: 0,
+        out: false, // Nahkämpfer, der gerade keinen Gegner erreicht (steht zu weit hinten) – nur für die Anzeige
         at: 0, // läuft ab, solange die Angriffsbewegung gezeigt wird
       });
     });
@@ -395,7 +396,11 @@ export class Run5 {
         if (this.act(h, foes)) {
           h.cd = h.cd0;
           h.at = SWING5;
-        } else h.cd = 0;
+          h.out = false;
+        } else {
+          h.cd = 0;
+          h.out = foes.length > 0 && !this.moving && CLASSES5[h.cls].melee;
+        }
       }
     }
   }
