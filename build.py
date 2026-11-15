@@ -50,6 +50,8 @@ def write_beta(dst):
         shutil.rmtree(dst)
     os.makedirs(dst)
     open(os.path.join(dst, 'index.html'), 'w', encoding='utf-8').write(beta)
+    # Messseite für Ruckler (tools/ruckeltest.html): schaltet die Zutaten des Spiels einzeln dazu
+    shutil.copy(os.path.join(ROOT, 'tools', 'ruckeltest.html'), os.path.join(dst, 'ruckeltest.html'))
     # Testliste zum Abhaken: nur solange TESTLISTE.md im Projektordner liegt
     liste = os.path.join(ROOT, 'TESTLISTE.md')
     if os.path.isfile(liste):
