@@ -171,6 +171,65 @@ export const HEROES5 = Object.fromEntries(
   ].map(h => [h.id, h]),
 );
 export const HERO_IDS5 = Object.keys(HEROES5);
+
+/* Eigenheit je Held (seit 0.38.0, Rückmeldung des Nutzers: zwei Verteidiger, die sich nur in den Werten unterscheiden, sind „Quatsch“).
+   Jeder Held außer den Champions – die haben ihre eigene Fähigkeit – bekommt etwas, das nur er kann. name/text stehen im Menü,
+   die übrigen Felder wertet heroStats5 (hp, atk, cd als Faktoren) bzw. Run5 aus:
+   thorns = Anteil des Nahkampfschadens zurück · shieldMul/guardT = Bollwerk · dr = eigener Schaden gesenkt · nth = jeder n-te Schlag doppelt
+   cleave = Anteil auf einen zweiten Gegner · leech = heilt sich um Anteil des Schadens · exec = [unter Anteil Leben, Faktor]
+   splash = Streuanteil des Magiers · abil = Faktor auf die Fähigkeit · chain = Grundangriff trifft zwei Ziele · stunAbil = Betäubung in s
+   healMul = Faktor auf Heilungen · abilShield = Schild in Anteil des Lebens · angel = rettet einmal je Welle vor dem Tod
+   hasteT = Dauer des Ansporns · auraAtk/auraDr = solange er lebt · hasteAtk = Angriffsbonus während des Ansporns · abilEn = Energie für alle */
+const TRAITS5 = {
+  riegel: { name: 'Standfest', text: '20 % mehr Leben.', hp: 1.2 },
+  poller: { name: 'Dornen', text: 'Wirft 25 % des Schadens aus dem Nahkampf auf den Angreifer zurück.', thorns: 0.25 },
+  bastion: { name: 'Schildwall', text: 'Der Schild aus „Bollwerk“ ist um die Hälfte größer.', shieldMul: 1.5 },
+  monolith: {
+    name: 'Fels',
+    text: 'Nimmt selbst 20 % weniger Schaden; „Bollwerk“ hält sechs statt vier Sekunden.',
+    dr: 0.2,
+    guardT: 6,
+  },
+  funke: { name: 'Flink', text: 'Greift 15 % schneller an.', cd: 0.85 },
+  kerbe: { name: 'Kerbschlag', text: 'Jeder vierte Schlag trifft doppelt.', nth: 4 },
+  schnitter: {
+    name: 'Rundschlag',
+    text: 'Jeder Schlag trifft auch den zweiten Gegner in Reichweite mit 40 %.',
+    cleave: 0.4,
+  },
+  sichel: { name: 'Blutdurst', text: 'Heilt sich um 15 % des Schadens, den sie austeilt.', leech: 0.15 },
+  vesper: { name: 'Todesstoß', text: 'Dreifacher Schaden gegen Gegner mit weniger als 30 % Leben.', exec: [0.3, 3] },
+  glimmer: { name: 'Streulicht', text: 'Treffer streuen mit 80 % statt 50 % auf Gegner daneben.', splash: 0.8 },
+  zunder: { name: 'Feuerkopf', text: '„Entladung“ trifft 40 % härter.', abil: 1.4 },
+  lohe: { name: 'Doppelschlag', text: 'Der Grundangriff trifft zwei Ziele voll.', chain: true },
+  aurora: { name: 'Polarlicht', text: '„Entladung“ betäubt alle Gegner eine Sekunde lang.', stunAbil: 1 },
+  flick: { name: 'Schnelle Hand', text: 'Handelt 20 % schneller.', cd: 0.8 },
+  tupfer: { name: 'Gründlich', text: 'Alle Heilungen sind 25 % stärker.', healMul: 1.25 },
+  balsam: {
+    name: 'Salbe',
+    text: '„Heilwelle“ gibt jedem zusätzlich einen Schild in Höhe von 10 % seines Lebens.',
+    abilShield: 0.1,
+  },
+  seraph: {
+    name: 'Schutzengel',
+    text: 'Einmal je Welle überlebt ein Verbündeter einen tödlichen Treffer mit einem Lebenspunkt.',
+    angel: true,
+  },
+  takt: { name: 'Metronom', text: '„Ansporn“ hält acht statt sechs Sekunden.', hasteT: 8 },
+  signal: { name: 'Leuchtfeuer', text: 'Solange Signal lebt, greift die Gruppe 8 % stärker an.', auraAtk: 0.08 },
+  fanal: {
+    name: 'Kampfruf',
+    text: 'Während des „Ansporns“ greift die Gruppe zusätzlich 20 % stärker an.',
+    hasteAtk: 0.2,
+  },
+  orakel: {
+    name: 'Voraussicht',
+    text: 'Solange Orakel lebt, nimmt die Gruppe 10 % weniger Schaden; „Ansporn“ gibt allen 20 Energie.',
+    auraDr: 0.1,
+    abilEn: 20,
+  },
+};
+for (const id of HERO_IDS5) HEROES5[id].trait = TRAITS5[id] || {};
 export const START_HERO5 = 'funke'; // der Basisheld, mit dem man beginnt
 
 // Aufwerten. Stufe: Leben und Angriff ×LVL_MUL5 je Stufe, Kosten in Lumen; alle 10 Stufen ein Durchbruch, der Material der Klasse kostet.
@@ -187,7 +246,13 @@ export function heroStats5(id, l, r) {
   const h = HEROES5[id],
     C = CLASSES5[h.cls],
     m = RARITY5[h.rar].mul * Math.pow(LVL_MUL5, l - 1) * (1 + RANK_MUL5 * r);
-  return { hp: Math.round(C.hp * m), atk: Math.round(C.atk * m * 10) / 10, cd: C.cd, en: C.en + h.en };
+  const T = h.trait;
+  return {
+    hp: Math.round(C.hp * m * (T.hp || 1)),
+    atk: Math.round(C.atk * m * (T.atk || 1) * 10) / 10,
+    cd: C.cd * (T.cd || 1),
+    en: C.en + h.en,
+  };
 }
 // Grobe Kampfkraft, nur für Anzeige und Bot
 export const heroPower5 = (id, l, r) => {
@@ -229,6 +294,8 @@ export const zone5 = z => {
     c = Math.floor((z - 1) / ZONES5.length);
   return { ...Z, z, name: Z.name + (ROMAN[c] !== undefined ? ROMAN[c] : ' ' + (c + 1)) };
 };
+// Erste Zone, die vor allem das Material dieser Klasse gibt (danach jede fünfte weitere)
+export const essZone5 = cls => ZONES5.findIndex(Z => Z.ess === cls) + 1;
 // Stufe = durchgehende Nummer aller Wellen (Zone 2, Welle 9 = Stufe 19)
 export const stage5 = (z, w) => (z - 1) * ZONE_LEN5 + w;
 export const zoneOf5 = s => Math.floor((s - 1) / ZONE_LEN5) + 1;

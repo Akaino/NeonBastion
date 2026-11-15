@@ -309,3 +309,38 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Betrag mit Währungszeichen */
+.c5 {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.w5cores b,
+.cmp .c5 b {
+  font-weight: 700;
+}
+.cmp i {
+  font-style: normal;
+}
+/* Ziehen und Ablegen in der Aufstellung */
+.w5slot {
+  touch-action: none;
+  cursor: grab;
+}
+.w5slot.drop {
+  border-color: #6dffb0;
+  box-shadow: 0 0 12px -2px #6dffb0;
+}
+.w5chip {
+  cursor: grab;
+}
+.w5ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 68px;
+  height: 68px;
+  pointer-events: none;
+  z-index: 50;
+  filter: drop-shadow(0 0 8px #fff);
+}

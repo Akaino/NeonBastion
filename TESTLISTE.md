@@ -1,10 +1,21 @@
-# Testliste (Beta 0.37.0)
+# Testliste (Beta 0.38.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
 Alles hier ist automatisch getestet (39 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 00000. Neu in 0.38.0: Welt 5 nach deiner Rückmeldung
+
+- [ ] Helden sind jetzt Figuren mit Schritt- und Angriffsbewegung. Sehen sie wie Personen aus? Sind die Klassen an Schild, Klinge, Stab, Heilkugel und Standarte erkennbar?
+- [ ] Die Gruppe läuft weiter, bis sie auf Gegner trifft.
+- [ ] Jeder Held außer den Champions hat eine Eigenheit (steht auf seiner Karte). Unterscheiden sich die Helden jetzt genug?
+- [ ] Nach jeder gewonnenen Welle ist die Gruppe voll geheilt.
+- [ ] Aufstellung: Helden per Ziehen auf einen anderen Platz tauschen. Am iPhone bitte besonders prüfen.
+- [ ] Helden-Karte: Zeile „Kerne“ mit Bestand und Bedarf; am Durchbruch steht, aus welchen Zonen das Material kommt.
+- [ ] Kosten zeigen das Zeichen ihrer Währung; die Materialzahlen oben zählen laufend mit.
+- [ ] Tempo bis 8×.
 
 ## 0000. Neu in 0.37.0: Welt 5 „Expedition“ (Prototyp)
 

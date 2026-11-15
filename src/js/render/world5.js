@@ -1,9 +1,12 @@
 import { CLASSES5, ENEMIES5, HEROES5, RARITY5, RARITY_IDS5 } from '../world5/data.js';
 
 /* ================= WELT 5: Zeichnung =================
-   Helden und Gegner werden einmal als leuchtende Bildchen vorgezeichnet (kein Leuchten je Bild und Objekt) und dann nur noch
-   kopiert. Jeder Held sieht anders aus: Die Klasse gibt die Grundform, Farbton und Variante (HEROES5[id].hue, .v) den Rest;
-   Punkte unter der Figur zeigen die Seltenheit, Champions tragen einen dezenten Lichtkranz. */
+   Helden sind Figuren mit Kopf, Rumpf, Armen und Beinen (Wunsch des Nutzers: „wie eine Person, mit animierten Bewegungen“).
+   Die Klasse gibt Statur und Ausrüstung (Schild, Klinge, Stab, Heilkugel, Standarte), Farbton und Variante (HEROES5[id].hue, .v)
+   unterscheiden jeden Helden (Kopfschmuck, Umhang), Punkte unter den Füßen zeigen die Seltenheit, Champions tragen einen
+   dezenten Lichtkranz. Im Lauf wird jede Figur je Bild neu gezeichnet (Schritt, Angriff, Fähigkeit, gefallen) – ohne Leuchtfilter,
+   das Leuchten entsteht durch einen breiten, durchscheinenden Strich unter dem scharfen. Für Menüs gibt es ein stehendes Bildchen.
+   Gegner bleiben einfache Formen und werden einmal vorgezeichnet. */
 const TAU = Math.PI * 2,
   cache = new Map();
 const poly = (c, pts) => {
@@ -30,7 +33,7 @@ function sprite(key, size, draw) {
   cache.set(key, cv);
   return cv;
 }
-// Umriss mit Leuchten: erst breit und weich, dann scharf
+// Umriss mit Leuchtfilter – nur für vorgezeichnete Bildchen
 function neon(c, path, col, fill, lw = 2.2) {
   c.save();
   c.shadowColor = col;
@@ -48,212 +51,346 @@ function neon(c, path, col, fill, lw = 2.2) {
   c.stroke();
 }
 
-// Bild eines Helden; r = halbe Größe der Figur
+/* ---------- Heldenfigur ----------
+   Gezeichnet um die Füße (0, 0), Blick nach rechts, etwa 48 Einheiten hoch. a = Haltung:
+   ph = Schrittphase (null = steht) · atk = Angriffsbewegung 0…1 · cast = Fähigkeit 0…1 · t = Zeit (Atmen, Flattern) · dead = gefallen */
+const DARK = 'rgba(6,8,34,.9)';
+function glow(c, col, w, fill) {
+  // aktueller Pfad: breiter durchscheinender Strich, dann scharfer Strich
+  const al = c.globalAlpha;
+  if (fill) {
+    c.fillStyle = fill;
+    c.fill();
+  }
+  c.strokeStyle = col;
+  c.globalAlpha = al * 0.28;
+  c.lineWidth = w + 4;
+  c.stroke();
+  c.globalAlpha = al;
+  c.lineWidth = w;
+  c.stroke();
+}
+const line = (c, pts) => {
+  c.beginPath();
+  pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+};
+export function drawHero5(c, id, x, y, k, a) {
+  const H = HEROES5[id],
+    cls = H.cls,
+    v = H.v,
+    col = `hsl(${H.hue} 100% 66%)`,
+    col2 = `hsl(${(H.hue + 40) % 360} 100% 74%)`,
+    t = a.t || 0,
+    walk = a.ph != null,
+    atk = a.atk || 0,
+    cast = a.cast || 0,
+    sw = walk ? Math.sin(a.ph) : 0, // Schwung der Glieder
+    bob = walk ? Math.abs(Math.cos(a.ph)) * 1.4 : Math.sin(t * 2.2 + H.hue) * 0.6,
+    robe = cls === 'mage' || cls === 'healer',
+    wide = cls === 'tank' ? 7.5 : cls === 'striker' ? 5.5 : 5;
+  c.save();
+  c.translate(x, y);
+  c.scale(k, k);
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  if (a.dead) {
+    c.globalAlpha *= 0.3;
+    c.translate(-4, -3);
+    c.rotate(-Math.PI / 2 + 0.12);
+  } else {
+    // Seltenheit als Punkte unter den Füßen
+    const n = RARITY_IDS5.indexOf(H.rar) + 1;
+    c.fillStyle = RARITY5[H.rar].col;
+    for (let i = 0; i < n; i++) {
+      c.beginPath();
+      c.arc((i - (n - 1) / 2) * 5, 5, 1.6, 0, TAU);
+      c.fill();
+    }
+  }
+  const lean = atk * 0.22 + (walk ? 0.07 : 0);
+  c.translate(0, -bob);
+  // Umhang (Legendäre und Champions) hinter der Figur
+  if (H.rar === 'legend' || H.rar === 'champ') {
+    const fl = Math.sin(t * 5 + H.hue) * 2 + (walk ? 4 : 0);
+    line(c, [
+      [-3, -34],
+      [-11 - fl, -22],
+      [-10 - fl * 1.4, -7],
+      [-4, -18],
+    ]);
+    c.closePath();
+    glow(c, col2, 1.3, `hsl(${(H.hue + 40) % 360} 80% 40% / .35)`);
+  }
+  // Standarte des Unterstützers auf dem Rücken
+  if (cls === 'support') {
+    const fl = Math.sin(t * 6 + v) * 1.5;
+    line(c, [
+      [-4, -20],
+      [-7, -54],
+    ]);
+    glow(c, col2, 1.5);
+    line(c, [
+      [-7, -54],
+      [-17 - fl, -50 + fl * 0.4],
+      [-7, -45],
+    ]);
+    c.closePath();
+    glow(c, col2, 1.3, `hsl(${(H.hue + 40) % 360} 100% 60% / .45)`);
+  }
+  // Beine oder Robe
+  const hipY = -19;
+  if (robe) {
+    line(c, [
+      [-4.5, hipY - 2],
+      [4.5, hipY - 2],
+      [8 + sw * 1.5, -3],
+      [-8 + sw * 1.5, -3],
+    ]);
+    c.closePath();
+    glow(c, col, 1.8, DARK);
+    line(c, [
+      [-3 + sw * 3, -3],
+      [-3 + sw * 3, 0],
+    ]);
+    glow(c, col, 1.8);
+    line(c, [
+      [3 - sw * 3, -3],
+      [3 - sw * 3, 0],
+    ]);
+    glow(c, col, 1.8);
+  } else
+    for (const s of [-1, 1]) {
+      const ang = sw * 0.6 * s,
+        bend = Math.max(0, -sw * s) * 0.7,
+        kx = Math.sin(ang) * 9.5,
+        ky = hipY + Math.cos(ang) * 9.5,
+        fx = kx + Math.sin(ang - bend) * 9.5,
+        fy = Math.min(0, ky + Math.cos(ang - bend) * 9.5);
+      line(c, [
+        [s * 1.5, hipY],
+        [kx + s * 1.5, ky],
+        [fx + s * 1.5, fy],
+        [fx + s * 1.5 + 3, fy],
+      ]);
+      glow(c, s < 0 ? col2 : col, cls === 'tank' ? 2.6 : 2.1);
+    }
+  // Rumpf (nach vorn geneigt beim Laufen und Angreifen)
+  c.translate(0, hipY);
+  c.rotate(lean);
+  const shY = -15;
+  // hinterer Arm
+  const ba = -sw * 0.7 - 0.15,
+    ex = -wide * 0.6 + Math.sin(ba) * 6,
+    ey = shY + 1 + Math.cos(ba) * 6;
+  line(c, [
+    [-wide * 0.6, shY + 1],
+    [ex, ey],
+    [ex + Math.sin(ba + 0.6) * 5.5, ey + Math.cos(ba + 0.6) * 5.5],
+  ]);
+  glow(c, col2, 1.9);
+  // Rumpf
+  line(c, [
+    [-wide, shY],
+    [wide, shY],
+    [wide * 0.62, 1],
+    [-wide * 0.62, 1],
+  ]);
+  c.closePath();
+  glow(c, col, 2, DARK);
+  if (cls === 'healer') {
+    line(c, [
+      [0, shY + 4],
+      [0, shY + 11],
+    ]);
+    glow(c, col2, 1.6);
+    line(c, [
+      [-3.5, shY + 7.5],
+      [3.5, shY + 7.5],
+    ]);
+    glow(c, col2, 1.6);
+  } else if (cls === 'tank') {
+    line(c, [
+      [-wide * 0.8, shY + 5],
+      [wide * 0.8, shY + 5],
+    ]);
+    glow(c, col2, 1.4);
+  } else if (v % 2) {
+    line(c, [
+      [-wide * 0.7, shY + 3],
+      [wide * 0.5, shY + 10],
+    ]);
+    glow(c, col2, 1.3);
+  }
+  // Kopf
+  const hy = shY - 7;
+  c.beginPath();
+  c.arc(0.5, hy, cls === 'tank' ? 5.6 : 5.1, 0, TAU);
+  glow(c, col, 2, DARK);
+  line(c, [
+    [1.5, hy - 0.5],
+    [5, hy - 0.5],
+  ]);
+  glow(c, '#fff', 1.2);
+  // Kopfschmuck je Klasse und Variante
+  if (cls === 'mage') {
+    line(c, [
+      [-5, hy - 2],
+      [1, hy - 14 - (v % 3) * 2],
+      [6, hy - 2.5],
+    ]);
+    glow(c, col2, 1.6, `hsl(${(H.hue + 40) % 360} 80% 35% / .5)`);
+  } else if (cls === 'healer') {
+    c.beginPath();
+    c.ellipse(0.5, hy - 8.5, 5.5, 1.8, 0, 0, TAU);
+    glow(c, col2, 1.3);
+  }
+  if (v === 1 || v === 3) {
+    line(c, [
+      [-3, hy - 5],
+      [-6 - v, hy - 10],
+      [1, hy - 6],
+    ]);
+    glow(c, col2, 1.5);
+  }
+  if (v === 2 || v === 5) {
+    line(c, [
+      [-3.5, hy - 4],
+      [-6, hy - 10],
+    ]);
+    glow(c, col2, 1.5);
+    line(c, [
+      [4, hy - 4],
+      [6.5, hy - 10],
+    ]);
+    glow(c, col2, 1.5);
+  }
+  if (v === 4 && cls !== 'healer') {
+    line(c, [
+      [-4, hy - 6],
+      [-3, hy - 10],
+      [-0.5, hy - 7.5],
+      [1, hy - 11],
+      [2.5, hy - 7.5],
+      [5, hy - 10],
+      [5.5, hy - 6],
+    ]);
+    glow(c, '#ffe14f', 1.3);
+  }
+  if (v === 5) {
+    line(c, [
+      [-5, hy + 1],
+      [-9, hy + 4],
+    ]);
+    glow(c, col2, 1.4);
+  }
+  // vorderer Arm mit Ausrüstung
+  const sx = wide * 0.55,
+    sy = shY + 1.5;
+  if (cls === 'striker') {
+    const th = -1.25 + atk * 1.9 + (walk ? sw * 0.25 : 0), // Schlag von oben nach vorn unten
+      hx = sx + Math.cos(th) * 9,
+      hy2 = sy + Math.sin(th) * 9,
+      bl = 15 + (v % 3) * 2;
+    line(c, [
+      [sx, sy],
+      [hx, hy2],
+    ]);
+    glow(c, col, 2);
+    line(c, [
+      [hx, hy2],
+      [hx + Math.cos(th - 0.15) * bl, hy2 + Math.sin(th - 0.15) * bl],
+    ]);
+    glow(c, '#fff', 1.6);
+    line(c, [
+      [hx + Math.cos(th + 1.4) * 3, hy2 + Math.sin(th + 1.4) * 3],
+      [hx + Math.cos(th - 1.7) * 3, hy2 + Math.sin(th - 1.7) * 3],
+    ]);
+    glow(c, col2, 1.6);
+  } else if (cls === 'tank') {
+    const px = 9 + atk * 6;
+    line(c, [
+      [sx, sy],
+      [px - 2, sy + 5],
+    ]);
+    glow(c, col, 2.2);
+    line(c, [
+      [px - 4, sy - 6],
+      [px + 4, sy - 4],
+      [px + 5, sy + 7],
+      [px, sy + 13],
+      [px - 4, sy + 8],
+    ]);
+    c.closePath();
+    glow(c, col2, 1.9, cast > 0 ? `hsl(${H.hue} 100% 70% / .5)` : DARK);
+    line(c, [
+      [px - 1, sy],
+      [px + 2.5, sy + 4],
+      [px - 1, sy + 8],
+    ]);
+    glow(c, col, 1.2);
+  } else if (cls === 'mage') {
+    const px = 9 + atk * 2,
+      top = sy - 22;
+    line(c, [
+      [sx, sy],
+      [px, sy + 4],
+    ]);
+    glow(c, col, 1.9);
+    line(c, [
+      [px, 2],
+      [px, top],
+    ]);
+    glow(c, col2, 1.7);
+    c.beginPath();
+    c.arc(px, top - 3, 3 + atk * 2.5 + cast * 3, 0, TAU);
+    glow(c, col2, 1.4, atk > 0 || cast > 0 ? '#fff' : `hsl(${(H.hue + 40) % 360} 100% 70% / .7)`);
+  } else if (cls === 'healer') {
+    const up = atk * 5 + cast * 7,
+      px = 9,
+      py = sy - 2 - up;
+    line(c, [
+      [sx, sy],
+      [px - 1, py + 2],
+    ]);
+    glow(c, col, 1.9);
+    c.beginPath();
+    c.arc(px + 1, py - 2, 2.8 + atk * 1.5 + cast * 2.5, 0, TAU);
+    glow(c, '#6dffb0', 1.4, atk > 0 || cast > 0 ? '#fff' : 'rgba(109,255,176,.6)');
+  } else {
+    const th = -0.3 - atk * 0.9 - cast * 1.1,
+      hx = sx + Math.cos(th) * 9,
+      hy2 = sy + Math.sin(th) * 9;
+    line(c, [
+      [sx, sy],
+      [hx, hy2],
+    ]);
+    glow(c, col, 1.9);
+    line(c, [
+      [hx, hy2],
+      [hx + Math.cos(th - 0.5) * 7, hy2 + Math.sin(th - 0.5) * 7],
+    ]);
+    glow(c, col2, 2.2);
+  }
+  c.restore();
+}
+// Stehendes Bildchen eines Helden für Menüs; r bestimmt die Größe
 export function heroSprite5(id, r = 20) {
   const H = HEROES5[id];
   return sprite('h' + id + r, r * 1.9 + 10, c => {
-    const col = `hsl(${H.hue} 100% 66%)`,
-      col2 = `hsl(${(H.hue + 40) % 360} 100% 72%)`,
-      v = H.v,
-      champ = H.rar === 'champ';
-    if (champ) {
-      // Lichtkranz: erkennbar, aber zurückhaltend
-      const g = c.createRadialGradient(0, 0, r * 0.6, 0, 0, r * 1.75);
-      g.addColorStop(0, `hsl(${H.hue} 100% 70% / .30)`);
+    const half = r * 1.9 + 10,
+      k = half / 36;
+    if (H.rar === 'champ') {
+      const g = c.createRadialGradient(0, 0, half * 0.25, 0, 0, half * 0.95);
+      g.addColorStop(0, `hsl(${H.hue} 100% 70% / .32)`);
       g.addColorStop(1, `hsl(${H.hue} 100% 70% / 0)`);
       c.fillStyle = g;
       c.beginPath();
-      c.arc(0, 0, r * 1.75, 0, TAU);
-      c.fill();
-      c.strokeStyle = 'rgba(255,255,255,.5)';
-      c.lineWidth = 1;
-      c.setLineDash([3, 5]);
-      c.beginPath();
-      c.arc(0, 0, r * 1.45, 0, TAU);
-      c.stroke();
-      c.setLineDash([]);
-    }
-    // Beiwerk je Variante, hinter der Figur
-    c.strokeStyle = col2;
-    c.lineWidth = 2;
-    c.shadowColor = col2;
-    c.shadowBlur = 8;
-    c.beginPath();
-    if (v === 2 || v === 5) {
-      c.moveTo(-r * 0.7, -r * 0.2);
-      c.lineTo(-r * 1.35, -r * 0.75);
-      c.moveTo(-r * 0.7, r * 0.2);
-      c.lineTo(-r * 1.35, r * 0.75);
-    }
-    if (v === 3 || v === 5) {
-      c.moveTo(-r * 0.3, -r * 0.9);
-      c.lineTo(0, -r * 1.5);
-      c.lineTo(r * 0.3, -r * 0.9);
-    }
-    if (v === 4) {
-      c.moveTo(-r * 0.5, -r * 0.6);
-      c.quadraticCurveTo(-r * 1.6, -r * 1.3, -r * 1.2, r * 0.1);
-      c.moveTo(-r * 0.5, r * 0.6);
-      c.quadraticCurveTo(-r * 1.6, r * 1.3, -r * 1.2, -r * 0.1);
-    }
-    c.stroke();
-    c.shadowBlur = 0;
-    // Grundform der Klasse
-    if (H.cls === 'tank') {
-      neon(c, () => poly(c, ngon(6, r, 0)), col);
-      neon(
-        c,
-        () =>
-          poly(c, [
-            [r * 0.15, -r * 0.62],
-            [r * 0.7, 0],
-            [r * 0.15, r * 0.62],
-            [-r * 0.35, r * 0.62],
-            [-r * 0.35, -r * 0.62],
-          ]),
-        col2,
-        'rgba(6,8,34,.6)',
-        1.6,
-      );
-      if (v % 2) {
-        c.strokeStyle = col;
-        c.lineWidth = 1.5;
-        c.beginPath();
-        c.moveTo(-r * 0.35, 0);
-        c.lineTo(r * 0.7, 0);
-        c.stroke();
-      }
-    } else if (H.cls === 'striker') {
-      neon(
-        c,
-        () =>
-          poly(c, [
-            [r * 1.15, 0],
-            [-r * 0.55, -r * 0.8],
-            [-r * 0.15, 0],
-            [-r * 0.55, r * 0.8],
-          ]),
-        col,
-      );
-      neon(
-        c,
-        () =>
-          poly(c, [
-            [r * 0.75, 0],
-            [-r * 0.05, -r * 0.28],
-            [-r * 0.05, r * 0.28],
-          ]),
-        col2,
-        col2,
-        1,
-      );
-      if (v % 2)
-        neon(
-          c,
-          () =>
-            poly(c, [
-              [r * 0.2, -r * 0.75],
-              [r * 0.75, -r * 0.95],
-              [r * 0.45, -r * 0.45],
-            ]),
-          col2,
-          'rgba(6,8,34,.8)',
-          1.4,
-        );
-    } else if (H.cls === 'mage') {
-      neon(c, () => poly(c, ngon(4, r)), col);
-      neon(
-        c,
-        () => {
-          c.beginPath();
-          c.arc(0, 0, r * 0.34, 0, TAU);
-        },
-        col2,
-        col2,
-        1,
-      );
-      for (let k = 0; k < 2 + (v % 3); k++) {
-        const a = (k * TAU) / (2 + (v % 3)) - 0.6;
-        neon(
-          c,
-          () => {
-            c.beginPath();
-            c.arc(Math.cos(a) * r * 1.02, Math.sin(a) * r * 1.02, r * 0.13, 0, TAU);
-          },
-          col2,
-          col2,
-          1,
-        );
-      }
-    } else if (H.cls === 'healer') {
-      neon(
-        c,
-        () => {
-          c.beginPath();
-          c.arc(0, 0, r * 0.92, 0, TAU);
-        },
-        col,
-      );
-      const a = r * 0.2,
-        b = r * 0.58;
-      neon(
-        c,
-        () =>
-          poly(c, [
-            [-a, -b],
-            [a, -b],
-            [a, -a],
-            [b, -a],
-            [b, a],
-            [a, a],
-            [a, b],
-            [-a, b],
-            [-a, a],
-            [-b, a],
-            [-b, -a],
-            [-a, -a],
-          ]),
-        col2,
-        v % 2 ? col2 : 'rgba(6,8,34,.6)',
-        1.6,
-      );
-    } else {
-      neon(
-        c,
-        () => {
-          c.beginPath();
-          c.arc(0, 0, r * 0.9, 0, TAU);
-          c.arc(0, 0, r * 0.52, 0, TAU, true);
-        },
-        col,
-      );
-      const n = 3 + (v % 3);
-      for (let k = 0; k < n; k++) {
-        const a = -Math.PI / 2 + (k * TAU) / n;
-        neon(
-          c,
-          () => {
-            c.beginPath();
-            c.arc(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9, r * 0.17, 0, TAU);
-          },
-          col2,
-          col2,
-          1,
-        );
-      }
-      neon(c, () => poly(c, ngon(3, r * 0.26, 0)), col2, col2, 1);
-    }
-    // Seltenheit als Punkte unter der Figur
-    const n = RARITY_IDS5.indexOf(H.rar) + 1,
-      rc = RARITY5[H.rar].col;
-    c.fillStyle = rc;
-    c.shadowColor = rc;
-    c.shadowBlur = 6;
-    for (let k = 0; k < n; k++) {
-      c.beginPath();
-      c.arc((k - (n - 1) / 2) * 7, r * 1.45, 2.2, 0, TAU);
+      c.arc(0, 0, half * 0.95, 0, TAU);
       c.fill();
     }
+    c.shadowColor = `hsl(${H.hue} 100% 66%)`;
+    c.shadowBlur = 7;
+    drawHero5(c, id, -2 * k, half * 0.66, k, { ph: null, t: 0 });
   });
 }
 export function enemySprite5(type) {
@@ -318,6 +455,17 @@ export function enemySprite5(type) {
     }
   });
 }
+// Lichtkranz eines Champions im Lauf, einmal vorgezeichnet
+const aura = hue =>
+  sprite('a' + hue, 40, c => {
+    const g = c.createRadialGradient(0, 0, 6, 0, 0, 40);
+    g.addColorStop(0, `hsl(${hue} 100% 70% / .28)`);
+    g.addColorStop(1, `hsl(${hue} 100% 70% / 0)`);
+    c.fillStyle = g;
+    c.beginPath();
+    c.arc(0, 0, 40, 0, TAU);
+    c.fill();
+  });
 // Bildchen in ein kleines <canvas> eines Menüs setzen
 export function paintHero5(cv, id, r) {
   const sp = heroSprite5(id, r),
@@ -331,9 +479,10 @@ export function paintHero5(cv, id, r) {
 export function drawRun5(c, w, h, run, hue) {
   const sc = Math.min(1.05, w / 560),
     ox = w * 0.4,
-    y0 = h * 0.6,
+    yb = h * 0.66, // Horizont; darunter liegt der Boden, auf dem alle stehen
     X = x => ox + x * sc,
-    Y = lane => y0 + lane * 15;
+    FEET = lane => yb + 22 + lane * 8, // Standhöhe je Reihe
+    Y = lane => FEET(lane) - 20; // Brusthöhe, für Treffer-Linien und Zahlen
   // Hintergrund: Himmel in der Farbe der Zone, Horizont, Bodenraster, das mit dem zurückgelegten Weg wandert
   const g = c.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, '#05051a');
@@ -345,7 +494,7 @@ export function drawRun5(c, w, h, run, hue) {
     const sx = (i * 97.3 - run.dist * (0.05 + (i % 3) * 0.04)) % (w + 40),
       x = sx < 0 ? sx + w + 40 : sx;
     c.fillStyle = `hsl(${hue + (i % 5) * 12} 80% 80% / ${0.25 + (i % 4) * 0.12})`;
-    c.fillRect(x - 20, ((i * 53.7) % (y0 - 50)) + 6, 1.6, 1.6);
+    c.fillRect(x - 20, ((i * 53.7) % (yb - 30)) + 6, 1.6, 1.6);
   }
   // ferne Türme
   c.strokeStyle = `hsl(${hue} 90% 60% / .22)`;
@@ -354,9 +503,8 @@ export function drawRun5(c, w, h, run, hue) {
     const px = ((i * 131 - run.dist * 0.25) % (w + 160)) - 80,
       x = px < -80 ? px + w + 160 : px,
       hh = 22 + ((i * 37) % 46);
-    c.strokeRect(x, y0 - 34 - hh, 16 + ((i * 7) % 14), hh);
+    c.strokeRect(x, yb - hh, 16 + ((i * 7) % 14), hh);
   }
-  const yb = y0 + 52;
   c.strokeStyle = `hsl(${hue} 100% 62% / .7)`;
   c.lineWidth = 2;
   c.beginPath();
@@ -381,56 +529,64 @@ export function drawRun5(c, w, h, run, hue) {
   if (run.invul > 0 || run.guard > 0 || run.haste > 0) {
     c.fillStyle =
       run.invul > 0 ? 'rgba(255,255,255,.10)' : run.guard > 0 ? 'rgba(90,184,255,.09)' : 'rgba(255,225,79,.07)';
-    c.fillRect(X(-4.6 * 46), y0 - 44, 5.4 * 46 * sc, 88);
+    c.fillRect(X(-4.6 * 46), yb - 40, 5.4 * 46 * sc, 80);
   }
   const bar = (x, y, bw, f, col) => {
     c.fillStyle = 'rgba(0,0,0,.55)';
-    c.fillRect(x - bw / 2, y, bw, 3.5);
+    c.fillRect(x - bw / 2, y, bw, 3);
     c.fillStyle = col;
-    c.fillRect(x - bw / 2, y, bw * Math.max(0, Math.min(1, f)), 3.5);
+    c.fillRect(x - bw / 2, y, bw * Math.max(0, Math.min(1, f)), 3);
   };
-  // Helden
-  for (const hr of run.heroes) {
-    const x = X(hr.x),
-      y =
-        y0 +
-        (hr.slot % 2 ? -22 : 12) + // zwei Reihen, damit sich Nachbarn nicht überdecken
-        (run.phase === 'walk' || run.phase === 'won' ? Math.sin(run.t * 9 + hr.slot) * 2.5 : 0),
-      sp = heroSprite5(hr.id, 17);
-    c.globalAlpha = hr.dead ? 0.22 : 1;
-    c.drawImage(sp, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
-    if (hr.flash > 0 && !hr.dead) {
-      c.globalAlpha = 0.5;
+  // Helden: zwei Reihen (ungerade Plätze stehen etwas weiter hinten), hintere Reihe zuerst
+  const order = run.heroes.slice().sort((a, b) => (b.slot % 2) - (a.slot % 2) || b.slot - a.slot);
+  for (const hr of order) {
+    const lane = hr.slot % 2 ? -1 : 1,
+      x = X(hr.x),
+      y = FEET(lane),
+      H = HEROES5[hr.id];
+    if (H.rar === 'champ' && !hr.dead) c.drawImage(aura(H.hue), x - 34, y - 56, 68, 68);
+    drawHero5(c, hr.id, x, y, 1, {
+      ph: run.moving && !hr.dead ? run.t * 11 + hr.slot * 1.3 : null,
+      atk: hr.at > 0 ? Math.sin((1 - hr.at / 0.28) * Math.PI) : 0,
+      cast: hr.cast > 0 ? Math.min(1, hr.cast / 0.6) : 0,
+      t: run.t,
+      dead: hr.dead,
+    });
+    if (hr.dead) continue;
+    if (hr.flash > 0) {
+      c.globalAlpha = 0.45;
       c.fillStyle = '#fff';
       c.beginPath();
-      c.arc(x, y, 15, 0, TAU);
+      c.arc(x, y - 22, 13, 0, TAU);
       c.fill();
+      c.globalAlpha = 1;
     }
-    c.globalAlpha = 1;
-    if (hr.dead) continue;
     if (hr.sh > 0) {
       c.strokeStyle = 'rgba(159,216,255,.9)';
       c.lineWidth = 2;
       c.beginPath();
-      c.arc(x, y, 22, 0, TAU);
+      c.ellipse(x, y - 22, 17, 27, 0, 0, TAU);
       c.stroke();
     }
-    bar(x, y + 27, 26, hr.hp / hr.max, hr.hp < hr.max * 0.35 ? '#ff4f6d' : '#6dffb0');
-    bar(x, y + 31.5, 26, hr.en / 100, '#ffe14f');
+    bar(x, y - 62, 26, hr.hp / hr.max, hr.hp < hr.max * 0.35 ? '#ff4f6d' : '#6dffb0');
+    bar(x, y - 58, 26, hr.en / 100, '#ffe14f');
     if (hr.cast > 0 && hr.castName) {
       c.globalAlpha = Math.min(1, hr.cast * 2);
       c.font = '600 11px "Chakra Petch", system-ui, sans-serif';
       c.textAlign = 'center';
       c.fillStyle = CLASSES5[hr.cls].col;
-      c.fillText(hr.castName, Math.max(46, x), y - 30 - (1.2 - hr.cast) * 10);
+      c.fillText(hr.castName, Math.max(46, x), y - 68 - (1.2 - hr.cast) * 10);
       c.globalAlpha = 1;
     }
   }
-  // Gegner
+  // Gegner: wippen im Anmarsch, stoßen beim Angriff vor
+  let i = 0;
   for (const e of run.en) {
+    i++;
     if (e.hp <= 0) continue;
-    const x = X(e.x),
-      y = Y(e.lane) - (e.boss ? 6 : 0);
+    const lunge = e.at > 0 ? Math.sin((1 - e.at / 0.28) * Math.PI) * 9 : 0,
+      x = X(e.x) - lunge,
+      y = FEET(e.lane) - e.r - 2 + Math.sin(run.t * 7 + i) * 1.6;
     if (x > w + 60) continue;
     const sp = enemySprite5(e.type);
     c.drawImage(sp, x - sp.half, y - sp.half, sp.half * 2, sp.half * 2);
@@ -449,7 +605,7 @@ export function drawRun5(c, w, h, run, hue) {
       c.arc(x, y, e.r + 5, run.t * 6, run.t * 6 + 4);
       c.stroke();
     }
-    if (e.hp < e.max || e.boss) bar(x, y + e.r + 8, e.boss ? 70 : 24, e.hp / e.max, e.boss ? '#ff4fd8' : '#ff8a3d');
+    if (e.hp < e.max || e.boss) bar(x, y - e.r - 9, e.boss ? 70 : 24, e.hp / e.max, e.boss ? '#ff4fd8' : '#ff8a3d');
   }
   // Wirkungen: Treffer-Linien, Ringe, Zahlen
   for (const f of run.fx) {
@@ -467,14 +623,14 @@ export function drawRun5(c, w, h, run, hue) {
       c.strokeStyle = f.col;
       c.lineWidth = 3;
       c.beginPath();
-      c.arc(X(f.x), y0, f.r * sc * (0.25 + 0.75 * k), 0, TAU);
+      c.arc(X(f.x), Y(0), f.r * sc * (0.25 + 0.75 * k), 0, TAU);
       c.stroke();
     } else {
       c.globalAlpha = 1 - k * k;
       c.font = '600 12px "Chakra Petch", system-ui, sans-serif';
       c.textAlign = 'center';
       c.fillStyle = f.col;
-      c.fillText(f.text, Math.min(w - 40, Math.max(40, X(f.x))), Y(f.lane) - 26 - k * 22);
+      c.fillText(f.text, Math.min(w - 40, Math.max(40, X(f.x))), Y(f.lane) - 30 - k * 22);
     }
   }
   c.globalAlpha = 1;

@@ -30,11 +30,14 @@ import {
 export const GAP5 = 46, // Abstand zwischen zwei Plätzen
   MELEE5 = 96, // so weit reicht ein Nahkämpfer nach vorn: von Platz 0 und 1 aus trifft er, von weiter hinten nicht
   RANGE5 = 440,
-  WALK_T5 = 1.4,
+  WALK_T5 = 0.5,
+  ADV5 = 90, // Lauftempo der Gruppe
+  CONTACT5 = 120, // die Gruppe läuft weiter, bis der nächste Gegner so nah ist (Wunsch des Nutzers: nicht stehen bleiben und warten)
+  SWING5 = 0.28, // Dauer der Angriffsbewegung, nur für die Anzeige
   WON_T5 = 0.5,
   WIPE_T5 = 1.6,
   ENGAGE5 = 3, // so viele Nahkampf-Gegner können gleichzeitig angreifen
-  REST5 = 0.25; // nach jeder gewonnenen Welle: so viel Leben kommt zurück, Gefallene stehen damit wieder auf
+  REST5 = 1; // nach jeder gewonnenen Welle: volles Leben, Gefallene stehen wieder auf (Vorgabe des Nutzers)
 
 export class Run5 {
   constructor(w5, hooks) {
@@ -43,6 +46,7 @@ export class Run5 {
     this.headless = false;
     this.t = 0;
     this.dist = 0; // zurückgelegter Weg, nur für die Anzeige
+    this.moving = true; // läuft die Gruppe gerade? (Anzeige: Schrittbewegung, wandernder Boden)
     this.fx = [];
     this.heroes = [];
     this.en = [];
@@ -51,6 +55,9 @@ export class Run5 {
     this.guard = 0; // Bollwerk: Schaden an der Gruppe gesenkt
     this.invul = 0; // Aegis: kein Schaden
     this.haste = 0; // Ansporn, Zeitkrümmung
+    this.hasteAtk = 0; // Angriffsbonus während des Ansporns (Fanal)
+    this.am = 1; // Faktor auf den Angriff der Gruppe
+    this.auraDr = 0; // Anteil, um den die Gruppe weniger Schaden nimmt (Orakel)
     this.begin(true);
   }
   /* ---------- Aufbau ---------- */
@@ -79,6 +86,9 @@ export class Run5 {
         sh: 0,
         flash: 0,
         cast: 0,
+        tr: H.trait, // Eigenheit des Helden
+        hits: 0,
+        at: 0, // läuft ab, solange die Angriffsbewegung gezeigt wird
       });
     });
   }
@@ -101,6 +111,8 @@ export class Run5 {
     if (fresh) this.muster();
     this.en = [];
     this.guard = this.invul = this.haste = 0;
+    this.hasteAtk = 0;
+    this.angel = true; // Schutzengel: einmal je Welle
     this.phase = 'walk';
     this.pt = WALK_T5;
   }
@@ -111,7 +123,7 @@ export class Run5 {
         hp = enemyHp5(s, type);
       return {
         type,
-        x: 430 + i * 38,
+        x: 560 + i * 38,
         lane: (i % 3) - 1,
         hp,
         max: hp,
@@ -126,6 +138,7 @@ export class Run5 {
         shots: i,
         cl: BOSS_CLEAVE_CD5,
         flash: 0,
+        at: 0,
         col: T.col,
       };
     });
@@ -185,9 +198,12 @@ export class Run5 {
     h.cast = 1.2;
     h.castName = text;
   }
-  hurt(h, d) {
+  // from = angreifender Gegner (für Dornen), fehlt bei Flächenschaden
+  hurt(h, d, from) {
     if (h.dead || this.invul > 0) return;
     if (this.guard > 0) d *= 0.75;
+    d *= (1 - (h.tr.dr || 0)) * (1 - this.auraDr);
+    if (from && !from.ranged && h.tr.thorns) this.hit(from, d * h.tr.thorns, null);
     if (h.sh > 0) {
       const a = Math.min(h.sh, d);
       h.sh -= a;
@@ -196,6 +212,12 @@ export class Run5 {
     if (d <= 0) return;
     h.hp -= d;
     h.flash = 0.12;
+    if (h.hp <= 0 && this.angel && this.heroes.some(a => !a.dead && a.tr.angel)) {
+      this.angel = false;
+      h.hp = 1;
+      this.ring(h.x, '#ffffff', 80);
+      this.note(h.x, 0, 'Schutzengel', '#6dffb0');
+    }
     if (h.hp <= 0) {
       h.hp = 0;
       h.dead = true;
@@ -241,6 +263,8 @@ export class Run5 {
   }
   ability(h, foes) {
     const C = CLASSES5[h.cls],
+      T = h.tr,
+      A = h.atk * this.am, // Angriff mit den Boni der Gruppe
       col = C.col,
       near = foes.filter(e => e.x - h.x <= MELEE5 + e.r).sort((a, b) => a.x - b.x);
     this.say(h, HEROES5[h.id].abil || C.abil);
@@ -253,12 +277,12 @@ export class Run5 {
       const e = near[0];
       if (!e) return false;
       this.bolt(h, e, col, true);
-      this.hit(e, h.atk * 7, col);
+      this.hit(e, A * 7, col);
       if (e.hp <= 0) h.en = 60;
       return e.hp > 0;
     } else if (h.id === 'astra') {
       for (const e of foes) {
-        this.hit(e, h.atk * 2.4, col);
+        this.hit(e, A * 2.4, col);
         e.stun = Math.max(e.stun, e.boss ? 1 : 2);
       }
       this.ring(foes[0].x, col, 220);
@@ -272,35 +296,46 @@ export class Run5 {
     } else if (h.id === 'chronos') {
       for (const a of this.heroes) if (!a.dead && a !== h) a.en = Math.min(100, a.en + 45);
       this.haste = 6;
+      this.hasteAtk = 0;
       this.ring(h.x, col, 170);
     } else if (h.cls === 'tank') {
-      h.sh = h.max * 0.35;
-      this.guard = 4;
+      h.sh = h.max * 0.35 * (T.shieldMul || 1);
+      this.guard = T.guardT || 4;
       this.ring(h.x, col, 110);
     } else if (h.cls === 'striker') {
       if (!near[0]) return false;
       this.bolt(h, near[0], col, true);
-      this.hit(near[0], h.atk * 3.5, col);
-      if (near[1]) this.hit(near[1], h.atk * 1.75, col);
+      this.hit(near[0], A * 3.5 * (T.abil || 1), col);
+      if (near[1]) this.hit(near[1], A * 1.75 * (T.abil || 1), col);
     } else if (h.cls === 'mage') {
-      for (const e of foes) this.hit(e, h.atk * 1.5, col);
+      for (const e of foes) {
+        this.hit(e, A * 1.5 * (T.abil || 1), col);
+        if (T.stunAbil) e.stun = Math.max(e.stun, e.boss ? T.stunAbil / 2 : T.stunAbil);
+      }
       this.ring(foes[0].x, col, 200);
     } else if (h.cls === 'healer') {
-      for (const a of this.heroes) this.heal(a, h.atk * 3.5);
+      for (const a of this.heroes) {
+        this.heal(a, A * 3.5 * (T.healMul || 1));
+        if (T.abilShield && !a.dead) a.sh = Math.max(a.sh, a.max * T.abilShield);
+      }
       this.ring(h.x, col, 150);
     } else if (h.cls === 'support') {
-      this.haste = 6;
+      this.haste = T.hasteT || 6;
+      this.hasteAtk = T.hasteAtk || 0;
+      if (T.abilEn) for (const a of this.heroes) if (!a.dead && a !== h) a.en = Math.min(100, a.en + T.abilEn);
       this.ring(h.x, col, 150);
     }
     return true;
   }
   act(h, foes) {
-    const col = CLASSES5[h.cls].col;
+    const col = CLASSES5[h.cls].col,
+      T = h.tr,
+      A = h.atk * this.am;
     if (h.cls === 'healer') {
       let t = null;
       for (const a of this.heroes) if (!a.dead && a.hp < a.max * 0.9 && (!t || a.hp / a.max < t.hp / t.max)) t = a;
       if (t) {
-        this.heal(t, h.atk * 2.2);
+        this.heal(t, A * 2.2 * (T.healMul || 1));
         this.bolt(h, t, col);
         return true;
       }
@@ -309,26 +344,59 @@ export class Run5 {
     let e = null;
     for (const o of foes) if (o.x - h.x <= (melee ? MELEE5 : RANGE5) + o.r && (!e || o.x < e.x)) e = o;
     if (!e) return false;
+    let d = A;
+    h.hits++;
+    if (T.nth && h.hits % T.nth === 0) d *= 2;
+    if (T.exec && e.hp < e.max * T.exec[0]) d *= T.exec[1];
     this.bolt(h, e, col);
-    this.hit(e, h.atk, null);
-    if (h.cls === 'mage') for (const o of foes) if (o !== e && Math.abs(o.x - e.x) < 70) this.hit(o, h.atk * 0.5, null);
+    this.hit(e, d, null);
+    if (T.leech) this.heal(h, d * T.leech);
+    if (T.cleave || T.chain) {
+      // zweites Ziel: der nächste weitere Gegner in Reichweite
+      let o2 = null;
+      for (const o of foes)
+        if (o !== e && o.hp > 0 && o.x - h.x <= (melee ? MELEE5 : RANGE5) + o.r && (!o2 || o.x < o2.x)) o2 = o;
+      if (o2) {
+        this.bolt(h, o2, col);
+        this.hit(o2, T.chain ? d : d * T.cleave, null);
+      }
+    }
+    if (h.cls === 'mage')
+      for (const o of foes) if (o !== e && Math.abs(o.x - e.x) < 70) this.hit(o, A * (T.splash || 0.5), null);
     return true;
   }
   updHeroes(dt) {
     const fast = this.haste > 0 ? 1.35 : 1;
+    // Boni, die für die ganze Gruppe gelten, solange ihr Träger lebt bzw. der Ansporn läuft
+    let aa = 0,
+      ad = 0;
+    for (const h of this.heroes)
+      if (!h.dead) {
+        aa = Math.max(aa, h.tr.auraAtk || 0);
+        ad = Math.max(ad, h.tr.auraDr || 0);
+      }
+    this.am = 1 + aa + (this.haste > 0 ? this.hasteAtk : 0);
+    this.auraDr = ad;
     for (const h of this.heroes) {
       if (h.flash > 0) h.flash -= dt;
       if (h.cast > 0) h.cast -= dt;
+      if (h.at > 0) h.at -= dt;
       if (h.dead) continue;
       const foes = this.en.filter(e => e.hp > 0);
       h.en = Math.min(100, h.en + h.reg * fast * dt);
       if (h.en >= 100 && this.useful(h, foes)) {
         h.en = 0;
+        h.at = SWING5;
         this.ability(h, foes);
         continue;
       }
       h.cd -= dt * fast;
-      if (h.cd <= 0) h.cd = this.act(h, foes) ? h.cd0 : 0;
+      if (h.cd <= 0) {
+        if (this.act(h, foes)) {
+          h.cd = h.cd0;
+          h.at = SWING5;
+        } else h.cd = 0;
+      }
     }
   }
   /* ---------- Gegner ---------- */
@@ -344,6 +412,7 @@ export class Run5 {
     for (const e of this.en) {
       if (e.hp <= 0) continue;
       if (e.flash > 0) e.flash -= dt;
+      if (e.at > 0) e.at -= dt;
       const far = e.ranged && cover,
         k = far ? rg++ : m++,
         stop = far ? f.x + 215 + k * 20 : k < ENGAGE5 ? f.x + 26 + e.r + k * 9 : f.x + 70 + e.r + k * 28;
@@ -368,8 +437,9 @@ export class Run5 {
       e.cd = e.cd0;
       const t = e.ranged ? alive[e.shots++ % alive.length] : f;
       if (!t || t.dead) continue;
+      e.at = SWING5;
       this.bolt(e, t, e.col);
-      this.hurt(t, e.atk);
+      this.hurt(t, e.atk, e);
     }
   }
   /* ---------- Ausgang einer Welle ---------- */
@@ -411,10 +481,8 @@ export class Run5 {
       nx = this.stage + 1;
     if (!W.hold && nx !== W.block) W.pos = nx;
     for (const h of this.heroes) {
-      if (h.dead) {
-        h.dead = false;
-        h.hp = h.max * REST5;
-      } else h.hp = Math.min(h.max, h.hp + h.max * REST5);
+      h.dead = false;
+      h.hp = Math.min(h.max, h.hp + h.max * REST5);
       h.sh = 0;
     }
     this.begin(false);
@@ -438,18 +506,29 @@ export class Run5 {
     if (this.guard > 0) this.guard -= dt;
     if (this.invul > 0) this.invul -= dt;
     if (this.haste > 0) this.haste -= dt;
+    this.moving = this.phase === 'walk' || this.phase === 'won';
     if (this.phase === 'walk') {
-      this.dist += 90 * dt;
+      this.dist += ADV5 * dt;
       this.pt -= dt;
       for (const h of this.heroes) if (!h.dead) h.en = Math.min(100, h.en + h.reg * 0.5 * dt);
       if (this.pt <= 0) this.spawn();
     } else if (this.phase === 'fight') {
+      // Die Gruppe läuft den Gegnern entgegen, bis der nächste auf Kontakt heran ist. Gerechnet wird das als Bewegung der Gegner
+      // auf die stehenden Plätze zu; Fernkämpfer der Gruppe schießen schon im Laufen.
+      const f = this.front();
+      let near = Infinity;
+      for (const e of this.en) if (e.hp > 0 && e.x < near) near = e.x;
+      if (f && near - f.x > CONTACT5) {
+        this.moving = true;
+        this.dist += ADV5 * dt;
+        for (const e of this.en) e.x -= ADV5 * dt;
+      }
       this.updHeroes(dt);
       this.updEnemies(dt);
       if (!this.en.some(e => e.hp > 0)) this.win();
       else if (!this.heroes.some(h => !h.dead)) this.lose();
     } else if (this.phase === 'won') {
-      this.dist += 90 * dt;
+      this.dist += ADV5 * dt;
       this.pt -= dt;
       if (this.pt <= 0) this.next();
     } else {

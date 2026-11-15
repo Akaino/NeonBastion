@@ -167,6 +167,15 @@ export function setSlot5(w5, slot, id) {
   return true;
 }
 
+// Zwei Plätze tauschen (auch mit einem leeren Platz). Die Gruppe bleibt dieselbe, deshalb gibt es hier nichts zu prüfen.
+export function swapSlots5(w5, a, b) {
+  if (a === b || !(w5.team[a] || w5.team[b])) return false;
+  const t = w5.team[a];
+  w5.team[a] = w5.team[b];
+  w5.team[b] = t;
+  return true;
+}
+
 /* ---------- Abwesenheit ---------- */
 // Ertrag je Minute Abwesenheit auf der Stufe, auf der die Gruppe geparkt ist (höchstens die höchste gewonnene)
 export function idleRate5(w5) {

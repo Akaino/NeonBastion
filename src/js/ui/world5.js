@@ -13,7 +13,9 @@ import {
   RARITY5,
   RARITY_IDS5,
   TEAM_SIZE5,
+  ZONES5,
   ZONE_LEN5,
+  essZone5,
   heroPower5,
   heroStats5,
   stage5,
@@ -35,10 +37,11 @@ import {
   rankUp5,
   setSlot5,
   slotBlock5,
+  swapSlots5,
   sync5,
 } from '../world5/save.js';
 import { show, toast } from './common.js';
-import { $, $$ } from './dom.js';
+import { $, $$, UI } from './dom.js';
 import { persist, save } from './state.js';
 import { openWorlds } from './worlds.js';
 
@@ -106,7 +109,7 @@ function closeW5() {
 }
 $('#w5Back').onclick = closeW5;
 $('#w5Speed').onclick = () => {
-  setW5Speed(w5Speed === 1 ? 2 : w5Speed === 2 ? 4 : 1);
+  setW5Speed(w5Speed >= 8 ? 1 : w5Speed * 2);
   $('#w5Speed').textContent = w5Speed + '×';
 };
 $('#w5Boss').onclick = () => {
@@ -132,12 +135,12 @@ export function w5Frame(dt) {
   if (!run5) return;
   acc += dt * w5Speed;
   let n = 0;
-  while (acc >= 1 / 60 && n < 24) {
+  while (acc >= 1 / 60 && n < 40) {
     run5.step(1 / 60);
     acc -= 1 / 60;
     n++;
   }
-  if (n >= 24) acc = 0;
+  if (n >= 40) acc = 0;
   const cv = $('#w5cv'),
     dpr = Math.min(2, devicePixelRatio || 1),
     w = cv.clientWidth,
@@ -200,9 +203,22 @@ const ownedSorted = () =>
       RARITY_IDS5.indexOf(HEROES5[b].rar) - RARITY_IDS5.indexOf(HEROES5[a].rar) ||
       heroPower5(b, W().heroes[b].l, W().heroes[b].r) - heroPower5(a, W().heroes[a].l, W().heroes[a].r),
   );
+// Betrag mit dem Zeichen seiner Währung (dieselben Zeichen wie oben in der Kopfzeile): l Lumen, k Kryon, d Synchron-Staub
+const SYM = { l: '◆', k: '❖', d: '✦' };
+const cur5 = (c, n) =>
+  `<span class="c5" style="color:${CUR5[c].col}">${SYM[c]} ${typeof n === 'number' ? fmtN(n) : n}</span>`;
+// Material einer Klasse und Kerne eines Helden bekommen ebenfalls ein festes Zeichen
+const ess5 = (cls, n) => `<span class="c5" style="color:${CLASSES5[cls].col}">⬟ ${n} ${CLASSES5[cls].ess}</span>`;
+const core5 = (rar, n) => `<span class="c5" style="color:${RARITY5[rar].col}">⬢ ${n}</span>`;
+const zoneHint = cls =>
+  `Zone ${essZone5(cls)}, ${essZone5(cls) + ZONES5.length}, ${essZone5(cls) + 2 * ZONES5.length} …`;
 const portrait = (id, r) => `<canvas class="w5p" data-h="${id}" data-r="${r || 20}"></canvas>`;
+// Materialbestand; die Zahlen stehen in eigenen Elementen und werden laufend nachgeführt (updAfford), nicht erst nach einer Aktion
 const essLine = () =>
-  CLASS_IDS5.map(c => `<span style="color:${CLASSES5[c].col}">${W().ess[c]} ${CLASSES5[c].ess}</span>`).join(' · ');
+  CLASS_IDS5.map(
+    c =>
+      `<span class="c5" style="color:${CLASSES5[c].col}">⬟ <b data-ess="${c}">${W().ess[c]}</b> ${CLASSES5[c].ess}</span>`,
+  ).join(' · ');
 
 function heroCard(id) {
   const w = W(),
@@ -220,21 +236,24 @@ function heroCard(id) {
     inTeam = w.team.includes(id);
   let h = `<div class="w5card${H.rar === 'champ' ? ' champ' : ''}" style="--c:${R.col}">${portrait(id, 22)}<div class="w5body">
     <h3>${H.name} ${tag(H.rar)}${inTeam ? '<span class="tag" style="--c:#6dffb0">In der Gruppe</span>' : ''}</h3>
-    <p><b style="color:${C.col}">${C.name}</b> · Stufe ${st.l} · Rang ${st.r}/${R.maxRank} · ${st.s} ${st.s === 1 ? 'Kern' : 'Kerne'}</p>
+    <p><b style="color:${C.col}">${C.name}</b> · Stufe ${st.l} · Rang ${st.r}/${R.maxRank}</p>
     <p class="w5abil">${H.abil ? `<b>${H.abil}:</b> ${H.text}` : C.text}</p>
+    ${H.trait.name ? `<p class="w5abil"><b>Eigenheit „${H.trait.name}“:</b> ${H.trait.text}</p>` : ''}
     <div class="cmp" style="--c:${R.col}">
       <div><span>Leben</span><b>${fmtN(a.hp)}${b ? ` <i>→</i> <em>${fmtN(b.hp)}</em>` : ''}</b></div>
       <div><span>Angriff</span><b>${fmtN(a.atk)}${b ? ` <i>→</i> <em>${fmtN(b.atk)}</em>` : ''}</b></div>
       ${c ? `<div><span>Rang ${st.r + 1}</span><b>Leben ${fmtN(c.hp)} · Angriff ${fmtN(c.atk)}</b></div>` : ''}
+      <div class="w5cores"><span>Kerne</span><b>${core5(H.rar, st.s)}${rn ? ` <i>von</i> ${rn.need} <i>für Rang ${st.r + 1}</i>` : ''}</b></div>
+      ${lc && lc.ess ? `<div><span>${C.ess}</span><b>${ess5(H.cls, `<b data-ess="${H.cls}">${w.ess[H.cls]}</b> von ${lc.ess}`).replace(' ' + C.ess + '</span>', '</span>')} <i>· aus ${zoneHint(H.cls)}</i></b></div>` : ''}
     </div><div class="w5acts">`;
   h += lc
-    ? `<button class="btn" data-act="lvl" data-id="${id}" style="--c:${CUR5.l.col}">Stufe ${st.l + 1} · ${fmtN(lc.l)} Lumen${lc.ess ? ` + ${lc.ess} ${C.ess}` : ''}</button>`
+    ? `<button class="btn" data-act="lvl" data-id="${id}" style="--c:${CUR5.l.col}"><span class="price"><span>Stufe ${st.l + 1}</span>${cur5('l', lc.l)}${lc.ess ? `<span class="plus">+</span>${ess5(H.cls, lc.ess)}` : ''}</span></button>`
     : `<button class="btn" disabled>Höchste Stufe</button>`;
   h += rn
-    ? `<button class="btn" data-act="rank" data-id="${id}" style="--c:${R.col}">Rang ${st.r + 1} · ${Math.min(rn.have, rn.need)}/${rn.need} Kerne${rn.dust ? ` + ${rn.dust} Staub` : ''}</button>`
+    ? `<button class="btn" data-act="rank" data-id="${id}" style="--c:${R.col}"><span class="price"><span>Rang ${st.r + 1}</span>${core5(H.rar, `${Math.min(rn.have, rn.need)}/${rn.need} Kerne`)}${rn.dust ? `<span class="plus">+</span>${cur5('d', rn.dust)}` : ''}</span></button>`
     : `<button class="btn" disabled>Höchster Rang</button>`;
   if (H.rar === 'basis' && st.s > 0)
-    h += `<button class="btn" data-act="sync" data-id="${id}" style="--c:${CUR5.d.col}">Synchronisieren · ${st.s} ${st.s === 1 ? 'Kern' : 'Kerne'} → ${st.s * R.sync} Staub</button>`;
+    h += `<button class="btn" data-act="sync" data-id="${id}" style="--c:${CUR5.d.col}"><span class="price"><span>Synchronisieren</span>${core5(H.rar, st.s)}<span class="plus">→</span>${cur5('d', st.s * R.sync)}</span></button>`;
   return h + `</div></div></div>`;
 }
 function panelHelden() {
@@ -243,14 +262,14 @@ function panelHelden() {
       (a, b) => RARITY_IDS5.indexOf(HEROES5[a].rar) - RARITY_IDS5.indexOf(HEROES5[b].rar),
     );
   return (
-    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden · Material: ${essLine()}</p>` +
+    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}</p>` +
     own.map(heroCard).join('') +
     rest.map(heroCard).join('')
   );
 }
 function panelTeam() {
   const w = W();
-  let h = `<p class="w5hint">Platz 1 steht vorn und fängt die Gegner ab, Platz 5 ganz hinten. <b>Verteidiger und Angreifer treffen nur von Platz 1 und 2 aus.</b> In der Gruppe sind höchstens ein Champion und zwei Legendäre erlaubt. Eine Änderung beginnt die Welle neu.</p><div class="w5slots">`;
+  let h = `<p class="w5hint">Platz 1 steht vorn und fängt die Gegner ab, Platz 5 ganz hinten. <b>Verteidiger und Angreifer treffen nur von Platz 1 und 2 aus.</b> In der Gruppe sind höchstens ein Champion und zwei Legendäre erlaubt. Zieh einen Helden auf einen anderen Platz, um zu tauschen – oder tippe erst den Platz, dann den Helden an. Eine Änderung beginnt die Welle neu.</p><div class="w5slots">`;
   for (let i = 0; i < TEAM_SIZE5; i++) {
     const id = w.team[i];
     h += `<button class="w5slot${i === w5Slot ? ' sel' : ''}" data-slot="${i}"><small>Platz ${i + 1}${i === 0 ? ' · vorn' : i === TEAM_SIZE5 - 1 ? ' · hinten' : ''}</small>${id ? portrait(id, 18) + `<b>${HEROES5[id].name}</b>` : '<span class="w5q sm">–</span><b>leer</b>'}</button>`;
@@ -284,7 +303,7 @@ function panelShop() {
       )
         .filter(Boolean)
         .join(' · ')}</p>
-      <div class="w5acts"><button class="btn" data-act="pull" data-id="${cid}" style="--c:${C.col}">Öffnen · ${C.cost} Kryon</button></div></div></div>`;
+      <div class="w5acts"><button class="btn" data-act="pull" data-id="${cid}" style="--c:${C.col}"><span class="price"><span>Öffnen</span>${cur5('k', C.cost)}</span></button></div></div></div>`;
   }
   return h;
 }
@@ -319,6 +338,7 @@ export function renderW5() {
 // Knöpfe, die gerade nicht bezahlbar sind, gedämpft zeigen – ohne den Reiter neu aufzubauen
 function updAfford() {
   const w = W();
+  $$('#w5panel [data-ess]').forEach(e => setT(e, String(w.ess[e.dataset.ess])));
   $$('#w5panel [data-act]').forEach(b => {
     const a = b.dataset.act,
       id = b.dataset.id,
@@ -334,6 +354,7 @@ function updAfford() {
   });
 }
 $('#w5panel').addEventListener('click', e => {
+  if (skipClick) return;
   const w = W(),
     t = e.target,
     b = t.closest('[data-act]'),
@@ -410,3 +431,68 @@ $('#w5panel').addEventListener('click', e => {
     return again();
   }
 });
+
+/* ---------- Aufstellung: Ziehen und Ablegen ----------
+   Einen Helden aus einem Platz auf einen anderen ziehen tauscht die beiden (auch mit einem leeren Platz); einen Helden aus der
+   Liste auf einen Platz ziehen setzt ihn dort ein. Antippen ohne Ziehen wählt wie bisher. Maus und Finger laufen über dieselben
+   Zeigerereignisse; die Plätze nehmen dem Browser dafür das Wischen ab (touch-action: none). */
+let drag = null; // { from: Platz | null, id, x0, y0, on: zieht schon?, ghost }
+const DRAG_MIN = 8;
+$('#w5panel').addEventListener('pointerdown', e => {
+  if (w5Tab !== 'team') return;
+  const sl = e.target.closest('[data-slot]'),
+    ch = e.target.closest('[data-pick]'),
+    id = sl ? W().team[+sl.dataset.slot] : ch ? ch.dataset.pick : null;
+  if (!id || (ch && e.pointerType !== 'mouse')) return; // in der Liste wischt der Finger zum Blättern; dort zieht nur die Maus
+  drag = { from: sl ? +sl.dataset.slot : null, id, x0: e.clientX, y0: e.clientY, on: false, ghost: null };
+});
+function dragMove(e) {
+  if (!drag) return;
+  if (!drag.on) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < DRAG_MIN) return;
+    drag.on = true;
+    const g = document.createElement('canvas');
+    g.className = 'w5ghost';
+    $('#w5').appendChild(g);
+    paintHero5(g, drag.id, 22);
+    drag.ghost = g;
+  }
+  drag.ghost.style.transform = `translate(${e.clientX - 34}px, ${e.clientY - 44}px)`;
+  const over = UI.elementFromPoint(e.clientX, e.clientY),
+    sl = over && over.closest && over.closest('[data-slot]');
+  $$('#w5panel .w5slot').forEach(b => b.classList.toggle('drop', b === sl));
+  e.preventDefault();
+}
+function dragEnd(e) {
+  if (!drag) return;
+  const d = drag;
+  drag = null;
+  if (!d.on) return;
+  d.ghost.remove();
+  const over = e.type === 'pointerup' ? UI.elementFromPoint(e.clientX, e.clientY) : null,
+    sl = over && over.closest && over.closest('[data-slot]'),
+    w = W();
+  skipClick = true; // das Loslassen soll nicht zusätzlich als Antippen zählen
+  setTimeout(() => (skipClick = false), 0);
+  if (sl) {
+    const to = +sl.dataset.slot;
+    let ok = false;
+    if (d.from != null) ok = swapSlots5(w, d.from, to);
+    else {
+      const blk = slotBlock5(w, to, d.id);
+      if (blk) toast(blk);
+      else ok = setSlot5(w, to, d.id);
+    }
+    if (ok) {
+      setW5Slot(to);
+      run5.begin(true);
+      Snd.play('buy');
+      persist();
+    } else Snd.play('no');
+  }
+  renderW5();
+}
+let skipClick = false;
+window.addEventListener('pointermove', dragMove, { passive: false });
+window.addEventListener('pointerup', dragEnd);
+window.addEventListener('pointercancel', dragEnd);
