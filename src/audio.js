@@ -9,6 +9,9 @@ const PROG = [
 ];
 const PENTA = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91];
 
+// Lautstärken in Prozent. Die Oberfläche trägt hier die Werte aus dem Spielstand ein (syncSound in ui.js); der Ton kennt den Spielstand nicht.
+const Vol = { mus: 70, sfx: 80 };
+
 function makeImpulse(ctx, sec, decay) {
   const r = ctx.sampleRate,
     n = Math.floor(r * sec),
@@ -1034,7 +1037,7 @@ const Music = {
   },
   tick() {
     const B = Snd.B;
-    if (!B || !(save.volMus > 0) || B.ctx.state !== 'running') return;
+    if (!B || !(Vol.mus > 0) || B.ctx.state !== 'running') return;
     const now = B.ctx.currentTime;
     if (this.next < now) this.next = now + 0.05;
     while (this.next < now + 0.15) {
@@ -1186,12 +1189,12 @@ const Snd = {
     if (!B) return;
     const t = this.ctx.currentTime,
       cv = v => Math.pow(clamp(v, 0, 100) / 100, 1.6);
-    B.mus.gain.setTargetAtTime(0.53 * cv(save.volMus), t, 0.05);
-    B.sfx.gain.setTargetAtTime(1 * cv(save.volSfx), t, 0.05);
+    B.mus.gain.setTargetAtTime(0.53 * cv(Vol.mus), t, 0.05);
+    B.sfx.gain.setTargetAtTime(1 * cv(Vol.sfx), t, 0.05);
   },
   play(n) {
     const B = this.B;
-    if (!(save.volSfx > 0) || !B || this.ctx.state !== 'running') return;
+    if (!(Vol.sfx > 0) || !B || this.ctx.state !== 'running') return;
     const now = this.ctx.currentTime;
     const lim =
       {

@@ -6123,7 +6123,7 @@ class Renderer {
       this.drawBase(
         { r: 30, rot: this.t * 0.6, hp: 1, max: 1, sh: 1, shMax: 1, ov: 0, flash: 0, turrets: [] },
         null,
-        this.theme === 1 && typeof save !== 'undefined' ? this.baseLook(save.nodes) : null,
+        this.theme === 1 && this.hubNodes ? this.baseLook(this.hubNodes) : null,
       );
       for (let i = 0; i < 5; i++) {
         const a = this.t * 0.5 + (i * TAU) / 5;
@@ -7482,6 +7482,9 @@ const PROG = [
 ];
 const PENTA = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91];
 
+// Lautstärken in Prozent. Die Oberfläche trägt hier die Werte aus dem Spielstand ein (syncSound in ui.js); der Ton kennt den Spielstand nicht.
+const Vol = { mus: 70, sfx: 80 };
+
 function makeImpulse(ctx, sec, decay) {
   const r = ctx.sampleRate,
     n = Math.floor(r * sec),
@@ -8507,7 +8510,7 @@ const Music = {
   },
   tick() {
     const B = Snd.B;
-    if (!B || !(save.volMus > 0) || B.ctx.state !== 'running') return;
+    if (!B || !(Vol.mus > 0) || B.ctx.state !== 'running') return;
     const now = B.ctx.currentTime;
     if (this.next < now) this.next = now + 0.05;
     while (this.next < now + 0.15) {
@@ -8659,12 +8662,12 @@ const Snd = {
     if (!B) return;
     const t = this.ctx.currentTime,
       cv = v => Math.pow(clamp(v, 0, 100) / 100, 1.6);
-    B.mus.gain.setTargetAtTime(0.53 * cv(save.volMus), t, 0.05);
-    B.sfx.gain.setTargetAtTime(1 * cv(save.volSfx), t, 0.05);
+    B.mus.gain.setTargetAtTime(0.53 * cv(Vol.mus), t, 0.05);
+    B.sfx.gain.setTargetAtTime(1 * cv(Vol.sfx), t, 0.05);
   },
   play(n) {
     const B = this.B;
-    if (!(save.volSfx > 0) || !B || this.ctx.state !== 'running') return;
+    if (!(Vol.sfx > 0) || !B || this.ctx.state !== 'running') return;
     const now = this.ctx.currentTime;
     const lim =
       {
@@ -8757,6 +8760,8 @@ let save = loadSave(),
   endShown = false,
   selNode = 'root';
 const R = new Renderer($('#cv'));
+Vol.mus = save.volMus;
+Vol.sfx = save.volSfx;
 
 /* ---------- icons ---------- */
 function curIcon(c) {
@@ -8835,7 +8840,13 @@ function setWorld(id) {
 /* ---------- helpers ---------- */
 /* Perf ist im echten Spiel nur ein leeres Objekt. Beta und Bottest füllen es in dev.js mit der Leistungsmessung. */
 const Perf = { on: false, noDraw: false, freeze: false, sv: 0 };
+// Gibt Grafik und Ton, was sie aus dem Spielstand brauchen (sie greifen nicht selbst darauf zu).
+const syncSound = () => {
+  Vol.mus = save.volMus;
+  Vol.sfx = save.volSfx;
+};
 const persist = () => {
+  syncSound();
   if (!Perf.on) {
     Store.save(save);
     return;
@@ -8938,6 +8949,7 @@ function bindStepper() {
 }
 /* ---------- hub ---------- */
 function renderHub() {
+  R.hubNodes = save.nodes;
   renderCurs();
   const w1 = W.id === 1;
   $('#hubWorld').textContent = W.name;
@@ -8983,6 +8995,7 @@ function goHub() {
 }
 function setVol(k, v) {
   save[k] = +v;
+  syncSound();
   $('#' + k + 'V').textContent = v > 0 ? v + ' %' : 'Aus';
   Snd.init();
   Snd.vol();

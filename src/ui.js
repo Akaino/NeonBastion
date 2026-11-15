@@ -31,6 +31,8 @@ let save = loadSave(),
   endShown = false,
   selNode = 'root';
 const R = new Renderer($('#cv'));
+Vol.mus = save.volMus;
+Vol.sfx = save.volSfx;
 
 /* ---------- icons ---------- */
 function curIcon(c) {
@@ -109,7 +111,13 @@ function setWorld(id) {
 /* ---------- helpers ---------- */
 /* Perf ist im echten Spiel nur ein leeres Objekt. Beta und Bottest füllen es in dev.js mit der Leistungsmessung. */
 const Perf = { on: false, noDraw: false, freeze: false, sv: 0 };
+// Gibt Grafik und Ton, was sie aus dem Spielstand brauchen (sie greifen nicht selbst darauf zu).
+const syncSound = () => {
+  Vol.mus = save.volMus;
+  Vol.sfx = save.volSfx;
+};
 const persist = () => {
+  syncSound();
   if (!Perf.on) {
     Store.save(save);
     return;
@@ -212,6 +220,7 @@ function bindStepper() {
 }
 /* ---------- hub ---------- */
 function renderHub() {
+  R.hubNodes = save.nodes;
   renderCurs();
   const w1 = W.id === 1;
   $('#hubWorld').textContent = W.name;
@@ -257,6 +266,7 @@ function goHub() {
 }
 function setVol(k, v) {
   save[k] = +v;
+  syncSound();
   $('#' + k + 'V').textContent = v > 0 ? v + ' %' : 'Aus';
   Snd.init();
   Snd.vol();

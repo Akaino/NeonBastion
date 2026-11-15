@@ -1,0 +1,91 @@
+{
+ "core": {
+  "VERSION": "core/version",
+  "PI": "core/util",
+  "Dev": "core/dev-hooks",
+  "verNum": "core/util",
+  "NUM_UNITS": "core/format",
+  "CUR": "data/currencies",
+  "PRESTIGE_DEFS": "data/prestige",
+  "BR": "data/nodes",
+  "LADDER": "data/balance",
+  "NODE_DEFS": "data/nodes",
+  "HEROES": "data/heroes",
+  "TOWERS": "data/towers",
+  "heroLvlCost": "data/heroes",
+  "DRONES": "data/drones",
+  "freshSave": "core/save",
+  "STAGE": "core/version",
+  "Store": "core/save",
+  "stats": "core/stats"
+ },
+ "core2": {
+  "stmt:CUR.c = { name: 'Schaltkreise', one: 'Schaltkrei": "world2/data",
+  "BR2": "world2/nodes",
+  "freshW2": "world2/save",
+  "stats2": "world2/stats"
+ },
+ "game": {
+  "hyp": "core/util",
+  "ETYPES": "data/enemies",
+  "DROP_P": "data/drops",
+  "SHINY_P": "data/enemies",
+  "HUNT_MUL": "data/balance",
+  "WAVE_MIX": "data/enemies",
+  "BOSS_KINDS": "data/bosses",
+  "CELL": "data/balance",
+  "jag": "run/util",
+  "Run": "run/Run"
+ },
+ "game2": {
+  "Run2": "world2/Run2"
+ },
+ "render": {
+  "Renderer": "render/Renderer"
+ },
+ "audio": {
+  "NOTE": "audio/music-data",
+  "makeImpulse": "audio/bus",
+  "osc": "audio/synth",
+  "SFX": "audio/sfx",
+  "explode": "audio/synth",
+  "CHORDS": "audio/music-data",
+  "makeMelody": "audio/music",
+  "Track": "audio/track",
+  "Snd": "audio/sound"
+ },
+ "ui": {
+  "UI": "ui/dom",
+  "save": "ui/state",
+  "curIcon": "ui/common",
+  "WORLDS": "ui/state",
+  "toast": "ui/common",
+  "startStepper": "ui/hub",
+  "setVol": "ui/settings",
+  "stmt:$('#bNova').onclick = () => { show('nova'); ": "ui/nova",
+  "stmt:$('#bWorlds').onclick = () => { show('worlds')": "ui/worlds",
+  "fleetOn": "ui/fleet",
+  "CODEX_TYPES": "ui/codex",
+  "achKills": "ui/achievements",
+  "stmt:$('#bTree').onclick = () => { show('tree'); ": "ui/tree",
+  "stmt:$('#bHeroes').onclick = () => { show('heroes')": "ui/heroes",
+  "stmt:$$('[data-back]').forEach(b => (b.onclick = goHu": "ui/hub",
+  "startRun": "ui/hud",
+  "stmt:$('#cv').addEventListener('pointerdown', e => { ": "ui/input",
+  "fv": "ui/preview",
+  "tv": "ui/tree",
+  "renderHeroes": "ui/heroes",
+  "buildSel": "ui/build",
+  "renderTowers": "ui/towers",
+  "renderNova": "ui/nova",
+  "stmt:if (save.pending && save.pending.g) { const ps": "ui/main"
+ },
+ "dev": {
+  "DEV_CSS": "dev/inject",
+  "stmt:Dev.stats = (save, S) => { if (save.dev && sav": "dev/hooks",
+  "HITCH_MS": "dev/perf",
+  "stmt:$('#bW2Test').onclick = () => { save.w2test = ": "dev/tools",
+  "devTaps": "dev/mode",
+  "stmt:{ const mt = Music.tick.bind(Music); Music.t": "dev/perf-start"
+ }
+}

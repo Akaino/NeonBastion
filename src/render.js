@@ -1286,7 +1286,7 @@ class Renderer {
       this.drawBase(
         { r: 30, rot: this.t * 0.6, hp: 1, max: 1, sh: 1, shMax: 1, ov: 0, flash: 0, turrets: [] },
         null,
-        this.theme === 1 && typeof save !== 'undefined' ? this.baseLook(save.nodes) : null,
+        this.theme === 1 && this.hubNodes ? this.baseLook(this.hubNodes) : null,
       );
       for (let i = 0; i < 5; i++) {
         const a = this.t * 0.5 + (i * TAU) / 5;
