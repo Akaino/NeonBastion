@@ -134,7 +134,7 @@ Diese Punkte standen auf der Liste. Ich habe sie nachts nicht gebaut, weil du f�
 - **Neue Helden.** Vorschläge: eine Ingenieurin, die Türme verstärkt; ein Jäger, der gezielt Elite-Gegner und Bosse angeht; ein Beschwörer, der eigene kleine Einheiten ruft.
 - **Neue Türme.** Vorschläge: ein Störturm, der Gegner-Fähigkeiten unterbricht (gegen Heiler, Kommandant, Schwarmkönigin); ein Magnetturm, der Gegner zusammenzieht (gut für Flächenschaden); ein Markierturm, der dem Impuls Zusatzschaden gibt.
 - **Größerer Skilltree.** „Heldenimpuls“ (früher „Göttlicher Finger“) in mehrere Stufen aufteilen; je Ast zwei bis drei neue Knoten, die auf die neuen Gegner antworten.
-- **Welten 3 bis 10.** Vorgabe von dir: gleiches Kernsystem, Basis beschützen, Impuls mit dem Zeiger. Ideen für den Unterschied je Welt: andere Gegnermischung, eine Sonderregel (z. B. Dunkelheit, in der nur der Impuls-Kreis leuchtet), eigene Währung.
+- **Welten 3 bis 10.** Welt 3 wird ein Arcade-Shooter mit drei Raumschiffen, Welt 4 ein klassisches Tower Defense ohne Basis (deine Vorgaben vom 15.11.). Für Welt 5 bis 10 gibt es noch keine Ideen.
 - **Welt 2** ruht weiterhin und hat die neuen Gegner nicht.
 - **Noch 7 bis 12 Gegnerarten** bis zu deinem Ziel von 25 bis 30. Im Ideenvorrat stehen unter anderem Spiegel, Phasenläufer, Dieb, Hacker, Mörser, Scharfschütze, Brüter, Giftwolke, Zwilling.
 
