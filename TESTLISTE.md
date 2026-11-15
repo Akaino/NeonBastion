@@ -1,10 +1,26 @@
-# Testliste für Welt 1 (Beta 0.36.0)
+# Testliste (Beta 0.37.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (38 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (39 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 0000. Neu in 0.37.0: Welt 5 „Expedition“ (Prototyp)
+
+Auf der Weltenkarte den Knoten „Expedition“ antippen und „Welt betreten“. Ausrüstung, Inventar und Sets fehlen noch.
+
+- [ ] Der Lauf: Die Gruppe läuft von selbst, Gegner kommen von rechts, alle zehn Wellen ein Boss. Liest man, was passiert?
+- [ ] Fällt die Gruppe, läuft die Welle davor weiter. Am Boss gescheitert erscheint oben „Boss herausfordern“.
+- [ ] Shop: Kryo-Kristalle öffnen (du startest mit 20 Kryon für den ersten). Fühlen sich Chancen und Preise richtig an?
+- [ ] Helden: Stufe (Lumen), Durchbruch alle 10 Stufen (Material der Klasse), Rang (Kerne aus doppelten Helden), Synchronisieren bei Basishelden. Verständlich?
+- [ ] Sehen die Helden verschieden genug aus? Sind Champions erkennbar, ohne zu grell zu sein?
+- [ ] Aufstellung: Platz antippen, dann Helden wählen. Nahkämpfer treffen nur von Platz 1 und 2 aus. Passt die Gruppenregel (höchstens ein Champion, zwei Legendäre, der Rest frei)?
+- [ ] Handeln die Helden sinnvoll (Heiler heilt nur Verletzte, Fähigkeiten nicht ins Leere)?
+- [ ] Zonen: in eine frühere Welle wechseln und „Diese Welle wiederholen“ einschalten, um Material zu sammeln.
+- [ ] Abwesenheit: Welt verlassen oder Browser schließen, später wiederkommen – oben steht, was dazukam.
+- [ ] Tempo: Wo hängt es zuerst? (In der Messung flacht der Fortschritt ab Zone 3 stark ab.)
+- [ ] Namen (Expedition, Lumen, Kryon, Heldennamen) sind Arbeitstitel von mir – was soll anders heißen?
 
 ## 000. Neu in 0.36.0: Gitterfestung
 

@@ -3,10 +3,12 @@ import { LIVE_KEY, STAGE } from './version.js';
 import { F5_MAX } from '../data/balance.js';
 import { freshFleet } from '../data/drones.js';
 import { freshW2 } from '../world2/save.js';
+import { freshW5, loadW5 } from '../world5/save.js';
 
 export function freshSave() {
   return {
     w2: typeof freshW2 !== 'undefined' ? freshW2() : null,
+    w5: freshW5(), // Welt 5 (Expedition): eigener Teil des Spielstands
     v: 2,
     cur: {
       s: 0,
@@ -159,6 +161,7 @@ export function loadSave() {
     },
     (s.w2 && s.w2.nodes) || {},
   );
+  o.w5 = loadW5(s.w5);
   if (s.cycleBest === undefined) o.cycleBest = s.best || 0;
   if (!s.v || s.v < 2) {
     for (const id of ['klinge', 'schuetzin']) {

@@ -62,13 +62,14 @@ export const DYN = {
   nova: ['#novaList', '#novaTop'],
   towers: ['#tlist', '#tslots'],
   worlds: ['#wmap', '#wsheet'],
+  w5: ['#w5panel'],
   codex: ['#clist'],
   achv: ['#alist'],
   fleet: ['#flist', '#fbar'],
 };
 
 export function show(id) {
-  for (const s of ['hub', 'hud', 'tree', 'heroes', 'nova', 'towers', 'worlds', 'codex', 'achv', 'fleet']) {
+  for (const s of ['hub', 'hud', 'tree', 'heroes', 'nova', 'towers', 'worlds', 'codex', 'achv', 'fleet', 'w5']) {
     const el = $('#' + s);
     if (s !== id && !el.hidden && DYN[s])
       for (const q of DYN[s]) {

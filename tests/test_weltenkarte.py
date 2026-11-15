@@ -17,16 +17,16 @@ def karte(pg,name,beta):
     check('open' in cls(pg,'1') and 'act' in cls(pg,'1'),name+': Neon-Sektor offen und aktiv')
     check(('open' if beta else 'soon') in cls(pg,'2'),name+': Gitterfestung '+('offen' if beta else '„Demnächst“'))
     check('soon' in cls(pg,'3') and 'soon' in cls(pg,'4'),name+': Arcade und Classic Tower Defense „Demnächst“')
-    check('hidden' in cls(pg,'5') and 'soon' not in cls(pg,'5'),name+': fünfte Welt verdeckt, nicht „Demnächst“')
+    check(('open' if beta else 'hidden') in cls(pg,'5') and 'soon' not in cls(pg,'5'),name+(': fünfte Welt als Prototyp offen' if beta else ': fünfte Welt verdeckt, nicht „Demnächst“'))
     # Namen stehen im Knoten, keine Nummern
     nm=pg.evaluate("()=>[...$$('#wmap .wnode:not(.ver)')].map(g=>[...g.querySelectorAll('text.name')].map(t=>t.textContent).join(' '))")
-    check(nm==['Neon-Sektor','Gitterfestung','Arcade','Classic Tower Defense',''],name+': Namen stehen im Knoten, die fünfte Welt hat keinen '+str(nm))
+    check(nm==['Neon-Sektor','Gitterfestung','Arcade','Classic Tower Defense','Expedition' if beta else ''],name+': Namen stehen im Knoten'+('' if beta else ', die fünfte Welt hat keinen')+' '+str(nm))
     innen=pg.evaluate("()=>[...$$('#wmap .wnode:not(.ver)')].every(g=>{const r=g.querySelector('.rim').getBoundingClientRect();return [...g.querySelectorAll('text.name')].every(t=>{const b=t.getBoundingClientRect();return b.left>=r.left&&b.right<=r.right&&b.top>=r.top&&b.bottom<=r.bottom})})")
     check(innen and not pg.evaluate("()=>/[1-5]/.test($('#wmap').textContent)"),name+': Namen liegen innerhalb ihres Knotens, keine Ziffern auf der Karte')
     # jeder Knoten sieht anders aus: eigener Umriss und eigenes Motiv
     form=pg.evaluate("()=>[...$$('#wmap .wnode:not(.ver)')].map(g=>g.querySelector('.rim').innerHTML+'|'+g.querySelector('.art').innerHTML.length)")
     check(len(set(form))==5 and pg.evaluate("()=>[...$$('#wmap .wnode:not(.ver) .art')].every(a=>a.children.length>0)"),name+': fünf verschiedene Knoten mit eigenem Motiv')
-    check(pg.evaluate("()=>$$('#wmap .wstar').length>100&&$$('#wmap .wpulse').length")==(2 if beta else 1),name+': Sternenhintergrund und ein Energiepuls je offener Welt')
+    check(pg.evaluate("()=>$$('#wmap .wstar').length>100&&$$('#wmap .wpulse').length")==(3 if beta else 1),name+': Sternenhintergrund und ein Energiepuls je offener Welt')
     check('Rekord' in pg.inner_text('#wsheet') and 'Weiterspielen' in pg.inner_text('#bEnter'),name+': Infokarte zeigt die aktive Welt mit Rekord und „Weiterspielen“')
     # Antippen ändert die Größe der Karte nicht und baut sie nicht neu auf
     s0=size(pg);pg.evaluate("()=>{$('#wmap svg').dataset.alt='1'}");gleich=True
@@ -35,7 +35,7 @@ def karte(pg,name,beta):
         s=pg.inner_text('#wsheet');gleich=gleich and size(pg)==s0
         check('Demnächst' in s and wort in s and pg.locator('#bEnter').count()==0 and 'sel' in cls(pg,w),name+': Welt '+w+' zeigt Beschreibung und „Demnächst“, lässt sich nicht betreten')
     pg.click('#wmap [data-w="5"] .hit');pg.wait_for_timeout(80);gleich=gleich and size(pg)==s0
-    s=pg.inner_text('#wsheet');check('nichts bekannt' in s and 'Demnächst' not in s and pg.locator('#bEnter').count()==0,name+': fünfte Welt verrät nichts')
+    s=pg.inner_text('#wsheet');check(('Prototyp' in s and pg.locator('#bEnter').count()==1) if beta else ('nichts bekannt' in s and 'Demnächst' not in s and pg.locator('#bEnter').count()==0),name+(': fünfte Welt lässt sich als Prototyp betreten' if beta else ': fünfte Welt verrät nichts'))
     pg.click('#wmap [data-w="v1"] .hit');pg.wait_for_timeout(80);gleich=gleich and size(pg)==s0
     s=pg.inner_text('#wsheet');check('Zweite Version' in s and 'Neon-Sektor' in s and pg.locator('#bEnter').count()==0,name+': zweite Version des Neon-Sektors ist verdeckt')
     pg.click('#wmap [data-w="v5"] .hit');pg.wait_for_timeout(80);gleich=gleich and size(pg)==s0

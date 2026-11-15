@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="%V%/css/hud.css">
 <link rel="stylesheet" href="%V%/css/menus.css">
 <link rel="stylesheet" href="%V%/css/modal.css">
+<link rel="stylesheet" href="%V%/css/world5.css">
 </head>
 <body>
 <div id="app">
@@ -84,6 +85,15 @@
   <div class="logo small"><h1>Neon<span>Bastion</span></h1><p>Wähle deine Welt · <span class="ver"></span></p></div>
   <div id="wmap"></div>
   <div class="sheet" id="wsheet"></div>
+</section>
+<section id="w5" class="screen" hidden>
+  <div class="head"><button class="btn icon" id="w5Back" aria-label="Zurück zur Weltenkarte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="w5Title">Expedition</h2>
+    <div class="curs"><span class="cur" style="color:#9fd8ff" title="Lumen">◆ <b id="w5cL">0</b></span><span class="cur" style="color:#c79bff" title="Kryon">❖ <b id="w5cK">0</b></span><span class="cur" style="color:#ffe14f" title="Synchron-Staub">✦ <b id="w5cD">0</b></span></div></div>
+  <div id="w5stage"><canvas id="w5cv" aria-label="Lauf der Gruppe"></canvas>
+    <div id="w5bar"><span id="w5Info"></span><button class="btn" id="w5Boss" hidden style="--c:#ff4fd8">Boss herausfordern</button><button class="btn" id="w5Speed" aria-label="Tempo">1×</button></div></div>
+  <div id="w5Note" hidden></div>
+  <div id="w5tabs"><button class="btn" data-t="helden" style="--c:#6dffb0">Helden</button><button class="btn" data-t="team" style="--c:#5ab8ff">Aufstellung</button><button class="btn" data-t="shop" style="--c:#c79bff">Shop</button><button class="btn" data-t="zonen" style="--c:#ffb14f">Zonen</button></div>
+  <div id="w5panel"></div>
 </section>
 <section id="towers" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Türme</h2><div class="curs" data-cur></div></div>

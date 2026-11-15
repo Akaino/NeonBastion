@@ -5,6 +5,7 @@ import { buildPaused, endBuild, placing, updBuildBtn } from './build.js';
 import { toast } from './common.js';
 import { $, $$, UI } from './dom.js';
 import { goHub } from './hub.js';
+import { w5Frame, w5On } from './world5.js';
 import { openWorlds } from './worlds.js';
 import { musicState, showEnd, updHud } from './hud.js';
 import { Perf, R, W, endShown, paused, persist, run, save, speed } from './state.js';
@@ -49,6 +50,12 @@ export function loop(now) {
   const raw = now - last,
     dt = Math.min(0.1, raw / 1000);
   last = now;
+  // Welt 5 hat ein eigenes Grundspiel und ein eigenes Zeichenfeld: Solange sie offen ist, ruht alles andere
+  if (w5On) {
+    w5Frame(dt);
+    requestAnimationFrame(loop);
+    return;
+  }
   const pf = Perf.on,
     p0 = pf ? performance.now() : 0;
   let p1 = p0,

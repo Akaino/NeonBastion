@@ -6,6 +6,9 @@ import { $, $$ } from './dom.js';
 import { goHub } from './hub.js';
 import { W, WORLDS, save, setWorld } from './state.js';
 import { worldOpen } from '../world2/save.js';
+import { stageName5 } from '../world5/data.js';
+import { w5Open } from '../world5/save.js';
+import { openW5 } from './world5.js';
 import { w2BonusForW1 } from '../world2/stats.js';
 
 /* ---------- Weltenkarte (seit 0.33.0, Startseite seit 0.34.0, Vorgaben des Nutzers) ----------
@@ -39,7 +42,14 @@ export const WORLD_MAP = [
     state: () => 'soon',
     text: 'Klassisches Tower Defense: Die Gegner laufen feste Wege entlang, du baust Türme an den Rand. Hier gibt es keine Basis.',
   },
-  { id: 5, name: 'Verborgene Welt', lines: [], col: '#9a8cff', state: () => 'hidden' },
+  {
+    id: 5,
+    name: 'Expedition', // Arbeitstitel
+    lines: ['Expedition'],
+    col: '#9a8cff',
+    state: () => (w5Open() ? 'open' : 'hidden'),
+    text: 'Deine Gruppe aus bis zu fünf Helden zieht von selbst durch Zonen voller Gegner. Du sammelst Helden und bestimmst die Aufstellung.',
+  },
 ];
 const VB = 210, // halbe Kantenlänge der Karte
   R_WORLD = 114,
@@ -209,6 +219,10 @@ function sheetHtml() {
     return `<h3>Verborgene Welt <span class="tag" style="--c:${w.col}">?</span></h3><p>Über diese Welt ist noch nichts bekannt.</p>`;
   if (st === 'soon')
     return `<h3>${w.name} <span class="tag" style="--c:${w.col}">Demnächst</span></h3><p>${w.text || WORLDS[w.id].text}</p><div class="act"><button class="btn poor" disabled>Demnächst verfügbar</button></div>`;
+  if (w.id === 5)
+    return `<h3>${w.name} <span class="tag" style="--c:${w.col}">Prototyp</span></h3><p>${w.text}</p>
+    <div class="cmp" style="--c:${w.col}"><div><span>Weiteste Welle</span><b>${save.w5.cleared ? stageName5(save.w5.cleared) : '–'}</b></div><div><span>Helden</span><b>${Object.keys(save.w5.heroes).length} von 26</b></div></div>
+    <div class="act"><button class="btn big" id="bEnter" style="--c:${w.col}">Welt betreten</button></div>`;
   const Wd = WORLDS[w.id],
     best = w.id === 1 ? save.best : save.w2.best,
     bonus =
@@ -228,6 +242,7 @@ function renderSheet() {
   const b = $('#bEnter');
   if (b)
     b.onclick = () => {
+      if (worldSel === 5) return openW5(); // eigenes Grundspiel, eigener Bildschirm; die aktive Welt der anderen bleibt
       const neu = W.id !== worldSel;
       if (neu) setWorld(worldSel);
       Snd.play(neu ? 'nova' : 'ui');
