@@ -1,4 +1,4 @@
-# Testliste für die Beta 0.23.0
+# Testliste für die Beta 0.27.0
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
 
@@ -6,7 +6,49 @@ Zum schnellen Einstieg: In der Beta unter „Einstellungen“ den Knopf „Live-
 
 Zum Testen später Inhalte: Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle).
 
-Alles hier ist automatisch getestet (26 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+Alles hier ist automatisch getestet (30 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+
+## A. Neue Gegner (0.24.0)
+
+| Gegner | ab Welle | Woran du ihn erkennst | Was er tut |
+|---|---|---|---|
+| Springer | 28 | gelbgrüner Doppelpfeil | springt alle drei Sekunden ein Stück auf die Basis zu |
+| Schattenwerfer | 38 | violetter Kreis mit dunklem Hof | in seinem Schatten ist der Impuls nur halb so groß |
+| Phasenläufer | 58 | zwei versetzte rosa Rauten | ist immer wieder anderthalb Sekunden lang nicht zu treffen |
+| Hacker | 68 | grüne eckige Klammern mit Punkt | Drohnen in seinem gepunkteten Kreis feuern nicht |
+| Brüter | 90 | orange Ellipse mit drei Kreisen | hinterlässt ein Ei, aus dem nach vier Sekunden vier Schwärmer schlüpfen |
+
+- [ ] Mit der Testhilfe „Startwelle“ auf Welle 95 stellen: Sind alle fünf auf einen Blick zu unterscheiden?
+- [ ] Schattenwerfer: Sieht man, dass der Impuls-Kreis im dunklen Hof schrumpft?
+- [ ] Phasenläufer: Ist klar, wann er nicht zu treffen ist (er wird blass)?
+- [ ] Hacker: Werden die Drohnen in seinem Kreis sichtbar blass?
+- [ ] Brüter: Schafft man es, das Ei rechtzeitig zu zerstören? Sind vier Sekunden passend?
+- [ ] Springer: Wirkt der Sprung fair oder überrumpelnd?
+
+## B. Neue Türme (0.25.0)
+
+- [ ] Im Turm-Menü stehen „Stör-Turm“ (25 Kerne) und „Markier-Turm“ (4 Prismen). Sind die Texte verständlich?
+- [ ] Stör-Turm: Heiler, Schwarmkönigin, Kommandant, Störsender, Hacker, Schattenwerfer und Springer verlieren in seinem Radius ihre Fähigkeit; Tarner und Phasenläufer werden sichtbar. Merkt man das?
+- [ ] Markier-Turm: Markierte Gegner tragen vier gelbe Striche und nehmen deutlich mehr Schaden durch den Impuls (Stufe 1: +55 %). Lohnt es sich, den Zeiger dort zu halten?
+- [ ] Die beiden kombinieren nicht mit Frost, Zerfall und Kryo. Vermisst du das?
+
+## C. Neue Helden (0.26.0)
+
+- [ ] Im Helden-Menü stehen „Kopfjäger“ (8 Prismen) und „Ingenieurin“ (40 Kerne).
+- [ ] Kopfjäger: sucht sich Elite-Gegner, Hünen und Bosse und trifft sie dreifach; „Fangschuss“ alle zwölf Sekunden. Fühlt er sich gegen Bosse nützlich an?
+- [ ] Ingenieurin: bringt 25 % mehr Energie für Türme, „Verstärker“ lässt Gegner im Turmradius sechs Sekunden lang 30 % mehr Schaden nehmen. Merkt man sie?
+- [ ] Sehen beide ordentlich aus und sind von den anderen vier zu unterscheiden?
+
+## D. Skilltree (0.27.0)
+
+- [ ] „Heldenimpuls“ hat jetzt fünf Stufen statt einer. Hattest du ihn schon, steht er auf Stufe 5 mit voller Wirkung.
+- [ ] Neun neue Knoten: Bunker, Fernrohr (Basis), Feldreparatur, Nachbrenner (Flotte), Feldsanitäter, Fünfter Platz (Helden), Brennpunkt, Schattenlicht (Impuls), Energiekern (Ertrag). Passen Namen und Plätze im Baum?
+- [ ] Jeder neue Knoten zeigt Vorher und Nachher.
+- [ ] „Fünfter Platz“ kostet 8 Sternenstaub. Zu billig, zu teuer?
+
+## E. Entwicklermodus nur noch in der Beta (0.25.1)
+
+- [ ] Im echten Spiel gibt es nach dem nächsten Release keinen Entwicklermodus mehr: kein Code-Feld, keine Testhilfen, keine Test-Freischaltung der Gitterfestung. In der Beta bleibt alles wie gehabt. So gewollt?
 
 ## 0. Abwürfe (neu in 0.22.0)
 

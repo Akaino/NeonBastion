@@ -126,6 +126,7 @@ function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.fres
   save.towers=Object.assign(X.freshSave().towers,save.towers);   // ältere Spielstände kennen neuere Türme nicht
   if(job.opt.frei)for(const id of String(job.opt.frei).split(','))if(save.towers[id]){save.towers[id].u=1;save.towers[id].l=Math.max(save.towers[id].l,+job.opt.freiStufe||1)}   // --frei mark: Turm für die Probe freischalten
   save.heroes=Object.assign(X.freshSave().heroes,save.heroes);
+  if(save.nodes.f5===1&&!save.ver&&X.NODES.f5.max>1)save.nodes.f5=X.NODES.f5.max;   // wie loadSave: alte Stände behalten den vollen Heldenimpuls
   const S=X.stats(save);save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
   // --held kopfjaeger: ersetzt den letzten Helden im Team, mit dessen Stufe und Aufstieg
   if(job.opt.held&&save.team.length)for(const id of String(job.opt.held).split(','))if(save.heroes[id]&&!save.team.includes(id)){const o=save.heroes[save.team[save.team.length-1]];save.heroes[id]={u:1,l:o.l,a:o.a};save.team[save.team.length-1]=id}

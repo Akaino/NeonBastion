@@ -1,8 +1,9 @@
-const VERSION='0.26.0';
+const VERSION='0.27.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const verNum=v=>{const p=String(v||'0').split('.').map(Number);return(p[0]||0)*1e6+(p[1]||0)*1e3+(p[2]||0)};
 const NUM_UNITS=['','K','M','B','T','Qa','Qi'];
 // Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
 const numUnit=e=>e<NUM_UNITS.length?NUM_UNITS[e]:(k=>String.fromCharCode(97+Math.floor(k/26)%26)+String.fromCharCode(97+k%26))(e-NUM_UNITS.length);
@@ -49,6 +50,7 @@ const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=2.6,MEGA_
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
 const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
+const F5_MAX=5;   // Heldenimpuls: früher ein Knoten mit einer Stufe (Sprung), seit 0.27.0 fünf Stufen
 const NODE_DEFS=[
  // ---- Basis ----
  ['b1','b','root',1,0,'Panzerung',999,'s',8,1.25,l=>`+${l*20} % Leben der Basis, +${l*BASE_GUN} % Schaden für Geschütze und Autofeuer`,LADDER],
@@ -61,10 +63,12 @@ const NODE_DEFS=[
  ['b4b','b','b3b',4,1.4,'Resonanz',4,'p',1,1.6,l=>`−${l*12} % Abklingzeit der Schockwelle`],
  ['b5','b','b4a',5,-1,'Bollwerk',1,'d',3,1,l=>'Doppeltes Basisleben, +50 % Geschützreichweite'],
  ['b5b','b','b4b',5,1.2,'Nova-Ring',5,'k',8,1.6,l=>`+${l*15} % Radius der Schockwelle`],
+ ['b6b','b','b5b',6,1.5,'Bunker',10,'k',12,1.4,l=>`−${l*4} % Schaden durch Geschosse von Fernkämpfern und Belagerern`],
  ['b6','b','b5',6,0,'Kernreaktor',25,'k',20,1.34,l=>`×${fmtD(Math.pow(1.06,l),2)} Basisleben`],
  ['b7a','b','b6',7,-1,'Schildmatrix',10,'p',3,1.4,l=>`+${l*25} % Schildaufladung, +${l*5} % Schildstärke`],
  ['b7b','b','b6',7,1,'Abwehrnetz',20,'p',2,1.35,l=>`×${fmtD(Math.pow(1.08,l),2)} Schaden für Geschütze und Autofeuer`],
  ['b8','b','b7a',8,0,'Festungskern',10,'d',2,1.5,l=>`×${fmtD(Math.pow(1.15,l),2)} Basisleben`],
+ ['b8b','b','b7b',8,1.3,'Fernrohr',5,'p',4,1.5,l=>`+${l*10} % Reichweite der Geschütze`],
  ['b9','b','b8',9,0,'Unzerstörbar',10,'d',4,1.5,l=>`−${l*5} % erlittener Schaden`],
  // ---- Einheiten ----
  ['u1','u','root',1,0,'Drohnenbucht',10,'s',10,1.5,l=>`${2+l} Drohnen gleichzeitig`],
@@ -75,11 +79,13 @@ const NODE_DEFS=[
  ['u3b','u','u2b',3,1.3,'Schwarm',4,'k',4,1.8,l=>`+${l*2} zusätzliche Drohnen`],
  ['u4','u','u3a',4,-1,'Lanzenstrahl',3,'p',1,1.8,l=>l?`Strahlwaffen, +${l*50} % Reichweite`:'Normale Bordkanonen'],
  ['u4b','u','u3b',4,1.3,'Schwarmintelligenz',10,'k',6,1.45,l=>`+${l*2} % Drohnenschaden pro aktiver Drohne`],
+ ['u5b','u','u4b',5,1.3,'Feldreparatur',5,'k',10,1.5,l=>`Drohnen reparieren sich um ${l*2} % ihres Lebens pro Sekunde`],
  ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Schaltet in der Flotte die Klasse Kreuzer frei'],
  ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden und -leben`],
  ['u7a','u','u6',7,-1,'Flottenausbau',5,'p',3,1.8,l=>`+${l*2} Drohnen`],
  ['u7b','u','u6',7,1,'Plasmakern',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Drohnenschaden und -leben`],
  ['u8','u','u7b',8,0,'Admiral',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Drohnenschaden und -leben`],
+ ['u8b','u','u7a',8,-1.3,'Nachbrenner',5,'p',3,1.5,l=>`+${l*10} % Tempo der Drohnen`],
  ['u9','u','u8',9,0,'Hyperflotte',3,'d',5,1.8,l=>`+${l*50} % Feuerrate der Drohnen`],
  // ---- Helden ----
  ['h1','h','root',1,0,'Ausbildung',999,'s',12,1.25,l=>`+${l*15} % Heldenschaden`,LADDER],
@@ -90,11 +96,13 @@ const NODE_DEFS=[
  ['h3c','h','h2b',3,1.8,'Kampftempo',15,'s',150,1.3,l=>`+${l*6} % Angriffstempo der Helden`],
  ['h4','h','h3a',4,-1,'Fähigkeitsfokus',4,'p',1,1.7,l=>`−${l*10} % Abklingzeit der Fähigkeiten`],
  ['h4b','h','h3b',4,1,'Heldenkrit',10,'k',5,1.45,l=>`${l*4} % Chance auf 2,5-fachen Heldenschaden`],
+ ['h5b','h','h4b',5,1.2,'Feldsanitäter',10,'k',8,1.4,l=>`Helden heilen sich um ${l} % ihres Lebens pro Sekunde`],
  ['h5','h','h4',5,-.5,'Vierter Platz',1,'d',4,1,l=>'Vierter Heldenplatz'],
  ['h6','h','h5',6,0,'Kampfgeist',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Heldenschaden`],
  ['h7a','h','h6',7,-1,'Unsterblichkeit',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.1,l),2)} Heldenleben`],
  ['h7b','h','h6',7,1,'Meisterschaft',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Heldenschaden`],
  ['h8','h','h7b',8,0,'Legende',5,'d',2,1.6,l=>`×${fmtD(Math.pow(1.25,l),2)} Heldenschaden`],
+ ['h8b','h','h7a',8,-1.3,'Fünfter Platz',1,'d',8,1,l=>'Fünfter Heldenplatz'],
  ['h9','h','h8',9,0,'Avatar',5,'d',4,1.7,l=>`+${l*50} % Stärke der Fähigkeiten`],
  // ---- Fokus ----
  ['f1','f','root',1,0,'Impulsstärke',999,'s',6,1.25,l=>`+${l*40} % Impulsschaden`,LADDER],
@@ -107,9 +115,11 @@ const NODE_DEFS=[
  ['f3c','b','f2c',3.5,.5,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
  ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
  ['f4b','f','f3b',4,1,'Impulsgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Impulsschaden`],
- ['f5','f','f4',5,-.5,'Heldenimpuls',1,'d',3,1,l=>'Heldenschaden verstärkt auch deinen Impuls'],
+ ['f5','f','f4',5,-.5,'Heldenimpuls',F5_MAX,'d',.7,1.25,l=>`Dein Impuls erhält ${l*100/F5_MAX} % des Heldenschaden-Bonus`],
+ ['f5b','f','f4b',5,1,'Brennpunkt',10,'p',2,1.4,l=>`+${l*8} % Impulsschaden gegen Elite-Gegner und Bosse`],
  ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Impulsschaden`],
  ['f7','b','f3c',4.5,.6,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
+ ['f7b','f','f6',7,-1.2,'Schattenlicht',5,'k',30,1.5,l=>l<5?`Schattenwerfer verkleinern den Impuls nur noch um ${50-l*10} %`:'Schattenwerfer verkleinern den Impuls nicht mehr'],
  ['f8','f','f6',7,0,'Weltenbrecher',3,'d',4,2,l=>l?`Jeder ${60-l*10}. Impuls trifft alle Gegner mit doppeltem Schaden`:'Kein Weltenbrecher'],
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
@@ -119,6 +129,7 @@ const NODE_DEFS=[
  ['e3a','e','e2a',3,-.5,'Prismenschliff',8,'k',5,1.45,l=>`+${l*25} % Prismen`],
  ['e3b','e','e2b',3,1.3,'Elitejäger',4,'k',4,1.7,l=>`+${l*25} % Elite-Gegner`],
  ['e4b','e','e3a',4,-1.3,'Prismenfinder',5,'k',8,1.6,l=>`${fmtD(.6+l*.6)} % Chance auf ein Prisma pro Elite-Gegner`],
+ ['e4c','e','e3b',4,1.3,'Energiekern',10,'k',6,1.4,l=>`+${l*10} % Energie für Türme aus besiegten Gegnern`],
  ['e4','e','e3a',4,0,'Sternenkunde',3,'p',2,1.8,l=>`+${l} Sternenstaub beim ersten Bosssieg ab Welle 20`],
  ['e5','e','e4',5,0,'Singularität',1,'d',5,1,l=>'Alle Belohnungen verdoppelt'],
  ['e6','e','e5',6,0,'Zinseszins',20,'p',3,1.4,l=>`×${fmtD(Math.pow(1.06,l),2)} Splitter und Kerne`],
@@ -202,7 +213,7 @@ const Store={key:STAGE?'neon-bastion-'+STAGE.toLowerCase():LIVE_KEY,
   save(o){try{localStorage.setItem(this.key,JSON.stringify(o))}catch(e){}}};
 
 function loadSave(){const f=freshSave(),s=Store.load();if(!s)return f;
-  const o=Object.assign(f,s);o.cur=Object.assign(freshSave().cur,s.cur||{});o.nodes=Object.assign({root:1},s.nodes||{});
+  const o=Object.assign(f,s);o.cur=Object.assign(freshSave().cur,s.cur||{});o.nodes=Object.assign({root:1},s.nodes||{});if(o.nodes.f5===1&&verNum(s.ver)<verNum('0.27.0'))o.nodes.f5=F5_MAX;
   o.heroes=Object.assign(freshSave().heroes,s.heroes||{});
   if(s.volMus===undefined)o.volMus=s.mus===0?0:70;if(s.volSfx===undefined)o.volSfx=s.snd===0?0:80;
   o.towers=Object.assign(freshSave().towers,s.towers||{});o.tslots=s.tslots||0;
@@ -222,12 +233,13 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   pulse:L('b3b'),pulsePct:PULSE_PCT*L('b3b'),pulseDmg:15*(1+.6*Math.max(0,L('b3b')-1)),pulseCd:8*(1-.12*L('b4b')),
   drones:2+L('u1')+2*L('u3b'),droneDmg:DRONE_DMG*(1+.25*L('u2a')),droneHp:20*(1+.4*L('u3a')),
   droneSpawn:3/(1+.2*L('u2b')),droneRange:90*(1+.5*L('u4')),droneBeam:L('u4')>0,mother:L('u5')>0,
-  heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5'),
+  heroDmg:1+.15*L('h1'),heroHp:1+.25*L('h2b'),slots:1+L('h2a')+L('h3a')+L('h5')+L('h8b'),
   revive:8*(1-.15*L('h3b')),abilityCd:1-.1*L('h4'),
   tapDmg:6*(1+.4*L('f1')),tapCrit:.05+.05*L('f2a'),tapR:26+12*L('f2b'),beat:L('f3a'),
   overload:L('f3b'),chain:L('f4'),
   gS:1+.12*L('e1'),gK:1+.2*L('e2a'),startWave:1+2*L('e2b'),gP:1+.25*L('e3a'),elite:1+.25*L('e3b'),gD:L('e4'),gAll:L('e5')?2:1};
   // neue Knoten
+  S.rangedRes=1-.04*L('b6b');S.turretRange*=1+.1*L('b8b');S.droneRegen=.02*L('u5b');S.droneSp=1+.1*L('u8b');S.heroRegen=.01*L('h5b');S.impBig=.08*L('f5b');S.shadeMul=Math.min(1,.5+.1*L('f7b'));S.energyGain=1+.1*L('e4c');
   S.baseHp*=Math.pow(1.06,L('b6'))*Math.pow(1.15,L('b8'));S.turretRate=1+.1*L('b4c');S.turretDmg*=Math.pow(1.08,L('b7b'));
   S.pulseR=150*(1+.15*L('b5b'));S.shRegen=1+.25*L('b7a');S.shieldPct=S.shieldPct?S.shieldPct+.05*L('b7a'):0;S.dmgTaken=1-.05*L('b9');
   S.droneRate=(1+.08*L('u3c'))*(1+.5*L('u9'));S.swarmInt=.02*L('u4b');S.droneDmg*=Math.pow(1.06,L('u6'))*Math.pow(1.08,L('u7b'))*Math.pow(1.25,L('u8'));S.droneHp*=Math.pow(1.08,L('u7b'))*Math.pow(1.06,L('u6'))*Math.pow(1.25,L('u8'));S.drones+=2*L('u7a');
@@ -239,7 +251,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
-  if(L('f5'))S.tapDmg*=1+S.heroDmg;
+  if(L('f5'))S.tapDmg*=1+S.heroDmg*Math.min(1,L('f5')/F5_MAX);
   S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
 
