@@ -29,9 +29,9 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>run.over&&!run.boomed"),'Basis gefallen, Explosion steht noch aus')
     pg.wait_for_timeout(150);pg.screenshot(path='bo4_flackern.png')
     pg.wait_for_timeout(450);check(pg.evaluate("()=>run.boomed&&run.rings.length>=2"),'Explosion nach 0,35 s');pg.screenshot(path='bo5_explosion.png')
-    check(pg.evaluate("()=>document.querySelector('#end').hidden"),'Endbildschirm wartet auf den Zerfall')
+    check(pg.evaluate("()=>$('#end').hidden"),'Endbildschirm wartet auf den Zerfall')
     pg.wait_for_timeout(500);pg.screenshot(path='bo6_truemmer.png')
-    pg.wait_for_timeout(1700);check(not pg.evaluate("()=>document.querySelector('#end').hidden"),'Endbildschirm erscheint')
+    pg.wait_for_timeout(1700);check(not pg.evaluate("()=>$('#end').hidden"),'Endbildschirm erscheint')
     # Abbruch: kein Zerfall
     pg.reload();pg.wait_for_timeout(400);pg.click('#bStart');pg.wait_for_timeout(600);pg.click('#bPause');pg.click('#bQuit');pg.wait_for_timeout(100)
     check(pg.evaluate("()=>run.over&&run.quit&&run.boomed"),'Abbruch: Basis zerfällt nicht')

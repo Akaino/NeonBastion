@@ -16,8 +16,8 @@ with sync_playwright() as p:
     pg.evaluate("()=>{save.best=120;save.cur.s=1e9;for(const k of Object.keys(NODES))save.nodes[k]=1;save.kills={swarm:5,brute:3};persist();renderHub()}")
     n0=pg.evaluate(N);check(n0<500,'Hub: %d Elemente'%n0)
     for btn,sec,probe in (('#bTree','#tree','#tw'),('#bHeroes','#heroes','#hlist'),('#bFleet','#fleet','#flist'),('#bTowers','#towers','#tlist'),('#bCodex','#codex','#clist'),('#bAchv','#achv','#alist')):
-        pg.click(btn);pg.wait_for_timeout(150);inn=pg.evaluate("q=>document.querySelector(q).children.length",probe);n1=pg.evaluate(N)
-        pg.click(sec+' [data-back]');pg.wait_for_timeout(150);n2=pg.evaluate(N);leer=pg.evaluate("q=>document.querySelector(q).children.length",probe)
+        pg.click(btn);pg.wait_for_timeout(150);inn=pg.evaluate("q=>$(q).children.length",probe);n1=pg.evaluate(N)
+        pg.click(sec+' [data-back]');pg.wait_for_timeout(150);n2=pg.evaluate(N);leer=pg.evaluate("q=>$(q).children.length",probe)
         check(inn>0 and n1>n0 and leer==0 and n2<=n0+5,'%s: geöffnet %d Elemente, nach dem Verlassen wieder %d'%(sec,n1,n2))
     pg.click('#bTree');pg.wait_for_timeout(200);pg.click('#bHeroes') if False else None
     check(pg.evaluate("()=>document.querySelectorAll('#tw *').length")>100,'Skilltree ist beim erneuten Öffnen wieder vollständig da')

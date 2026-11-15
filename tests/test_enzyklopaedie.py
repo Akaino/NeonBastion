@@ -11,7 +11,7 @@ with sync_playwright() as p:
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     pg.goto(GAME);pg.wait_for_timeout(300)
     # --- Hub: beide Knöpfe sichtbar, nichts ragt aus dem Bildschirm ---
-    check(pg.is_visible('#bCodex') and pg.is_visible('#bAchv') and pg.evaluate("()=>document.querySelector('.hubfoot').getBoundingClientRect().bottom<=innerHeight"),'Hub zeigt „Enzyklopädie“ und „Erfolge“, alles passt auf den Bildschirm')
+    check(pg.is_visible('#bCodex') and pg.is_visible('#bAchv') and pg.evaluate("()=>$('.hubfoot').getBoundingClientRect().bottom<=innerHeight"),'Hub zeigt „Enzyklopädie“ und „Erfolge“, alles passt auf den Bildschirm')
     pg.screenshot(path='e0_hub.png')
     # --- Enzyklopädie leer: alles verdeckt ---
     pg.click('#bCodex');pg.wait_for_timeout(200)
@@ -31,7 +31,7 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>[...document.querySelectorAll('#clist .shiny')].map(e=>e.textContent)")==['✦ Schillernd besiegt ×3','✦ Schillernd besiegt'],'schillernde Funde stehen als Stern am normalen Eintrag')
     check('5,20K' in t and pg.evaluate("()=>document.querySelectorAll('#clist canvas[data-e]').length")==5+1+2+1,'Anzahl besiegt und Formen werden angezeigt')
     pg.screenshot(path='e1_enzyklopaedie.png',full_page=False)
-    pg.evaluate("()=>document.querySelector('#clist').scrollTo(0,99999)");pg.wait_for_timeout(150);pg.screenshot(path='e2_bosse.png')
+    pg.evaluate("()=>$('#clist').scrollTo(0,99999)");pg.wait_for_timeout(150);pg.screenshot(path='e2_bosse.png')
     pg.click('#codex [data-back]')
     # --- Erfolge ---
     a=pg.evaluate("()=>ACH.map(a=>[a.id,a.tiers.length,achTier(a)])")
@@ -41,7 +41,7 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>ACH.find(a=>a.id==='kills').tiers[2]>=1e7&&ACH.find(a=>a.id==='welle').tiers[2]>=300&&ACH.find(a=>a.id==='nova').tiers[2]>=250"),'es gibt sehr schwer erreichbare Gold-Stufen')
     check(not pg.evaluate("()=>ACH.some(a=>/alle.*(shin|schill)/i.test(a.name+a.text))") and pg.evaluate("()=>ACH.filter(a=>/schill/i.test(a.name+a.text)).length")==1,'kein Erfolg „alle Schillernden“, nur „Erstes Schillern“')
     pg.click('#bAchv');pg.wait_for_timeout(200)
-    m=pg.evaluate("()=>({karten:document.querySelectorAll('#alist .hcard').length,verdeckt:document.querySelectorAll('#alist .hcard.lock').length,an:document.querySelectorAll('#alist .medal.on').length,alle:document.querySelectorAll('#alist .medal').length,kopf:document.querySelector('#alist h3').textContent,text:document.querySelector('#alist').innerText})")
+    m=pg.evaluate("()=>({karten:document.querySelectorAll('#alist .hcard').length,verdeckt:document.querySelectorAll('#alist .hcard.lock').length,an:document.querySelectorAll('#alist .medal.on').length,alle:document.querySelectorAll('#alist .medal').length,kopf:$('#alist h3').textContent,text:$('#alist').innerText})")
     offen=[i for i,_,t in a if t>0];zu=[i for i,_,t in a if t==0]
     check(m['karten']==28 and m['verdeckt']==len(zu) and m['an']==sum(st.values()) and m['kopf']==f"{sum(st.values())} von {26*3+1} Medaillen",f"Erfolge-Seite: {m['kopf']}, {m['verdeckt']} verdeckt")
     namen=dict(pg.evaluate("()=>ACH.map(a=>[a.id,[a.name,a.text]])"))

@@ -35,7 +35,7 @@ with sync_playwright() as p:
     # im Baum kaufbar, mit Vorschau
     pg.evaluate("()=>{Object.assign(save.nodes,{b1:5,b2b:3,b3b:2,b4b:1,b5b:1,f2b:1,f3b:1,f4b:1});persist()}");pg.reload();pg.wait_for_timeout(300)
     pg.click('#bTree');pg.wait_for_timeout(300)
-    pre=pg.evaluate("n=>n.filter(id=>{selNode=id;renderTree();const t=document.querySelector('#tree').innerText;return !t.includes(NODES[id].name)})",NEW)
+    pre=pg.evaluate("n=>n.filter(id=>{selNode=id;renderTree();const t=$('#tree').innerText;return !t.includes(NODES[id].name)})",NEW)
     check(pre==[] or True,'Karten der neuen Knoten lassen sich öffnen')
     pg.evaluate("()=>{selNode='b6b';renderTree()}");pg.wait_for_timeout(100)
     txt=pg.inner_text('#tree');check('Bunker' in txt and 'Schaden durch Geschosse' in txt,'Bunker zeigt Namen und Vorher-Nachher-Vorschau')

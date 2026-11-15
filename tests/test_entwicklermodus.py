@@ -7,7 +7,7 @@ os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
     print(('ok   ' if ok else 'Traceback FEHLER ')+msg)
-hid=lambda pg,s:pg.evaluate("s=>document.querySelector(s).hidden",s)
+hid=lambda pg,s:pg.evaluate("s=>$(s).hidden",s)
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))

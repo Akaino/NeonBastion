@@ -21,7 +21,7 @@ with sync_playwright() as p:
     print('towers',pg.evaluate("()=>run.towers.map(t=>t.type+' L'+t.l+' @'+Math.round(t.x)+','+Math.round(t.y))"),'energy',pg.evaluate("()=>run.energy"),'paused now',pg.evaluate("()=>buildPaused()"))
     pg.wait_for_timeout(500)
     # tap tower -> panel
-    pos=pg.evaluate("()=>{const T=run.towers[0],r=document.querySelector('#cv').getBoundingClientRect();return [r.left+R.w/2+T.x*R.se,r.top+R.h/2+T.y*R.se]}")
+    pos=pg.evaluate("()=>{const T=run.towers[0],r=$('#cv').getBoundingClientRect();return [r.left+R.w/2+T.x*R.se,r.top+R.h/2+T.y*R.se]}")
     pg.mouse.click(pos[0],pos[1]);pg.wait_for_timeout(200);print('panel open',pg.is_visible('#tpanel'));pg.screenshot(path='tt2.png')
     pg.click('#tpUp');pg.wait_for_timeout(150);print('after upgrade',pg.evaluate("()=>[run.towers[0].l,run.energy,run.towers[0].spent]"))
     pg.click('#tpMove');pg.wait_for_timeout(100);pg.mouse.click(120,600);pg.wait_for_timeout(200)

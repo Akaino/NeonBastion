@@ -14,18 +14,18 @@ with sync_playwright() as p:
     # Hauptseite: kein Beta-Merkmal
     pg.goto(LIVE);pg.wait_for_timeout(300)
     check(pg.evaluate("()=>!IS_BETA&&Store.key==='neon-bastion-v1'") and 'Beta' not in pg.inner_text('.hubfoot'),'Hauptseite: keine Beta, Spielstand neon-bastion-v1')
-    pg.click('#bSet');check(pg.evaluate("()=>document.querySelector('#bLiveCopy').hidden"),'Hauptseite: kein Knopf „Live-Spielstand übernehmen“');pg.click('#bSetClose')
+    pg.click('#bSet');check(pg.evaluate("()=>$('#bLiveCopy').hidden"),'Hauptseite: kein Knopf „Live-Spielstand übernehmen“');pg.click('#bSetClose')
     # Live-Spielstand anlegen. Die Seite sichert beim Verlassen ihren Stand im Speicher, deshalb dort ebenfalls setzen.
     live=json.loads(pg.evaluate("s=>{localStorage.setItem('neon-bastion-v1',s);save=loadSave();persist();return localStorage.getItem('neon-bastion-v1')}",json.dumps(live)))
     # Beta: gekennzeichnet, eigener Schlüssel, für Suchmaschinen gesperrt, Schrift und Icons von der Hauptseite
     pg.goto(BETA);pg.wait_for_timeout(500)
     check(pg.evaluate("()=>IS_BETA&&Store.key==='neon-bastion-beta'"),'Beta erkannt, Spielstand neon-bastion-beta')
     check('Version' in pg.inner_text('.hubfoot') and 'Beta' in pg.inner_text('.hubfoot'),'Kennzeichnung im Hub: '+pg.inner_text('.hubfoot .ver'))
-    check(pg.evaluate("()=>document.querySelector('meta[name=robots]').content")=='noindex,nofollow','für Suchmaschinen gesperrt')
+    check(pg.evaluate("()=>$('meta[name=robots]').content")=='noindex,nofollow','für Suchmaschinen gesperrt')
     check(pg.evaluate("()=>document.fonts.ready.then(()=>document.fonts.check('600 16px \"Chakra Petch\"'))") and not failed,'Schrift und Icons laden von der Hauptseite: '+str(failed))
     check(pg.evaluate("()=>(save.best||0)===0&&save.cur.s===0"),'Beta startet mit eigenem, leerem Spielstand')
     pg.click('#bSet');pg.wait_for_timeout(150)
-    check(not pg.evaluate("()=>document.querySelector('#bLiveCopy').hidden") and 'Beta' in pg.inner_text('#setVer'),'Einstellungen: Knopf sichtbar, Version mit „Beta“')
+    check(not pg.evaluate("()=>$('#bLiveCopy').hidden") and 'Beta' in pg.inner_text('#setVer'),'Einstellungen: Knopf sichtbar, Version mit „Beta“')
     links=pg.evaluate("()=>[...document.querySelectorAll('#settings .legal a')].map(a=>a.getAttribute('href'))")
     check(links==['../impressum.html','../datenschutz.html'] and all(os.path.isfile(os.path.join(WEB,'beta',l)) for l in links),'Impressum und Datenschutz zeigen auf die Hauptseite: '+str(links))
     pg.screenshot(path='b1_beta.png')

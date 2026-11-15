@@ -6,7 +6,7 @@ os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
     print(('ok   ' if ok else 'Traceback FEHLER ')+msg)
-hid=lambda pg,s:pg.evaluate("s=>document.querySelector(s).hidden",s)
+hid=lambda pg,s:pg.evaluate("s=>$(s).hidden",s)
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
@@ -23,7 +23,7 @@ with sync_playwright() as p:
     pg.click('[data-db="25"]');pg.click('[data-db="5"]');check(pg.evaluate("()=>save.best")==30,'Rekordwelle 30')
     for i in range(4):pg.click('[data-ds="10"]')
     check(pg.evaluate("()=>stats(save).startWave")==41,'Startwelle 41: '+str(pg.evaluate("()=>stats(save).startWave")))
-    check(pg.evaluate("()=>document.querySelector('#dev .mbox').scrollWidth<=document.querySelector('#dev .mbox').clientWidth+1"),'Testhilfen passen in die Breite')
+    check(pg.evaluate("()=>$('#dev .mbox').scrollWidth<=$('#dev .mbox').clientWidth+1"),'Testhilfen passen in die Breite')
     pg.screenshot(path='th1_testhilfen.png')
     pg.click('[data-ds="0"]');check(pg.evaluate("()=>stats(save).startWave")==1,'Startwelle wieder normal')
     pg.click('[data-dt="devShiny"]');pg.click('[data-dt="devPerf"]');pg.wait_for_timeout(100)
@@ -43,7 +43,7 @@ with sync_playwright() as p:
     pg.evaluate("()=>Perf.scan(.8)");pg.wait_for_timeout(13000)
     res=pg.evaluate("()=>Perf.scanRes.map(r=>r.name)")
     check(len(res)==12 and res[0]=='alles an' and res[10]=='alles zusammen','Ursachensuche hat 12 Abschnitte: '+str(len(res)))
-    check(pg.evaluate("()=>!Perf.noDraw&&!Perf.freeze&&document.documentElement.className.trim()===''&&!!Music.timer&&!!Track.timer&&document.querySelectorAll('input').length>=3&&!!document.querySelector('#volMus')"),'danach ist alles wieder an, Eingabefelder und Zeitgeber sind zurück')
+    check(pg.evaluate("()=>!Perf.noDraw&&!Perf.freeze&&document.documentElement.className.trim()===''&&!!Music.timer&&!!Track.timer&&document.querySelectorAll('input').length>=3&&!!$('#volMus')"),'danach ist alles wieder an, Eingabefelder und Zeitgeber sind zurück')
     check(not hid(pg,'#dev') and 'Ursachensuche' in pg.evaluate("()=>Perf.report()") and 'alles zusammen' in pg.inner_text('#devBody'),'Ergebnis steht in den Testhilfen und im Bericht')
     pg.screenshot(path='th3_ursachensuche.png')
     pg.evaluate("()=>{save.dev=false}")

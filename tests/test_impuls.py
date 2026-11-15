@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 def check(ok,msg):
     print(('ok   ' if ok else 'Traceback FEHLER ')+msg)
 save={"v":2,"cur":{"s":0,"k":0,"p":0,"d":0},"nodes":{"root":1,"f1":1},"best":5,"cycleBest":5,"runs":5,"volMus":0,"volSfx":0}
-TOUCH="""([type,x,y])=>{const c=document.querySelector('#cv');c.dispatchEvent(new PointerEvent(type,{pointerType:'touch',pointerId:7,clientX:x,clientY:y,bubbles:true,cancelable:true}))}"""
+TOUCH="""([type,x,y])=>{const c=$('#cv');c.dispatchEvent(new PointerEvent(type,{pointerType:'touch',pointerId:7,clientX:x,clientY:y,bubbles:true,cancelable:true}))}"""
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
@@ -22,7 +22,7 @@ with sync_playwright() as p:
     pg.click('#bStart');pg.wait_for_timeout(400)
     # Maus bewegt den Zeiger, Klick löst keinen Impuls aus
     pg.mouse.move(250,330);pg.wait_for_timeout(100)
-    pos=pg.evaluate("()=>{const r=document.querySelector('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+run.cx*R.se),Math.round(r.top+R.h/2+run.cy*R.se)]}")
+    pos=pg.evaluate("()=>{const r=$('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+run.cx*R.se),Math.round(r.top+R.h/2+run.cy*R.se)]}")
     check(abs(pos[0]-250)<=1 and abs(pos[1]-330)<=1,'Maus bewegt den Zeiger: '+str(pos))
     n0=pg.evaluate("()=>run.imps")
     for i in range(6):pg.mouse.click(250,330)
@@ -34,7 +34,7 @@ with sync_playwright() as p:
     pg.screenshot(path='i3_impuls.png')
     # Finger: zieht den Zeiger mit, beim Loslassen bleibt er liegen
     pg.evaluate(TOUCH,['pointerdown',120,500]);pg.evaluate(TOUCH,['pointerup',120,500]);pg.wait_for_timeout(50)
-    w=lambda:pg.evaluate("()=>{const r=document.querySelector('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+run.cx*R.se),Math.round(r.top+R.h/2+run.cy*R.se)]}")
+    w=lambda:pg.evaluate("()=>{const r=$('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+run.cx*R.se),Math.round(r.top+R.h/2+run.cy*R.se)]}")
     a=w();check(abs(a[0]-120)<=1 and abs(a[1]-500)<=1,'kurzes Antippen setzt den Zeiger direkt: '+str(a))
     # Trackpad: Wischen weit weg vom Zeiger schiebt ihn um die Strecke × 1,5; der Zeiger springt nicht unter den Finger
     pg.evaluate(TOUCH,['pointerdown',300,700]);pg.evaluate(TOUCH,['pointermove',320,700]);pg.evaluate(TOUCH,['pointermove',360,660]);pg.wait_for_timeout(50)
@@ -55,11 +55,11 @@ with sync_playwright() as p:
     pg.click('#bPause');pg.click('#bQuit');pg.wait_for_timeout(2200);pg.click('#bBack');pg.click('#bStart');pg.wait_for_timeout(300)
     a=w();check(abs(a[0]-180)<=1 and abs(a[1]-440)<=1,'Zeiger steht im nächsten Run wieder an derselben Stelle: '+str(a))
     # Turm-Menü: nur kurzes Antippen ohne Bewegung öffnet es; aufsetzen und ziehen bewegt den Zeiger
-    tp=pg.evaluate("()=>{run.energy=999;run.place('frost',-90,150);const T=run.towers[0],r=document.querySelector('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+T.x*R.se),Math.round(r.top+R.h/2+T.y*R.se)]}")
+    tp=pg.evaluate("()=>{run.energy=999;run.place('frost',-90,150);const T=run.towers[0],r=$('#cv').getBoundingClientRect();return [Math.round(r.left+R.w/2+T.x*R.se),Math.round(r.top+R.h/2+T.y*R.se)]}")
     a0=w();pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.evaluate(TOUCH,['pointermove',tp[0]+60,tp[1]-40]);pg.evaluate(TOUCH,['pointermove',tp[0]+80,tp[1]-40]);pg.evaluate(TOUCH,['pointerup',tp[0]+80,tp[1]-40]);pg.wait_for_timeout(80)
-    a=w();check(pg.evaluate("()=>document.querySelector('#tpanel').hidden&&towerSel===null") and abs(a[0]-a0[0]-30)<=1 and abs(a[1]-a0[1])<=1,'auf Turm aufsetzen und wischen: kein Menü, Zeiger wird geschoben: '+str(a0)+' → '+str(a))
+    a=w();check(pg.evaluate("()=>$('#tpanel').hidden&&towerSel===null") and abs(a[0]-a0[0]-30)<=1 and abs(a[1]-a0[1])<=1,'auf Turm aufsetzen und wischen: kein Menü, Zeiger wird geschoben: '+str(a0)+' → '+str(a))
     pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.wait_for_timeout(600);pg.evaluate(TOUCH,['pointerup',tp[0],tp[1]]);pg.wait_for_timeout(80)
-    check(pg.evaluate("()=>document.querySelector('#tpanel').hidden"),'langes Halten auf dem Turm: kein Menü')
+    check(pg.evaluate("()=>$('#tpanel').hidden"),'langes Halten auf dem Turm: kein Menü')
     pg.evaluate(TOUCH,['pointerdown',tp[0],tp[1]]);pg.evaluate(TOUCH,['pointerup',tp[0],tp[1]]);pg.wait_for_timeout(80)
-    b2=w();check(not pg.evaluate("()=>document.querySelector('#tpanel').hidden") and b2==a,'kurzes Antippen öffnet das Turm-Menü, Zeiger bleibt liegen')
+    b2=w();check(not pg.evaluate("()=>$('#tpanel').hidden") and b2==a,'kurzes Antippen öffnet das Turm-Menü, Zeiger bleibt liegen')
     print('\n'.join(errs) or 'no errors');b.close()

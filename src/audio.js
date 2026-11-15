@@ -241,4 +241,4 @@ const Snd={ctx:null,B:null,last:{},unlocked:false,
 addEventListener('pagehide',()=>{try{for(const b of Track.list)for(const x of b.nodes){try{x.disconnect()}catch(e){}}Track.list.length=0;Track.ctx=null;
   if(Snd.ctx){const c=Snd.ctx;Snd.ctx=null;Snd.B=null;Snd.unlocked=false;Snd.last={};Music.next=0;c.close().catch(()=>{})}}catch(e){}});
 for(const ev of['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Snd.init(),{capture:true,passive:true});
-document.addEventListener('click',e=>{if(e.target.closest('.btn'))Snd.play('ui')});
+document.addEventListener('click',e=>{const t=e.composedPath()[0]||e.target;if(t.closest&&t.closest('.btn'))Snd.play('ui')});

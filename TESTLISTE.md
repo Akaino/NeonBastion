@@ -1,17 +1,19 @@
-# Abschluss-Testliste für Welt 1 (Beta 0.29.1)
+# Abschluss-Testliste für Welt 1 (Beta 0.30.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (32 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (34 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
 ## 1. Ruckeln und Ton in Safari (wichtig zuerst)
 
-- [ ] Ruckeltest unter https://neonbastion.de/beta/ruckeltest.html starten, anderthalb Minuten warten, Ergebnis kopieren und an Claude schicken.
-- [ ] Die Erweiterung „AdBlock for Safari“ für neonbastion.de oder ganz ausschalten, Safari neu starten und in der Beta messen (Testhilfen → Leistungsmessung): Sind die Ruckler weg?
-- [ ] Beta 0.29.1 in einem frisch gestarteten Safari 10 Minuten auf 4× oder 8× spielen: Bleibt es flüssig, bleibt der Ton sauber?
-- [ ] Danach die Seite neu laden: Läuft es weiter flüssig?
+Die Ursache ist gefunden: Ein fremdes Skript in deinem Safari reagiert auf jede Textänderung der Seite mit einem Hänger pro Sekunde. Seit 0.30.0 liegen alle laufenden Anzeigen so, dass es ihre Änderungen nicht mehr sieht.
+
+- [ ] Beta 0.30.0 laden, ein paar Runs auf 4× oder 8× spielen, zwischendurch die Seite neu laden: Bleibt es flüssig, bleibt der Ton sauber?
+- [ ] In der Konsole `Perf.live()`: Steht dort dauerhaft „Ruckler in 5 s: 0“ (einzelne Ausreißer beim Öffnen von Menüs sind normal)?
+- [ ] Sieht die Anzeige im Run aus wie vorher (Welle, Lebensbalken, Währungen, Bossbalken, Heldenkreise, Bauen-Knopf, Banner, Hinweise)?
+- [ ] Funktionieren Pause, Tempo, Bauen und das Turm-Menü wie vorher?
 
 ## 2. Flotte
 
@@ -133,4 +135,4 @@ Karriere mit ruhendem Zeiger (4 Seeds):
 - Die Helden selbst machen spät nur etwa 14 % des Schadens. Ihr Ast bleibt trotzdem der wichtigste, weil die anderen von seinem Bonus leben.
 - Die Wirkung von Stör-Turm und Markier-Turm für einen Menschen ist nicht gemessen.
 - Welt 2 hat nichts von den Neuerungen.
-- Die Ursache des Sekundentakt-Rucklers in Safari ist noch nicht geklärt. Das Aufräumen des Tons in 0.29.1 hat ihn nicht beseitigt (deine Messung: weiter 43 bis 60 ms je Sekunde, schon im Hub).
+- Von wem das fremde Skript in deinem Safari stammt, ist nicht geklärt. Das Spiel umgeht es seit 0.30.0; Menüs und Käufe ändern die Seite weiterhin und können einzelne kurze Hänger auslösen.

@@ -1,4 +1,10 @@
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+/* Schattenbaum für alles, was sich im Run laufend ändert (Anzeige oben, Banner, Messanzeige).
+   Hintergrund (15.11.2026, beim Nutzer in Safari gemessen und mit Perf.aus('frz') bestätigt): Ein fremdes Skript im Browser beobachtet die Seite und arbeitet nach jeder Änderung
+   am Dokument einmal pro Sekunde 50 bis 150 ms lang – das waren die Ruckler im Sekundentakt. Änderungen innerhalb eines Schattenbaums sieht ein solcher Beobachter nicht.
+   Deshalb ziehen #hud, #banner und #perf beim Start in einen Schattenbaum um; die Stilregeln der Seite werden hineinkopiert. $ und $$ suchen in beiden Bäumen. */
+const UI=(()=>{const host=document.createElement('div');host.id='ui';const root=host.attachShadow({mode:'open'}),st=document.querySelector('style'),hud=document.querySelector('#hud');
+  if(st)root.appendChild(st.cloneNode(true));hud.parentNode.insertBefore(host,hud);for(const id of['hud','banner','perf','toast']){const e=document.getElementById(id);if(e)root.appendChild(e)}return root})();
+const $=s=>document.querySelector(s)||UI.querySelector(s),$$=s=>[...document.querySelectorAll(s),...UI.querySelectorAll(s)];
 let save=loadSave(),run=null,paused=false,speed=save.speed||1,endShown=false,selNode='root';
 const R=new Renderer($('#cv'));
 
