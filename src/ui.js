@@ -184,7 +184,7 @@ $('#fleet').addEventListener('click',e=>{const b=e.target.closest('button');if(!
 $('#bFleet').onclick=()=>{show('fleet');renderFleet()};
 
 /* ---------- Enzyklopädie: was man besiegt hat, getrennt nach Gegnern und Bossen ---------- */
-const CODEX_TYPES=['swarm','brute','shooter','sprinter','healer','queen','shield','bomber','ram','splitter','mite','cloaker','tank','siege','revenant','jammer','commander','giant'];
+const CODEX_TYPES=['swarm','brute','shooter','sprinter','healer','queen','shield','bomber','ram','splitter','mite','cloaker','tank','siege','revenant','jammer','commander','giant','jumper','shade','phaser','hacker','brooder','egg'];
 function renderCodex(){const K=save.kills||{},n=t=>K[t]||0;let h='<h3 class="sect">Gegner</h3>';
   const card=(known,col,cv,name,sub,text,count,extra)=>`<article class="hcard ${known?'':'lock'}" style="--c:${known?col:'#5f5c8c'}"><div class="hc-top">${known?cv:'<div class="unk">?</div>'}<div><h3>${known?name:'Unbekannt'}</h3><small>${sub}</small>${extra||''}</div>${known?`<div class="lvl"><small>Besiegt</small><br>${fmtN(count)}</div>`:''}</div><p style="margin:0;color:var(--muted);font-size:13px">${known?text:'Noch nicht besiegt.'}</p></article>`;
   for(const t of CODEX_TYPES){const T=ETYPES[t],k=n(t),sh=n('shiny:'+t);

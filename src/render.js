@@ -29,6 +29,12 @@ enemySprite(type,r,col,white){const key='e'+type+Math.round(r)+(white?'w':col);r
   else if(type==='commander'){this.neon(c,K,c=>{c.beginPath();for(let i=0;i<10;i++){const a=-PI/2+i*TAU/10,rr=i%2?r*.5:r*1.1;c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}c.closePath()},C,2.2,14,F);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.2,0,TAU);c.fill()}
   else if(type==='healer'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.55,0);c.lineTo(r*.55,0);c.moveTo(0,-r*.55);c.lineTo(0,r*.55)},C,2.6,8)}
   else if(type==='bomber'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r*.8,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();for(let i=0;i<8;i++){const a=i*TAU/8;c.moveTo(Math.cos(a)*r*.95,Math.sin(a)*r*.95);c.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4)}},C,1.8,6);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.3,0,TAU);c.fill()}
+  else if(type==='jumper'){for(const o of[-.45,.45])this.neon(c,K,c=>{c.beginPath();c.moveTo(r*(o-.45),-r*.8);c.lineTo(r*(o+.55),0);c.lineTo(r*(o-.45),r*.8)},C,2.2,10)}
+  else if(type==='shade'){this.neon(c,K,c=>{c.beginPath();c.arc(0,0,r,0,TAU)},C,2.2,12,white?F:'rgba(2,0,10,.96)');this.neon(c,K,c=>{c.beginPath();c.arc(r*.25,0,r*.55,PI*.5,PI*1.5)},C,2,6)}
+  else if(type==='phaser'){for(const o of[-.3,.3])this.neon(c,K,c=>{c.beginPath();c.moveTo(r*(o+.9),0);c.lineTo(r*o,-r*.8);c.lineTo(r*(o-.9),0);c.lineTo(r*o,r*.8);c.closePath()},C,1.8,10,o>0?F:null)}
+  else if(type==='hacker'){this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.35,-r);c.lineTo(-r,-r);c.lineTo(-r,r);c.lineTo(-r*.35,r);c.moveTo(r*.35,-r);c.lineTo(r,-r);c.lineTo(r,r);c.lineTo(r*.35,r)},C,2.2,12);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.28,0,TAU);c.fill()}
+  else if(type==='brooder'){this.neon(c,K,c=>{c.beginPath();c.ellipse(0,0,r*1.15,r*.85,0,0,TAU)},C,2.4,12,F);for(const [x,y] of[[-.45,0],[.2,-.3],[.2,.3]])this.neon(c,K,c=>{c.beginPath();c.arc(r*x,r*y,r*.2,0,TAU)},C,1.4,5)}
+  else if(type==='egg'){this.neon(c,K,c=>{c.beginPath();c.ellipse(0,0,r*.95,r*.72,0,0,TAU)},C,2,10,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-r*.5,0);c.lineTo(-r*.15,-r*.25);c.lineTo(r*.15,r*.2);c.lineTo(r*.5,-r*.05)},C,1.3,4)}
   else if(type==='cloaker'){this.neon(c,K,c=>{c.beginPath();c.moveTo(r*1.25,0);c.lineTo(0,-r*.85);c.lineTo(-r*1.25,0);c.lineTo(0,r*.85);c.closePath()},C,2,12,F);this.neon(c,K,c=>{c.beginPath();c.ellipse(0,0,r*.55,r*.28,0,0,TAU)},C,1.5,6)}
   else if(type==='jammer'){this.neon(c,K,c=>{c.beginPath();c.moveTo(r,r*.8);c.lineTo(-r,r*.8);c.lineTo(0,-r*.95);c.closePath()},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.arc(0,-r*.95,r*.55,-PI*.85,-PI*.15);c.moveTo(r*.9,-r*.95);c.arc(0,-r*.95,r*.9,0,-PI,true)},C,1.4,6)}
   else if(type==='giant'){this.neon(c,K,c=>this.poly(c,8,r,PI/8),C,3,14,F);this.neon(c,K,c=>{c.beginPath();c.rect(-r*.42,-r*.42,r*.84,r*.84)},C,2,8);c.fillStyle=C;c.beginPath();c.arc(0,0,r*.14,0,TAU);c.fill()}
@@ -92,8 +98,10 @@ frame(run,dt){this.t+=dt;
       c.lineWidth=1.5;c.setLineDash([3,9]);c.lineDashOffset=this.t*20;c.beginPath();c.arc(e.x,e.y,e.r*1.85,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;c.globalCompositeOperation='source-over'}
     // Störsender: gestrichelter Kreis zeigt, wo Türme ausfallen. Tarner: fast unsichtbar, solange getarnt.
     if(e.type==='jammer'){c.strokeStyle='rgba(61,255,208,.35)';c.lineWidth=1.5;c.setLineDash([4,7]);c.lineDashOffset=this.t*18;c.beginPath();c.arc(e.x,e.y,JAM_R,0,TAU);c.stroke();c.setLineDash([])}
+    if(e.type==='hacker'){c.strokeStyle='rgba(79,255,138,.32)';c.lineWidth=1.5;c.setLineDash([1,5]);c.lineDashOffset=this.t*10;c.beginPath();c.arc(e.x,e.y,HACK_R,0,TAU);c.stroke();c.setLineDash([])}
+    if(e.type==='shade'){c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.arc(e.x,e.y,SHADE_R,0,TAU);c.fill();c.strokeStyle='rgba(138,125,255,.25)';c.lineWidth=1;c.beginPath();c.arc(e.x,e.y,SHADE_R,0,TAU);c.stroke()}
     if(e.type==='commander'){c.strokeStyle='rgba(255,79,79,.32)';c.lineWidth=1.5;c.setLineDash([2,6]);c.lineDashOffset=-this.t*14;c.beginPath();c.arc(e.x,e.y,CMD_R,0,TAU);c.stroke();c.setLineDash([])}
-    if(e.cloak)c.globalAlpha=e.down>0?.35:.14;
+    if(e.cloak)c.globalAlpha=e.down>0?.35:e.type==='phaser'?.3:.14;
     const s=this.enemySprite(e.type,e.r,e.col,e.flash>0);this.draw(s,e.x,e.y,e.boss?this.t*.4:e.ang);c.globalAlpha=1;
     // Boss lädt eine Fähigkeit auf: goldener Ring füllt sich bis zur Auslösung; Panzerung des Koloss als heller Ring
     if(e.boss&&e.cast>0){const f=1-e.cast/e.cast0;c.globalAlpha=.35;c.strokeStyle='#ffe14f';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.r*2.15,0,TAU);c.stroke();
@@ -113,7 +121,7 @@ frame(run,dt){this.t+=dt;
   for(const e of run.en){if(e.boss||e.hp>=e.max||(!e.elite&&!ETYPES[e.type].bar))continue;const w=e.r*2.2,f=Math.max(0,e.hp/e.max),y=e.y-e.r*1.5-6;
     c.fillStyle='rgba(5,5,26,.8)';c.fillRect(e.x-w/2-1,y-1,w+2,5);c.fillStyle=e.boss?'#ff3b5c':e.elite?'#ffe14f':'#ff8a3d';c.fillRect(e.x-w/2,y,w*f,3)}
   // drones
-  for(const d of run.drones)this.draw(this.droneSprite(d.cls,d.flash>0),d.x,d.y,d.face);
+  for(const d of run.drones){if(d.hack)c.globalAlpha=.35;this.draw(this.droneSprite(d.cls,d.flash>0),d.x,d.y,d.face);if(d.hack)c.globalAlpha=1}
   // dash afterimages
   for(const g of run.ghosts){if(g.l<0)continue;c.globalAlpha=(1-g.l/g.m)*.45;this.draw(this.heroSprite(g.id,g.col),g.x,g.y,g.a,1.2)}c.globalAlpha=1;
   // heroes
@@ -139,7 +147,7 @@ frame(run,dt){this.t+=dt;
       c.globalAlpha=.9;c.strokeStyle=d.life<1?'#ff4f6d':d.col;c.lineWidth=2;c.beginPath();c.arc(0,0,19,PI/2-PI*.62*d.life/DROP_LIFE,PI/2+PI*.62*d.life/DROP_LIFE);c.stroke();c.restore()}
     let bi=0;for(const k in run.buff)if(run.buff[k]>0){const rr=run.base.r+16+bi*6;c.globalAlpha=.9;c.strokeStyle=DROPS[k].col;c.lineWidth=3.5;c.lineCap='round';c.beginPath();c.arc(0,0,rr,-PI/2,-PI/2+TAU*run.buff[k]/DROP_DUR);c.stroke();c.lineCap='butt';bi++}c.globalAlpha=1}
   // Impuls-Ring am Zeiger: füllt sich im Uhrzeigersinn bis zum nächsten Impuls, Farbe kündigt Sondertreffer an
-  if(run.S.impInt>0&&!run.over){const S=run.S,r=S.tapR,f=clamp(1-run.impT/S.impInt,0,1),nx=run.imps+1;
+  if(run.S.impInt>0&&!run.over){const S=run.S,r=S.tapR*(run.shaded(run.cx,run.cy)?SHADE_MUL:1),f=clamp(1-run.impT/S.impInt,0,1),nx=run.imps+1;
     const col=S.megaTap&&nx%S.megaTap===0?'#ffe14f':S.overload&&nx%10===0?'#ff8a3d':S.beat&&nx%BEAT_N===0?'#ff4fd8':'#3df5ff';
     c.fillStyle=col;c.globalAlpha=.05;c.beginPath();c.arc(run.cx,run.cy,r,0,TAU);c.fill();
     c.globalAlpha=.3;c.strokeStyle='#ffffff';c.lineWidth=1.2;c.stroke();

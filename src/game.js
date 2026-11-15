@@ -24,6 +24,17 @@ const ETYPES={
   jammer:{name:'Störsender',hp:45,sp:30,r:12,dmg:5,val:6,col:'#3dffd0',bar:1,from:70,step:.01,max:.05,text:'Schaltet alle Türme in seinem Umkreis ab, solange er lebt.'},
   // Hüne: sehr langsam, sehr viel Leben, lässt sich nicht zurückstoßen
   giant:{name:'Hüne',hp:420,sp:20,r:22,dmg:28,val:25,col:'#ff7ab0',bar:1,from:85,step:.005,max:.03,text:'Sehr langsam, sehr zäh und nicht zurückzustoßen. Ein kleiner Boss mitten in der Welle.'},
+  // Springer: setzt alle paar Sekunden ein Stück Richtung Basis – auch über Helden und Drohnen hinweg
+  jumper:{name:'Springer',hp:18,sp:50,r:9,dmg:6,val:3,col:'#c8ff4f',from:28,step:.01,max:.06,text:'Springt alle drei Sekunden ein Stück auf die Basis zu, auch über Helden und Drohnen hinweg.'},
+  // Schattenwerfer: halbiert den Radius des Impulses in seiner Nähe
+  shade:{name:'Schattenwerfer',hp:34,sp:32,r:12,dmg:5,val:5,col:'#8a7dff',bar:1,from:38,step:.008,max:.04,text:'In seinem Schatten ist der Impuls nur halb so groß. Helden, Drohnen und Geschütze stört das nicht.'},
+  // Phasenläufer: wechselt zwischen angreifbar und unangreifbar
+  phaser:{name:'Phasenläufer',hp:30,sp:48,r:10,dmg:8,val:5,col:'#ff9dff',from:58,step:.01,max:.05,text:'Verschwindet immer wieder für anderthalb Sekunden aus der Welt und ist dann nicht zu treffen.'},
+  // Hacker: Drohnen in seinem Umkreis feuern nicht
+  hacker:{name:'Hacker',hp:38,sp:34,r:11,dmg:5,val:6,col:'#4fff8a',bar:1,from:68,step:.008,max:.04,text:'Drohnen in seinem Umkreis feuern nicht, solange er lebt.'},
+  // Brüter: hinterlässt beim Tod ein Ei, aus dem Schwärmer schlüpfen
+  brooder:{name:'Brüter',hp:70,sp:30,r:14,dmg:8,val:8,col:'#ffa64f',bar:1,from:90,step:.006,max:.03,text:'Hinterlässt beim Tod ein Ei. Wird es nicht rechtzeitig zerstört, schlüpfen vier Schwärmer.'},
+  egg:{name:'Ei',hp:20,sp:0,r:9,dmg:0,val:1,col:'#ffd27a',text:'Bleibt liegen, wo der Brüter fiel. Nach vier Sekunden schlüpfen vier Schwärmer.'},
   // Schwarmkönigin: bringt laufend Schwärmer hervor
   queen:{name:'Schwarmkönigin',hp:60,sp:28,r:14,dmg:5,val:8,col:'#ff9de0',bar:1,from:25,step:.008,max:.04,text:'Bringt alle drei Sekunden zwei Schwärmer hervor, solange sie lebt.'},
   // Rammbock: wird immer schneller, je länger er lebt
@@ -46,9 +57,10 @@ const DROPS={bomb:{name:'Bombe',text:'Sprengt alles im Umkreis',col:'#ff8a3d'},d
   gain:{name:'Splitterregen',text:'5 Sekunden doppelte Splitter',col:'#ffe14f'}},DROP_IDS=Object.keys(DROPS);
 const SHINY_P=1/5000,SHINY_HP=3.5;
 const BOOM_T=.35;   // Sekunden vom Fall der Basis bis zur Explosion
-const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander'];
+const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander','jumper','shade','phaser','hacker','brooder'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
+const JUMP_CD=3,JUMP_D=90,SHADE_R=130,SHADE_MUL=.5,PHASE_ON=1.5,PHASE_OFF=2.5,HACK_R=130,EGG_T=4,EGG_HP=.4,EGG_N=4;
 const MIX_MAX=.85,HEAL_R=110,HEAL_PCT=.04,CLOAK_R=150,JAM_R=120,QUEEN_CD=3,RAM_ACC=.25,RAM_MAX=3,TANK_CAP=.12,REV_DOWN=1.5,CMD_R=120,CMD_DMG=1.4,CMD_SP=1.25;
 const waveMix=w=>{const m=WAVE_MIX.map(t=>[t,waveShare(t,w)]),sum=m.reduce((a,x)=>a+x[1],0),k=sum>MIX_MAX?MIX_MAX/sum:1;return m.map(([t,s])=>[t,s*k])};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
@@ -176,6 +188,7 @@ kill(e){
   this.kills++;this.energy+=e.val*this.energyMul(e);
   const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss){kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;if(this.twin&&++this.twinDown===2)kb.twin=(kb.twin||0)+1}
   if(e.shiny){kb['shiny:'+e.type]=(kb['shiny:'+e.type]||0)+1;this.ring(e.x,e.y,e.r,e.r*5,'#ffffff',.7,8);this.h.banner&&this.h.banner('Schillernd!',ETYPES[e.type].name+' besiegt');this.h.sfx&&this.h.sfx('abil')}
+  if(e.type==='brooder')this.pend.push(['egg',e.x,e.y,e.max*EGG_HP]);
   if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*MITE_HP])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);if(e.drop)this.spawnDrop(e.x,e.y);
@@ -227,7 +240,7 @@ spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
 spawnEnemy(type,elite,x,y,shiny){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}if(shiny)hp*=SHINY_HP;
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,healT:rnd(0,1),cloak:type==='cloaker',heavy:type==='giant',acc:1,down:0,rev:false,qT:QUEEN_CD,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,healT:rnd(0,1),cloak:type==='cloaker',heavy:type==='giant',acc:1,down:0,rev:false,qT:QUEEN_CD,jT:JUMP_CD*rnd(.5,1),phT:PHASE_OFF*rnd(.3,1),eggT:EGG_T,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
     // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
     spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
@@ -313,7 +326,8 @@ spawnDrone(){const F=this.save.fleet,S=this.S,ids=F?DRONE_IDS.filter(id=>F[id]&&
 updDrones(dt){const S=this.S,leash=200+(S.droneRange-90);
   if(this.drones.length<S.drones){this.droneT-=dt;if(this.droneT<=0){this.droneT=S.droneSpawn;this.spawnDrone()}}
   if(this.drones.length)for(const e of this.en)e.bd=hyp(e.x,e.y);   // einmal pro Schritt statt einmal pro Drohne
-  for(const d of this.drones){d.flash-=dt;d.atkT-=dt;
+  const hk=this.en.filter(e=>e.type==='hacker'&&e.hp>0);
+  for(const d of this.drones){d.flash-=dt;d.atkT-=dt;d.hack=hk.length>0&&hk.some(e=>hyp(e.x-d.x,e.y-d.y)<HACK_R);
     // Reparaturdrohne: kreist nah an der Basis, repariert sie und heilt Verbündete in ihrer Nähe
     if(d.heal){d.healT-=dt;if(d.healT<=0){d.healT=1;const b=this.base;if(b.hp<b.max)b.hp=Math.min(b.max,b.hp+b.max*REPAIR_BASE*d.heal);
         for(const a of this.heroes)if(!(a.dead>0)&&a.hp<a.max&&hyp(a.x-d.x,a.y-d.y)<REPAIR_R)a.hp=Math.min(a.max,a.hp+a.max*REPAIR_ALLY*d.heal);
@@ -324,7 +338,7 @@ updDrones(dt){const S=this.S,leash=200+(S.droneRange-90);
     for(const e of this.en){if(e.hp<=0||e.cloak)continue;const bdist=e.bd;if(bdist>leash+S.droneRange*.9)continue;const dd=sq(e.x-d.x)+sq(e.y-d.y)*1-(e.ranged&&bdist<e.stop+10?9000:0)-(pr&&DRONE_PRIO[e.type]?60000:0);if(dd<bd){bd=dd;tg=e}}
     if(tg){const dist=hyp(tg.x-d.x,tg.y-d.y);if(!this.headless)d.face=Math.atan2(tg.y-d.y,tg.x-d.x);
       if(dist>S.droneRange*.8)this.moveTo(d,tg.x+Math.cos(d.off)*14,tg.y+Math.sin(d.off)*14,dt,d.sp);
-      if(dist<=S.droneRange&&d.atkT<=0){d.atkT=1/(1.2*S.droneRate*d.rate);const dd_=d.dmg*(1+S.swarmInt*this.drones.length);
+      if(dist<=S.droneRange&&d.atkT<=0&&!d.hack){d.atkT=1/(1.2*S.droneRate*d.rate);const dd_=d.dmg*(1+S.swarmInt*this.drones.length);
         if(d.splash){this.headless||this.bolts.push({pts:[[d.x,d.y],[tg.x,tg.y]],l:0,m:.14,col:d.col,w:4});this.aoe(tg.x,tg.y,d.splash,dd_,{num:false});this.ring(tg.x,tg.y,4,d.splash,d.col,.25,3);this.h.sfx&&this.h.sfx('turret')}
         else if(S.droneBeam){for(let k=0;k<d.shots&&tg.hp>0;k++)this.hitE(tg,dd_,{num:false});this.headless||this.bolts.push({pts:[[d.x,d.y],[tg.x,tg.y]],l:0,m:.12,col:d.col,w:2});this.h.sfx&&this.h.sfx('beam')}
         else{for(let k=0;k<d.shots;k++)this.shootAt(d.x+(k?rnd(-5,5):0),d.y+(k?rnd(-5,5):0),tg,520,dd_,d.col,{num:false,size:d.shots>1?1.7:2.2});this.h.sfx&&this.h.sfx('drone')}}}
@@ -340,7 +354,10 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
   const cmd=this.en.filter(e=>e.type==='commander'&&e.hp>0);
   for(let i=0;i<n0;i++){const e=this.en[i];if(e.hp<=0)continue;e.flash-=dt;
     if(e.down>0){e.down-=dt;if(e.down<=0){e.down=0;e.cloak=false;this.ring(e.x,e.y,4,e.r*3,e.col,.4,4)}continue}
+    if(e.type==='egg'){e.eggT-=dt;if(e.eggT<=0){for(let j=0;j<EGG_N;j++)this.pend.push(['swarm',e.x+rnd(-14,14),e.y+rnd(-14,14),0]);e.hp=0;this.ring(e.x,e.y,4,40,e.col,.4,4);this.burst(e.x,e.y,10,e.col,160,.4,2)}continue}
+    if(e.type==='phaser'){e.phT-=dt;if(e.phT<=0){e.cloak=!e.cloak;e.phT=e.cloak?PHASE_ON:PHASE_OFF;this.ring(e.x,e.y,e.r*2,4,e.col,.25,2)}}
     if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;
+    if(e.type==='jumper'){e.jT-=dt;if(e.jT<=0&&d>b.r+e.r+30){e.jT=JUMP_CD;const j=Math.min(JUMP_D,d-b.r-e.r-6);this.ring(e.x,e.y,e.r*2,3,e.col,.3,3);e.x-=e.x/d*j;e.y-=e.y/d*j;this.ring(e.x,e.y,3,e.r*2.4,e.col,.3,3);continue}}
     let buff=false;if(cmd.length)for(const c of cmd)if(c!==e&&hyp(c.x-e.x,c.y-e.y)<CMD_R){buff=true;break}
     if(e.type==='ram')e.acc=Math.min(RAM_MAX,e.acc+RAM_ACC*dt);
     if(e.type==='queen'){e.qT-=dt;if(e.qT<=0){e.qT=QUEEN_CD;for(let j=0;j<2;j++)this.pend.push(['swarm',e.x+rnd(-20,20),e.y+rnd(-20,20),0])}}
@@ -409,10 +426,12 @@ useDrop(d){const D=DROPS[d.kind];this.dropN++;this.h.banner&&this.h.banner(D.nam
 updDrops(dt){const B=this.buff;for(const k in B)if(B[k]>0)B[k]-=dt;
   if(B.repair>0){const b=this.base;if(b.hp<b.max)b.hp=Math.min(b.max,b.hp+b.max*DROP_REPAIR*dt)}
   if(this.drops.length){for(const d of this.drops){d.life-=dt;d.t+=dt;d.flash-=dt}this.drops=this.drops.filter(d=>d.life>0)}}
+shaded(x,y){for(const e of this.en)if(e.type==='shade'&&e.hp>0&&hyp(e.x-x,e.y-y)<SHADE_R)return true;return false}
 tap(x,y){if(this.over)return;const S=this.S,n=++this.imps;this.taps=n;
   let dmg=S.tapDmg*S.impMul,beat=false;if(S.beat&&n%BEAT_N===0){dmg*=1+S.beat;beat=true}
   if(S.megaTap&&n%S.megaTap===0){for(const e of this.en)if(e.hp>0)this.hitE(e,dmg*MEGA_MUL,{col:'#ffe14f',big:true});this.ring(0,0,20,Math.max(this.hw,this.hh)*1.4,'#ffe14f',.8,14);this.shake=Math.max(this.shake,12);this.h.sfx&&this.h.sfx('pulse');this.dropTap(null);return 1}const crit=Math.random()<S.tapCrit;if(crit)dmg*=2.5;
   const over=S.overload&&n%10===0;let r=S.tapR;if(over){dmg*=4+2*S.overload;r=Math.max(r,90)}
+  if(this.shaded(x,y))r*=SHADE_MUL;
   const hit=this.aoe(x,y,r,dmg,{col:beat?'#ff4fd8':'#ffffff',crit,big:over||beat});this.dropTap(x,y,r);
   this.ring(x,y,4,r+6,over?'#ff8a3d':beat?'#ff4fd8':'#ffffff',over||beat?.45:.25,over||beat?8:3);if(over){this.shake=Math.max(this.shake,8);this.burst(x,y,24,'#ff8a3d',260,.5)}
   if(S.chain&&hit.length){const f=hit[0];let nx=null,nd=130*130;for(const e of this.en){if(e.hp<=0||hit.includes(e))continue;const d=sq(e.x-f.x)+sq(e.y-f.y);if(d<nd){nd=d;nx=e}}

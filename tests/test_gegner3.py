@@ -14,7 +14,7 @@ with sync_playwright() as p:
     pg.goto(GAME);pg.wait_for_timeout(300)
     sh=pg.evaluate("()=>Object.fromEntries([24,25,39,40,54,55,64,65,79,80].map(w=>[w,WAVE_MIX.filter(t=>waveShare(t,w)>0)]))")
     check('queen' not in sh['24'] and 'queen' in sh['25'] and 'ram' not in sh['39'] and 'ram' in sh['40'] and 'tank' not in sh['54'] and 'tank' in sh['55'] and 'revenant' not in sh['64'] and 'revenant' in sh['65'] and 'commander' not in sh['79'] and 'commander' in sh['80'],'Einstieg: Schwarmkönigin 25, Rammbock 40, Panzer 55, Wiedergänger 65, Kommandant 80')
-    check(pg.evaluate("()=>['queen','ram','tank','revenant','commander'].every(t=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))") and pg.evaluate("()=>CODEX_TYPES.length")==18,'alle fünf stehen in der Enzyklopädie, zusammen 18 Gegnerarten')
+    check(pg.evaluate("()=>['queen','ram','tank','revenant','commander'].every(t=>ETYPES[t].name&&ETYPES[t].text&&CODEX_TYPES.includes(t))") and pg.evaluate("()=>CODEX_TYPES.length")==24,'alle fünf stehen in der Enzyklopädie, zusammen 18 Gegnerarten')
     check(all(pg.evaluate("w=>waveMix(w).reduce((s,x)=>s+x[1],0)",w)<=.8501 for w in (60,100,300)),'auch mit 16 besonderen Typen bleiben mindestens 15 % Schwärmer')
     pg.evaluate("()=>{save.startPick=90;persist()}");pg.click('#bStart');pg.wait_for_timeout(300)
     r=pg.evaluate("""()=>{paused=true;run.noImpulse=true;run.base.max=run.base.hp=1e15;run.queue.length=0;const out={};
