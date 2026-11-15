@@ -141,6 +141,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .dwide{width:100%;padding:10px 12px;font-size:15px;margin-top:6px}.dwide.on{background:rgba(255,138,61,.25);border-color:#ff8a3d}
 #devOut{width:100%;height:160px;font:12px/1.35 ui-monospace,Menlo,monospace;color:var(--ink);background:rgba(5,5,26,.8);border:1px solid var(--line);border-radius:8px;padding:8px;-webkit-user-select:text;user-select:text}
 #perf{position:fixed;left:max(8px,env(safe-area-inset-left,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5;pointer-events:none;font:11px/1.35 ui-monospace,Menlo,monospace;color:#ffe14f;background:rgba(3,3,14,.72);border-radius:6px;padding:4px 7px;white-space:pre}
+html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!important}
 #settings{z-index:6}#settings .mbox{background:#100e30}
 #devCode{display:flex;align-items:center;gap:8px;justify-content:center}#devCode label{color:var(--muted);font-size:14px}#devCode .btn{padding:9px 14px}
 #devIn{width:110px;font:inherit;font-weight:600;text-align:center;letter-spacing:.2em;color:var(--ink);background:rgba(5,5,26,.8);border:1.5px solid #ff8a3d;border-radius:10px;padding:9px 8px;-webkit-user-select:text;user-select:text}#devIn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}#devCode.shake{animation:shake .3s}
@@ -354,7 +355,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.21.1';
+const VERSION='0.21.2';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1628,6 +1629,24 @@ function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);docume
    Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
 const HITCH_MS=28;
 const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
+  /* Ursachensuche: schaltet nacheinander einzelne Teile ab und zählt je Abschnitt die Ruckler. Zeigt, ob Zeichnen, Ton, Animationen oder gar nichts davon schuld ist. */
+  scanRes:null,scanT:0,noDraw:false,
+  scan(sec=8){if(this.scanT)return;const cv=R.cv,pf=$('#perf'),au=on=>{if(Snd.ctx)(on?Snd.ctx.resume():Snd.ctx.suspend()).catch(()=>{})},H=document.documentElement;
+    const ph=[['alles an',()=>{},()=>{}],
+      ['Messanzeige aus',()=>{pf.style.visibility='hidden'},()=>{pf.style.visibility=''}],
+      ['Zeichnen aus',()=>{this.noDraw=true},()=>{this.noDraw=false}],
+      ['Spielfeld unsichtbar',()=>{this.noDraw=true;cv.style.visibility='hidden'},()=>{this.noDraw=false;cv.style.visibility=''}],
+      ['Ton angehalten',()=>au(false),()=>au(true)],
+      ['Animationen aus',()=>H.classList.add('noanim'),()=>H.classList.remove('noanim')],
+      ['alles aus',()=>{this.noDraw=true;cv.style.visibility='hidden';pf.style.visibility='hidden';au(false);H.classList.add('noanim')},()=>{this.noDraw=false;cv.style.visibility='';pf.style.visibility='';au(true);H.classList.remove('noanim')}],
+      ['alles an (Kontrolle)',()=>{},()=>{}]];
+    if(!this.on)this.start();this.scanRes=[];let i=0;
+    const next=()=>{if(i>0){const p=ph[i-1],f=this.fr.slice(this.scanN+40),hits=f.filter(v=>v>HITCH_MS&&v<5000);p[2]();this.scanRes.push({name:p[0],n:f.length,hits:hits.length,max:f.length?Math.max(...f):0,sec})}
+      if(i>=ph.length){this.scanT=0;toast('Ursachensuche fertig');$('#bDev').onclick();return}
+      ph[i][1]();this.scanN=this.fr.length;toast('Ursachensuche '+(i+1)+' von '+ph.length+': '+ph[i][0]);i++;this.scanT=setTimeout(next,sec*1000)};
+    next()},
+  scanText(){if(!this.scanRes||!this.scanRes.length)return'';let o='\nUrsachensuche (je Abschnitt '+this.scanRes[0].sec+' s)\n';
+    for(const r of this.scanRes)o+='  '+r.name.padEnd(22)+String(r.hits).padStart(3)+' Ruckler, '+r.n+' Bilder, längstes '+Math.round(r.max)+' ms\n';return o},
   start(){this.on=true;this.fr=[];this.hit=[];this.t0=performance.now();this.mus=this.sv=0;this.pw=null;$('#perf').hidden=false;$('#perf').textContent='Messung läuft …'},
   stop(){this.on=false;$('#perf').hidden=true},
   frame(now,raw,work){const mus=this.mus,sv=this.sv,pw=this.pw;this.mus=this.sv=0;this.pw=work;
@@ -1642,7 +1661,7 @@ const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
       '\nRuckler (Bild über '+HITCH_MS+' ms): '+H.length+(H.length>1?', mittlerer Abstand '+(gap/(H.length-1)).toFixed(1)+' s':'')+
       '\n\n  Zeit   Bild  Logik Anzeig Zeichn  Musik Speich   Rest | Schritte Gegner Welle Tempo\n';
     for(const h of H.slice(-60))o+=f1(h.t)+f1(h.raw)+f1(h.st)+f1(h.hud)+f1(h.draw)+f1(h.mus)+f1(h.sv)+f1(Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus))+' | '+h.ns+' '+h.en+' '+h.w+' '+h.sp+'×\n';
-    return o+'\nAlle Angaben in Millisekunden. Speichern ist in Logik enthalten. Rest = Zeit außerhalb des Spiels (Browser, System).\n'}};
+    return o+this.scanText()+'\nAlle Angaben in Millisekunden. Speichern ist in Logik enthalten. Rest = Zeit außerhalb des Spiels (Browser, System).\n'}};
 const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
@@ -1693,6 +1712,7 @@ function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curI
   h+=`<h3>Im Run</h3>`+(w1?`<button type="button" class="dwide${save.devShiny?' on':''}" data-dt="devShiny">Schillernder Gegner in jeder Welle: ${save.devShiny?'an':'aus'}</button>`:'')+
     `<button type="button" class="dwide${save.devPerf?' on':''}" data-dt="devPerf">Leistungsmessung: ${save.devPerf?'an':'aus'}</button>`+
     (save.devPerf?`<button type="button" class="dwide" data-dp="copy">Messung kopieren (${Perf.hit.length} Ruckler)</button><button type="button" class="dwide" data-dp="clear">Messung neu beginnen</button>`:'')+
+    `<button type="button" class="dwide" data-dp="scan">Ursachensuche starten (etwa 1 Minute)</button>`+(Perf.scanRes&&Perf.scanRes.length&&!Perf.scanT?`<button type="button" class="dwide" data-dp="copy">Ergebnis kopieren</button><p style="white-space:pre;font:11px/1.4 ui-monospace,Menlo,monospace;overflow-x:auto">${Perf.scanText()}</p>`:'')+
     `<p>Die Testhilfen ändern den Spielstand dieser Seite${STAGE?' ('+STAGE+')':''} und gelten nur, solange der Entwicklermodus an ist.</p>`;
   $('#devBody').innerHTML=h}
 $('#bDev').onclick=()=>{$('#devOut').hidden=true;renderDev();$('#dev').hidden=false};
@@ -1703,6 +1723,7 @@ $('#devBody').addEventListener('click',e=>{const b=e.target.closest('button');if
   else if(d.ds&&!run){save.devStart=+d.ds?clamp((save.devStart||stats(save).startWave)+(+d.ds),1,999):0}
   else if(d.dt){save[d.dt]=!save[d.dt];if(d.dt==='devPerf')save.devPerf?Perf.start():Perf.stop()}
   else if(d.dp==='clear')Perf.start();
+  else if(d.dp==='scan'){save.devPerf=true;persist();$('#dev').hidden=true;$('#settings').hidden=true;Perf.scan();return}
   else if(d.dp==='copy'){const t=Perf.report(),o=$('#devOut'),fail=()=>{o.hidden=false;o.value=t;o.focus();o.select();toast('Text steht unten, bitte markieren und kopieren')};
     try{navigator.clipboard.writeText(t).then(()=>toast('Messung kopiert'),fail)}catch(err){fail()}return}
   else return;
@@ -2148,7 +2169,7 @@ function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf
     hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}
   else if(!run)Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:W.id===2?5:0});
   if(pf)p2=performance.now();
-  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden&&$('#fleet').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
+  if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden&&$('#fleet').hidden&&!Perf.noDraw)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
   if(pf)Perf.frame(now,raw,{st:p1-p0,hud:Math.max(0,p2-p1),draw:performance.now()-p2,ns,en:run?run.en.length:0,w:run?run.w:0,sp:speed});
   requestAnimationFrame(loop)}
 requestAnimationFrame(loop);

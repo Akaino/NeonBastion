@@ -39,6 +39,13 @@ with sync_playwright() as p:
     pg.evaluate("()=>{const a=performance.now();while(performance.now()-a<80);}");pg.wait_for_timeout(300)
     check(pg.evaluate("()=>Perf.hit.length")>=1,'ein künstlicher Hänger wird als Ruckler erfasst')
     pg.screenshot(path='th2_messung.png')
+    # Ursachensuche: läuft die Abschnitte durch und stellt danach alles wieder her
+    pg.evaluate("()=>Perf.scan(.8)");pg.wait_for_timeout(8500)
+    res=pg.evaluate("()=>Perf.scanRes.map(r=>r.name)")
+    check(len(res)==8 and res[0]=='alles an' and res[6]=='alles aus','Ursachensuche hat 8 Abschnitte: '+str(len(res)))
+    check(pg.evaluate("()=>!Perf.noDraw&&R.cv.style.visibility===''&&!document.documentElement.classList.contains('noanim')&&document.querySelector('#perf').style.visibility===''"),'danach ist alles wieder an')
+    check(not hid(pg,'#dev') and 'Ursachensuche' in pg.evaluate("()=>Perf.report()") and 'alles aus' in pg.inner_text('#devBody'),'Ergebnis steht in den Testhilfen und im Bericht')
+    pg.screenshot(path='th3_ursachensuche.png')
     pg.evaluate("()=>{save.dev=false}")
     check(pg.evaluate("()=>{save.devStart=40;return stats(save).startWave}")==1,'nach Beenden des Entwicklermodus keine Wirkung mehr')
     print('\n'.join(errs) or 'no errors');b.close()

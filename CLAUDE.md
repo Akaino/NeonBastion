@@ -224,7 +224,7 @@ Vom Nutzer abgelehnt (nicht erneut vorschlagen): Zähler „So viele spielen ger
 
 ## 8. Fallstricke aus der bisherigen Entwicklung
 
-- **Ruckeln in Safari auf dem Mac (gemeldet 15.11.2026, offen):** etwa alle 2–3 s, auf dem iPhone nicht. Mit Playwright-WebKit nicht nachstellbar (Median 17 ms, Speichern 0–1 ms, auch mit zweitem Tab). Im selben Takt läuft nur das Zwischenspeichern (`pendT>2` in `loop`, schreibt den ganzen Spielstand nach `localStorage`). Erst die Leistungsmessung des Nutzers aus dem echten Safari abwarten, dann beheben.
+- **Ruckeln in Safari auf dem Mac (gemeldet 15.11.2026, offen):** etwa alle 2–3 s, auf dem iPhone nicht. Mit Playwright-WebKit nicht nachstellbar (Median 17 ms, Speichern 0–1 ms, auch mit zweitem Tab). Im selben Takt läuft nur das Zwischenspeichern (`pendT>2` in `loop`, schreibt den ganzen Spielstand nach `localStorage`). Messung des Nutzers (0.21.1, Safari 26.5, Fenster 1716×861, Leinwand 3432×1722): Ruckler von 55–80 ms genau alle 1,06 s, auch im Hub ohne Run, vollständig außerhalb des Spielcodes („Rest“); Logik, Zeichnen, Musik und Speichern je 0–1 ms. Das Speichern ist also nicht die Ursache. Seit 0.21.2 gibt es in den Testhilfen die „Ursachensuche“ (`Perf.scan`): schaltet nacheinander Messanzeige, Zeichnen, Spielfeld, Ton und CSS-Animationen ab und zählt je Abschnitt die Ruckler. Keine Playwright-Fenster mit `headless=False` öffnen – sie erscheinen auf dem Bildschirm des Nutzers.
 
 - **Klicks gehen verloren, wenn ein Knopf per `innerHTML` neu aufgebaut wird**, während er gedrückt ist. HUD-Elemente einmal aufbauen, danach nur `textContent` ändern (siehe `updBuildBtn`, `updPhase`).
 - **Keine Zeitlupe** beim Bauen – fühlt sich wie Lag an. Bauen pausiert stattdessen das Spiel.
