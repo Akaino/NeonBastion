@@ -1,17 +1,22 @@
-# Testliste für Welt 1 (Beta 0.35.0)
+# Testliste für Welt 1 (Beta 0.36.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (37 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (38 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
-## 000. Neu in 0.35.0: Gitterfestung
+## 000. Neu in 0.36.0: Gitterfestung
 
-- [ ] Gitterfestung, Turm bauen oder verschieben: Um die Basis liegt ein schraffierter Ring, in dem kein Turm stehen darf; er wird rot, wenn du hineinzielst. Deutlich genug?
-- [ ] Antippen im Sperrbereich meldet „Zu nah an der Basis“ bzw. „Zu nah an einem anderen Turm“.
-- [ ] In der Gitterfestung gibt es keinen Impuls mehr: kein Kreis am Zeiger, kein Schaden durch den Zeiger.
-- [ ] Im Neon-Sektor ist alles wie vorher (Impuls da, keine Ringe beim Bauen).
+- [ ] Turm bauen oder verschieben: schraffierter Ring um die Basis, wird rot, wenn du hineinzielst. Jetzt auch im Neon-Sektor. Deutlich genug?
+- [ ] In der Gitterfestung gibt es keinen Impuls mehr.
+- [ ] Die Umbauphase nennt die kommende Welle genau (z. B. „17× Brecher, 15× Schwärmer …“). Jede Welle ist immer gleich: gleiche Gegner, gleiche Richtung. Hilft dir die Angabe so, oder willst du alle Arten sehen?
+- [ ] Ab Welle 15 kommen nach und nach die Gegner aus dem Neon-Sektor dazu (Sprinter, Heiler, Springer …).
+- [ ] Betäubte Türme: gelber Bogen läuft ab, Funken, der Turm wirkt 5 Sekunden nicht. Gut erkennbar?
+- [ ] Angreifer auf Türme: Mörser (ab 48), Hacker (68), Scharfschütze (73), Spiegel (78), Giftträger (63, Wolke legt Türme lahm). Fair oder lästig?
+- [ ] Welle 10, 20, 30 …: Der Boss kommt allein und schickt abwechselnd Schwärmer und gelbe Saboteure vor, die zum nächsten Turm laufen und ihn betäuben.
+- [ ] Welle 25, 50, 75, 100: zwei Bosse von gegenüberliegenden Seiten.
+- [ ] Wie schwer fühlt sich die Gitterfestung an? (In der Simulation sind Türme nur selten betäubt, sie ist eher zu leicht.)
 
 ## 00. Neu in 0.34.0: Weltenkarte als Startseite
 

@@ -3,6 +3,7 @@ import { PI, TAU, hyp, rnd, sq } from '../core/util.js';
 import { AIM_STICK, BOOM_T, CELL } from '../data/balance.js';
 import { CUR_IDS } from '../data/currencies.js';
 import { DROP_HASTE } from '../data/drops.js';
+import { ETYPES } from '../data/enemies.js';
 import { runBaseMethods } from './base.js';
 import { runCombatMethods } from './combat.js';
 import { runDronesMethods } from './drones.js';
@@ -85,6 +86,7 @@ export class Run {
     this.droneIdx = 0;
     this.taps = 0;
     this.imps = 0;
+    this.ET = ETYPES; // Gegnertabelle dieser Welt; Run2 setzt seine eigene Kopie ein
     this.killsBy = {};
     this.pend = [];
     this.rushT = 0;

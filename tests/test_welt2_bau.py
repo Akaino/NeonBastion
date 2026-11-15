@@ -1,5 +1,5 @@
 # Gitterfestung (seit 0.35.0): Im Baumodus zeigt das Feld, wo kein Turm stehen darf; es gibt keinen Impuls.
-# Der Neon-Sektor bleibt davon unberührt (Vorgabe: Keine Änderung einer Welt darf eine andere Welt verändern).
+# Den Sperrbereich zeigt seit 0.36.0 auch der Neon-Sektor (vom Nutzer gewünscht); den Impuls behält er.
 import os,sys,json
 HERE=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,HERE);from _web import web
@@ -51,14 +51,14 @@ with sync_playwright() as p:
     for i in range(6):pg.mouse.move(120+i*20,300+i*10);pg.wait_for_timeout(400)
     check(pg.evaluate("()=>run.imps")==0 and pg.evaluate("()=>run.w>=1"),'Gitterfestung: in laufender Welle wird kein Impuls ausgelöst')
     pg.close()
-    # ----- Neon-Sektor: unverändert -----
+    # ----- Neon-Sektor -----
     pg=seite(b,1);pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     pg.click('#bStart');pg.wait_for_timeout(700)
     check(pg.evaluate("()=>run.world===1&&!run.noImpulse"),'Neon-Sektor: Impuls bleibt')
     pg.evaluate("()=>{run.energy=5000;run.base.hp=run.base.max=1e12}");pg.click('#bBuild');pg.wait_for_timeout(200);pg.click('[data-bt="frost"]');pg.wait_for_timeout(250)
-    check(pg.evaluate("()=>R.buildMode")==False,'Neon-Sektor: keine Sperrzonen-Anzeige (Welt 1 bleibt, wie sie ist)')
+    check(pg.evaluate("()=>R.buildMode")==True,'Neon-Sektor: Sperrbereich wird seit 0.36.0 auch hier gezeigt (vom Nutzer so gewünscht)')
     klick(pg,30,30);pg.wait_for_timeout(250)
-    check('Hier kann kein Turm stehen' in pg.inner_text('#toast') and pg.evaluate("()=>run.towers.length")==0,'Neon-Sektor: Meldung wie bisher')
+    check('Zu nah an der Basis' in pg.inner_text('#toast') and pg.evaluate("()=>run.towers.length")==0,'Neon-Sektor: Meldung nennt den Grund')
     pg.evaluate("()=>endBuild()");pg.wait_for_timeout(2600)
     check(pg.evaluate("()=>run.imps")>=1,'Neon-Sektor: Impulse lösen weiter aus')
     print('\n'.join(errs) or 'no errors');b.close()

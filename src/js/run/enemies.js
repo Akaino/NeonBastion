@@ -85,6 +85,7 @@ export const runEnemiesMethods = {
       }
       if (e.frozen > 0) continue;
       e.atkT -= dt;
+      if (e.own && this.ownEnemy(e, dt)) continue;
       const d = hyp(e.x, e.y) || 1;
       if (e.type === 'jumper' && !e.mute) {
         e.jT -= dt;
@@ -137,10 +138,7 @@ export const runEnemiesMethods = {
         spd = e.sp * (e.spMul || 1) * (this.rushT > 0 ? 1.5 : 1) * e.acc * (buff ? CMD_SP : 1);
       if (e.boss) {
         e.sumT -= dt;
-        if (e.sumT <= 0) {
-          e.sumT = 4;
-          for (let j = 0; j < 3; j++) this.spawnEnemy('swarm', false, e.x + rnd(-30, 30), e.y + rnd(-30, 30));
-        }
+        if (e.sumT <= 0) this.bossSummon(e);
         if (e.armorT > 0) e.armorT -= dt;
         // Fähigkeit: erst in Reichweite der Basis, dann aufladen (Boss steht still), dann auslösen
         if (e.cast > 0) {
@@ -207,15 +205,7 @@ export const runEnemiesMethods = {
         e.ang = Math.atan2(-e.y, -e.x);
         if (e.atkT <= 0) {
           e.atkT = MORTAR_CD;
-          let t = null,
-            bd = MORTAR_RANGE * MORTAR_RANGE;
-          for (const a of allies) {
-            const q = sq(a.x - e.x) + sq(a.y - e.y);
-            if (q < bd) {
-              bd = q;
-              t = a;
-            }
-          }
+          const t = this.mortarPick(e, allies);
           if (t) {
             this.zones.push({
               kind: 'shell',
@@ -243,14 +233,7 @@ export const runEnemiesMethods = {
       }
       if (e.type === 'sniper' && d < e.stop) {
         if (e.tgA && (e.tgA.dead > 0 || e.tgA.hp <= 0)) e.tgA = null;
-        if (!e.tgA && e.aimT === 0) {
-          let bh = 0;
-          for (const a of this.heroes)
-            if (!(a.dead > 0) && a.max > bh) {
-              bh = a.max;
-              e.tgA = a;
-            }
-        }
+        if (!e.tgA && e.aimT === 0) e.tgA = this.snipePick(e);
         const tx = e.tgA ? e.tgA.x : 0,
           ty = e.tgA ? e.tgA.y : 0;
         e.ang = Math.atan2(ty - e.y, tx - e.x);
@@ -328,6 +311,40 @@ export const runEnemiesMethods = {
       e.y += (uy + ux * lat) * spd * dt;
       if (!this.headless) e.ang = Math.atan2(uy, ux);
     }
+  },
+  /* Einhängepunkte, die eine Welt überschreiben kann (Run2). Hier steht das Verhalten des Neon-Sektors. */
+  // Gegner mit own = true führt die Welt selbst; true heißt „erledigt, den Rest überspringen“
+  ownEnemy() {
+    return false;
+  },
+  // Nachschub eines Bosses: alle 4 s drei Schwärmer
+  bossSummon(e) {
+    e.sumT = 4;
+    for (let j = 0; j < 3; j++) this.spawnEnemy('swarm', false, e.x + rnd(-30, 30), e.y + rnd(-30, 30));
+  },
+  // Ziel einer Mörsergranate: der nächste Held oder die nächste Drohne in Reichweite
+  mortarPick(e, allies) {
+    let t = null,
+      bd = MORTAR_RANGE * MORTAR_RANGE;
+    for (const a of allies) {
+      const q = sq(a.x - e.x) + sq(a.y - e.y);
+      if (q < bd) {
+        bd = q;
+        t = a;
+      }
+    }
+    return t;
+  },
+  // Ziel eines Scharfschützen: der Held mit dem meisten Leben
+  snipePick() {
+    let t = null,
+      bh = 0;
+    for (const a of this.heroes)
+      if (!(a.dead > 0) && a.max > bh) {
+        bh = a.max;
+        t = a;
+      }
+    return t;
   },
   // Fähigkeit eines Bosses auslösen (dm = sein aktueller Schaden, allies = lebende Helden und Drohnen)
   bossAbility(e, dm, allies) {

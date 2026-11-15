@@ -628,4 +628,4 @@ function probe(job) {
     baseLeft: r.base.hp / r.base.max,
   };
 }
-module.exports = { prepare, simulate, benchmark, probe, candidates, WEIGHT };
+module.exports = { prepare, loadGame, simulate, benchmark, probe, candidates, WEIGHT };

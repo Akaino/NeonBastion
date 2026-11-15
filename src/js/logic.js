@@ -13,6 +13,7 @@ export * from './data/drones.js';
 export * from './core/save.js';
 export * from './core/stats.js';
 export * from './world2/data.js';
+export * from './world2/enemies.js';
 export * from './world2/nodes.js';
 export * from './world2/save.js';
 export * from './world2/stats.js';

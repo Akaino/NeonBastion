@@ -118,7 +118,7 @@ export const runWavesMethods = {
     return [-W, H - u];
   },
   spawnEnemy(type, elite, x, y, shiny) {
-    const T = ETYPES[type],
+    const T = this.ET[type],
       w = this.w,
       hm = this.hpScale(w),
       dm = this.dmgScale(w);
@@ -200,6 +200,7 @@ export const runWavesMethods = {
       psn: 0,
       psT: 0,
       acid: 0,
+      own: false, // true: die Welt führt diesen Gegner selbst (ownEnemy), z. B. der Saboteur der Gitterfestung
     });
     if (type === 'shield') {
       const e = this.en[this.en.length - 1];

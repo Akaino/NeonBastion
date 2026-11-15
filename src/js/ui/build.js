@@ -314,14 +314,13 @@ $('#cv').addEventListener('pointerup', e => {
     endBuild();
   } else {
     Snd.play('no');
-    // Die genaueren Gründe nennt nur die Gitterfestung; der Neon-Sektor bleibt, wie er ist
-    const why = run.placeBlock(x, y);
     toast(
-      !why
-        ? 'Nicht genug Energie'
-        : run.world === 2
-          ? { base: 'Zu nah an der Basis', tower: 'Zu nah an einem anderen Turm', edge: 'Außerhalb des Felds' }[why]
-          : 'Hier kann kein Turm stehen',
+      {
+        '': 'Nicht genug Energie',
+        base: 'Zu nah an der Basis',
+        tower: 'Zu nah an einem anderen Turm',
+        edge: 'Außerhalb des Felds',
+      }[run.placeBlock(x, y)],
     );
     if (e.pointerType !== 'mouse') R.ghost = null;
   }

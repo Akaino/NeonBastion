@@ -22,6 +22,9 @@ if (!isMainThread) {
       parentPort.postMessage({ type: 'bench', id: msg.id, res: bot.benchmark(msg.job) });
     } else if (msg.type === 'probe') {
       parentPort.postMessage({ type: 'probe', res: bot.probe(msg.job) });
+    } else if (msg.type === 'welt2') {
+      const w2 = require('./welt2.js');
+      parentPort.postMessage({ type: 'welt2', res: msg.job.stand != null ? w2.probe2(msg.job) : w2.career2(msg.job) });
     }
   });
   return;
@@ -38,7 +41,7 @@ if (argv.includes('--hilfe') || argv.includes('--help')) {
   console.log(`
 Neon Bastion – Balancing-Simulation
 
-  node sim.js [karriere|upgrades|aeste|probe] [Optionen]
+  node sim.js [karriere|upgrades|aeste|probe|welt2] [Optionen]
 
 Karriere (Standard): komplette Spielerkarriere, bis Welle --ziel
   --seeds 4          Anzahl paralleler Simulationen (verschiedene Zufallswerte)
@@ -67,6 +70,18 @@ Probe (probe): derselbe Spielstand spielt wenige Runs, wahlweise gegen zwei Fass
   --runs 10          Runs je Spielstand und Fassung
   --gegen ORDNER     zweiter src-Ordner zum Vergleich, z. B. nach „git worktree add /tmp/alt v0.14.1“ der Ordner /tmp/alt/src
   --neu              Spielstände neu erspielen
+
+Gitterfestung (welt2): Karriere in Welt 2 mit mehreren Aufstellungen im Vergleich. Wellen und Richtungen stehen dort fest.
+  --varianten richtung:80,richtung:130,ring:80,ring:130   Bauweise:Abstand zum Kern. richtung = Türme stehen vor der angekündigten
+                     Richtung und ziehen in der Umbauphase um; ring = gleichmäßig um den Kern, kein Umzug
+  --tuerme laser,frost,rocket,tesla,weak,cryo   Reihenfolge, in der gebaut wird (auch: welche Türme der Bot überhaupt nutzt)
+  --aeste kwul       erlaubte Äste des Skilltrees (k Kern, w Waffen, u Unterstützung, l Logistik)
+  --ausbau billig    Ausbau im Run: billig (günstigster Turm) oder schaden (erst Schadenstürme)
+  --seeds 2          Durchläufe je Variante
+  --stunden 6        Spielzeit (1×) je Durchlauf
+  --ziel 100         Zielwelle
+  --bauzeit 8        Sekunden, die ein Mensch je Umbauphase braucht
+  --stand 50         statt Karriere eine Probe: Knoten und Turmstufen auf so viel Prozent ihres Höchstwerts, --runs Runs je Variante
 
 Allgemein
   --kerne N          Anzahl Prozessorkerne (Standard: alle außer einem)
@@ -489,7 +504,83 @@ async function probe() {
   console.log('\n' + md);
 }
 
-(({ upgrades, aeste, probe })[mode] || karriere)().catch(e => {
+/* ---------- Gitterfestung ---------- */
+async function welt2() {
+  const vars = arg('varianten', 'richtung:80,richtung:130,ring:80,ring:130').split(','),
+    seeds = +arg('seeds', 2),
+    stand = arg('stand', null),
+    common = {
+      tuerme: arg('tuerme', 'laser,frost,rocket,tesla,weak,cryo').split(','),
+      aeste: arg('aeste', null),
+      ausbau: arg('ausbau', 'billig'),
+      sparen: !argv.includes('--nichtsparen'),
+      ziel: +arg('ziel', 100),
+      stunden: +arg('stunden', 6),
+      maxruns: +arg('maxruns', 400),
+      bauzeit: +arg('bauzeit', 8),
+      pause: +arg('pause', 20),
+      runs: +arg('runs', 6),
+      dt: base.dt,
+      maxRunSec: 6 * 3600,
+    };
+  const P = pool(Math.min(CORES, vars.length * seeds)),
+    jobs = [];
+  for (const v of vars)
+    for (let s = 0; s < seeds; s++) {
+      const [bau, abstand] = v.split(':');
+      jobs.push({
+        ...common,
+        name: v,
+        bau,
+        abstand: +abstand || 90,
+        seed: 1000 + s * 7919,
+        ...(stand != null ? { stand: +stand } : {}),
+      });
+    }
+  console.log(
+    `Gitterfestung: ${vars.length} Varianten × ${seeds} Durchläufe auf ${Math.min(CORES, jobs.length)} Kernen …`,
+  );
+  const res = (await Promise.all(jobs.map(job => P.run({ type: 'welt2', job })))).map(m => m.res);
+  P.close();
+  const avg = a => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+  let md = `# Gitterfestung – Vergleich der Aufstellungen\n\nTürme in dieser Reihenfolge: ${common.tuerme.join(', ')} · Äste: ${common.aeste || 'alle'} · Ausbau: ${common.ausbau} · ${seeds} Durchläufe je Variante\n\n`;
+  if (stand != null) {
+    md += `Probe: Knoten und Turmstufen auf ${stand} % ihres Höchstwerts, ${common.runs} Runs je Durchlauf.\n\n| Variante | Ø Welle | von – bis | Ø Dauer | Betäubungen je Run | Türme im Mittel außer Gefecht |\n|---|---|---|---|---|---|\n`;
+    for (const v of vars) {
+      const rs = res.filter(r => r.job.name === v).flatMap(r => r.runs),
+        w = rs.map(r => r.w);
+      md += `| ${v} | ${avg(w).toFixed(1)} | ${Math.min(...w)} – ${Math.max(...w)} | ${fmtT(avg(rs.map(r => r.sec)))} | ${avg(rs.map(r => r.stuns)).toFixed(0)} | ${((100 * avg(rs.map(r => r.downT))) / avg(rs.map(r => r.sec * Math.max(1, r.towers)))).toFixed(1)} % |\n`;
+    }
+  } else {
+    const marks = [10, 20, 25, 30, 40, 50, 60, 75, 100].filter(m => m <= common.ziel);
+    md += `Karriere: ${common.stunden} h Spielzeit (1×) oder bis Welle ${common.ziel}.\n\n| Variante | Rekord (Durchläufe) | Runs | ${marks.map(m => 'Welle ' + m).join(' | ')} | Türme außer Gefecht |\n|---|---|---|${marks.map(() => '---').join('|')}|---|\n`;
+    let csv = 'variante;seed;run;welle;spielzeit_s;schaltkreise;matrixchips;betaeubungen\n';
+    for (const v of vars) {
+      const rs = res.filter(r => r.job.name === v);
+      md += `| ${v} | ${median(rs.map(r => r.best))} (${rs.map(r => r.best).join(', ')}) | ${Math.round(avg(rs.map(r => r.runs)))} | ${marks
+        .map(m => {
+          const t = rs.filter(r => r.marks[m]).map(r => r.marks[m].sec);
+          return t.length ? fmtT(avg(t)) + (t.length < rs.length ? ` (${t.length}/${rs.length})` : '') : '–';
+        })
+        .join(' | ')} | ${avg(rs.map(r => r.downPct)).toFixed(1)} % |\n`;
+      for (const r of rs)
+        for (const x of r.rows) csv += `${v};${r.job.seed};${x.run};${x.w};${x.sec};${x.c};${x.m};${x.stuns}\n`;
+    }
+    const sp = {};
+    for (const r of res) for (const k in r.spend) sp[k] = (sp[k] || 0) + r.spend[k];
+    const tot = Object.values(sp).reduce((a, b) => a + b, 0) || 1;
+    md += `\nAusgaben über alle Varianten (Matrixchips mit 40 Schaltkreisen gewichtet): ${Object.keys(sp)
+      .sort()
+      .map(k => k + ' ' + ((100 * sp[k]) / tot).toFixed(0) + ' %')
+      .join(' · ')}\n`;
+    fs.writeFileSync(path.join(OUT, 'welt2_runs.csv'), csv);
+  }
+  md += `\nRechenzeit ${wall()}.\n`;
+  fs.writeFileSync(path.join(OUT, 'welt2.md'), md);
+  console.log('\n' + md);
+}
+
+(({ upgrades, aeste, probe, welt2 })[mode] || karriere)().catch(e => {
   console.error(e);
   process.exit(1);
 });

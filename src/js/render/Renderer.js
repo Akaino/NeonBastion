@@ -552,7 +552,7 @@ export class Renderer {
     }
     // hp bars for damaged big ones
     for (const e of run.en) {
-      if (e.boss || e.hp >= e.max || (!e.elite && !ETYPES[e.type].bar)) continue;
+      if (e.boss || e.hp >= e.max || (!e.elite && !(run.ET || ETYPES)[e.type].bar)) continue;
       const w = e.r * 2.2,
         f = Math.max(0, e.hp / e.max),
         y = e.y - e.r * 1.5 - 6;

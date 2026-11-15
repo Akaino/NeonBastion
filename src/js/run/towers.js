@@ -131,7 +131,8 @@ export const runTowersMethods = {
       if (T.type === 'mute') continue;
       T.pulse += dt;
       T.born += dt;
-      T.jam = jam.length > 0 && jam.some(j => hyp(j.x - T.x, j.y - T.y) < JAM_R);
+      // T.stun: Betäubung durch Angreifer – gibt es nur in der Gitterfestung, im Neon-Sektor bleibt das Feld leer
+      T.jam = (jam.length > 0 && jam.some(j => hyp(j.x - T.x, j.y - T.y) < JAM_R)) || T.stun > 0;
       if (T.jam) continue;
       const r2 = T.r * T.r;
       if (T.type === 'mark') {

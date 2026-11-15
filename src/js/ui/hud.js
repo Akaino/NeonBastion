@@ -209,23 +209,23 @@ export function updPhase() {
     return;
   }
   pb.hidden = false;
-  const p = run.preview,
-    T = ['swarm', 'brute', 'shooter', 'boss'],
-    N = {
-      swarm: 'Schwärmer',
-      brute: 'Brecher',
-      shooter: 'Schützen',
-      boss: 'Boss',
-    };
+  const p = run.preview;
   const dirName = a => {
     const d = ((a * 180) / PI + 360 + 90) % 360;
     return ['Norden', 'Nordosten', 'Osten', 'Südosten', 'Süden', 'Südwesten', 'Westen', 'Nordwesten'][
       Math.round(d / 45) % 8
     ];
   };
-  const comp = T.filter(t => p.types[t])
-    .map(t => (t === 'boss' ? 'Boss' : `${p.types[t]} ${N[t]}`))
-    .join(', ');
+  // Die Welle steht fest: die häufigsten Arten nennen, den Rest zusammenfassen
+  const ts = Object.keys(p.types).sort((a, b) => p.types[b] - p.types[a]),
+    comp = p.twin
+      ? 'Doppelboss, schickt Einheiten vor'
+      : p.boss
+        ? 'Boss, schickt Einheiten vor'
+        : ts
+            .slice(0, 4)
+            .map(t => `${p.types[t]}× ${run.ET[t].name}`)
+            .join(', ') + (ts.length > 4 ? ` und ${ts.length - 4} weitere Arten` : '');
   const key = run.phase + ':' + p.w;
   if (pb.dataset.key !== key) {
     pb.dataset.key = key;

@@ -107,7 +107,7 @@ export function loop(now) {
     $('#fleet').hidden &&
     !Perf.noDraw
   )
-    R.buildMode = !!run && run.world === 2 && !run.over && placing(); // nur Gitterfestung
+    R.buildMode = !!run && !run.over && placing();
   R.frame(run, paused ? 0 : run && buildPaused() ? dt * 0.15 : dt * (run ? speed : 1));
   if (pf)
     Perf.frame(now, raw, {

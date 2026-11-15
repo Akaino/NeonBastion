@@ -3,7 +3,6 @@ import { TAU, hyp, rnd, sq } from '../core/util.js';
 import { ENGI_ENERGY } from '../data/balance.js';
 import {
   EGG_HP,
-  ETYPES,
   GAS_DUR,
   GAS_R,
   MIRROR_CD,
@@ -156,7 +155,7 @@ export const runCombatMethods = {
     if (e.shiny) {
       kb['shiny:' + e.type] = (kb['shiny:' + e.type] || 0) + 1;
       this.ring(e.x, e.y, e.r, e.r * 5, '#ffffff', 0.7, 8);
-      this.h.banner && this.h.banner('Schillernd!', ETYPES[e.type].name + ' besiegt');
+      this.h.banner && this.h.banner('Schillernd!', this.ET[e.type].name + ' besiegt');
       this.h.sfx && this.h.sfx('abil');
     }
     if (e.type === 'brooder') this.pend.push(['egg', e.x, e.y, e.max * EGG_HP]);

@@ -114,6 +114,28 @@ export const rendererTowersMethods = {
       if (T.jam) c.globalAlpha = 0.3;
       this.draw(this.towerSprite(T.type, T.col), T.x, T.y, rot, pop);
       c.globalAlpha = 1;
+      // Betäubt (Gitterfestung): gelber Bogen läuft ab, darüber zucken Funken
+      if (T.stun > 0) {
+        c.strokeStyle = '#ffe14f';
+        c.lineWidth = 2.5;
+        c.globalAlpha = 0.9;
+        c.beginPath();
+        c.arc(T.x, T.y, 19, -PI / 2, -PI / 2 + TAU * clamp(T.stun / (T.stun0 || T.stun), 0, 1));
+        c.stroke();
+        c.lineWidth = 1.5;
+        c.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = this.t * 5 + (k * TAU) / 3,
+            x = T.x + Math.cos(a) * 11,
+            y = T.y + Math.sin(a) * 11;
+          c.moveTo(x - 3, y - 4);
+          c.lineTo(x + 1, y - 1);
+          c.lineTo(x - 1, y + 1);
+          c.lineTo(x + 3, y + 4);
+        }
+        c.stroke();
+        c.globalAlpha = 1;
+      }
     }
     const sel = this.selTower;
     if (sel && run.towers.includes(sel)) {

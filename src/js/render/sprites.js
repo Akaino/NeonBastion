@@ -497,6 +497,32 @@ export const rendererSpritesMethods = {
         c.beginPath();
         c.arc(r * 0.25, 0, r * 0.2, 0, TAU);
         c.fill();
+      } else if (type === 'sabo') {
+        // Saboteur (nur Gitterfestung): Raute mit Blitz
+        this.neon(
+          c,
+          K,
+          c => {
+            c.beginPath();
+            c.moveTo(r * 1.3, 0);
+            c.lineTo(0, -r * 0.9);
+            c.lineTo(-r * 1.1, 0);
+            c.lineTo(0, r * 0.9);
+            c.closePath();
+          },
+          C,
+          2,
+          10,
+          F,
+        );
+        c.strokeStyle = C;
+        c.lineWidth = 1.6;
+        c.beginPath();
+        c.moveTo(r * 0.5, -r * 0.35);
+        c.lineTo(-r * 0.1, r * 0.1);
+        c.lineTo(r * 0.15, r * 0.1);
+        c.lineTo(-r * 0.5, r * 0.4);
+        c.stroke();
       } else if (type === 'mortar') {
         this.neon(
           c,

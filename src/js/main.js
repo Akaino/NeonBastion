@@ -13,6 +13,7 @@ import './data/drones.js';
 import './core/save.js';
 import './core/stats.js';
 import './world2/data.js';
+import './world2/enemies.js';
 import './world2/nodes.js';
 import './world2/save.js';
 import './world2/stats.js';
