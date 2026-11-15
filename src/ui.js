@@ -28,7 +28,26 @@ const WORLDS={
 let W=WORLDS[save.world===2&&w2Unlocked(save)?2:1];
 function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);document.documentElement.dataset.wtheme=id;selNode='root'}
 /* ---------- helpers ---------- */
-const persist=()=>Store.save(save);
+/* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
+   Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
+const HITCH_MS=28;
+const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
+  start(){this.on=true;this.fr=[];this.hit=[];this.t0=performance.now();this.mus=this.sv=0;this.pw=null;$('#perf').hidden=false;$('#perf').textContent='Messung läuft …'},
+  stop(){this.on=false;$('#perf').hidden=true},
+  frame(now,raw,work){const mus=this.mus,sv=this.sv,pw=this.pw;this.mus=this.sv=0;this.pw=work;
+    if(this.fr.length<60000)this.fr.push(raw);
+    if(raw>HITCH_MS&&raw<5000&&pw&&this.hit.length<400)this.hit.push({t:(now-this.t0)/1000,raw,st:pw.st,hud:pw.hud,draw:pw.draw,mus,sv,ns:pw.ns,en:pw.en,w:pw.w,sp:pw.sp});
+    if(now-this.lastUi>500){this.lastUi=now;const n=Math.min(this.fr.length,60);let s=0;for(let i=this.fr.length-n;i<this.fr.length;i++)s+=this.fr[i];const h=this.hit[this.hit.length-1];
+      $('#perf').textContent=(n?Math.round(1000*n/s):0)+' Bilder/s · Ruckler '+this.hit.length+(h?'\nletzter '+Math.round(h.raw)+' ms: Spiel '+(h.st+h.hud+h.draw+h.mus).toFixed(0)+', Rest '+Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus).toFixed(0):'')}},
+  report(){const f=this.fr.slice().sort((a,b)=>a-b),n=f.length,q=p=>n?f[Math.min(n-1,Math.floor(n*p))].toFixed(1):'–',H=this.hit,f1=v=>v.toFixed(1).padStart(6);
+    let gap=0;for(let i=1;i<H.length;i++)gap+=H[i].t-H[i-1].t;
+    let o='Neon Bastion Leistungsmessung '+VERSION+(STAGE?' '+STAGE:'')+'\n'+navigator.userAgent+'\nFenster '+innerWidth+'×'+innerHeight+', Pixelverhältnis '+(window.devicePixelRatio||1)+', Leinwand '+R.cv.width+'×'+R.cv.height+
+      '\nDauer '+((performance.now()-this.t0)/1000).toFixed(0)+' s, '+n+' Bilder, Median '+q(.5)+' ms, 99 %: '+q(.99)+' ms, längstes '+q(1)+' ms'+
+      '\nRuckler (Bild über '+HITCH_MS+' ms): '+H.length+(H.length>1?', mittlerer Abstand '+(gap/(H.length-1)).toFixed(1)+' s':'')+
+      '\n\n  Zeit   Bild  Logik Anzeig Zeichn  Musik Speich   Rest | Schritte Gegner Welle Tempo\n';
+    for(const h of H.slice(-60))o+=f1(h.t)+f1(h.raw)+f1(h.st)+f1(h.hud)+f1(h.draw)+f1(h.mus)+f1(h.sv)+f1(Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus))+' | '+h.ns+' '+h.en+' '+h.w+' '+h.sp+'×\n';
+    return o+'\nAlle Angaben in Millisekunden. Speichern ist in Logik enthalten. Rest = Zeit außerhalb des Spiels (Browser, System).\n'}};
+const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
 function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
@@ -67,14 +86,38 @@ $('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStora
 $('#bSet').onclick=openSettings;$('#bPSet').onclick=openSettings;
 $('#bSetClose').onclick=()=>{$('#settings').hidden=true};
 $('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
-function updW2Btn(){const b=$('#bW2Test');b.textContent=save.w2test?'Test-Freischaltung Gitterfestung: an':'Gitterfestung testweise freischalten';b.hidden=!save.dev||!!run||(save.best||0)>=100;$('#bDevOff').hidden=!save.dev||!!run}
+function updW2Btn(){const b=$('#bW2Test');b.textContent=save.w2test?'Test-Freischaltung Gitterfestung: an':'Gitterfestung testweise freischalten';b.hidden=!save.dev||!!run||(save.best||0)>=100;$('#bDevOff').hidden=!save.dev||!!run;$('#bDev').hidden=!save.dev}
+/* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
+function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curIds.concat(w1?['q']:[]),val=c=>c==='q'?save.q||0:ws.cur[c]||0;
+  const btn=(a,l)=>`<button type="button" ${a}>${l}</button>`;let h='';
+  if(!run){h+=`<h3>Ressourcen · ${W.name}</h3>`+ids.map(c=>`<div class="drow"><span class="cur">${curIcon(c)}<span>${CUR[c].name}</span></span><b>${fmtN(val(c))}</b><span class="dbtn">${btn(`data-dc="${c}" data-op="k"`,'+1 Tsd.')}${btn(`data-dc="${c}" data-op="m"`,'+1 Mio.')}${btn(`data-dc="${c}" data-op="x"`,'×100')}${btn(`data-dc="${c}" data-op="0"`,'0')}</span></div>`).join('');
+    h+=`<h3>Fortschritt</h3><div class="drow"><span>Rekordwelle</span><b>${ws.best||0}</b><span class="dbtn">${[-25,-5,5,25].map(d=>btn(`data-db="${d}"`,(d>0?'+':'−')+Math.abs(d))).join('')}</span></div>`;
+    if(w1)h+=`<div class="drow"><span>Startwelle</span><b>${save.devStart||'normal ('+S.startWave+')'}</b><span class="dbtn">${[-10,-1,1,10].map(d=>btn(`data-ds="${d}"`,(d>0?'+':'−')+Math.abs(d))).join('')}${btn('data-ds="0"','normal')}</span></div>`}
+  else h+='<p>Ressourcen, Rekord und Startwelle lassen sich nur außerhalb eines Runs ändern.</p>';
+  h+=`<h3>Im Run</h3>`+(w1?`<button type="button" class="dwide${save.devShiny?' on':''}" data-dt="devShiny">Schillernder Gegner in jeder Welle: ${save.devShiny?'an':'aus'}</button>`:'')+
+    `<button type="button" class="dwide${save.devPerf?' on':''}" data-dt="devPerf">Leistungsmessung: ${save.devPerf?'an':'aus'}</button>`+
+    (save.devPerf?`<button type="button" class="dwide" data-dp="copy">Messung kopieren (${Perf.hit.length} Ruckler)</button><button type="button" class="dwide" data-dp="clear">Messung neu beginnen</button>`:'')+
+    `<p>Die Testhilfen ändern den Spielstand dieser Seite${STAGE?' ('+STAGE+')':''} und gelten nur, solange der Entwicklermodus an ist.</p>`;
+  $('#devBody').innerHTML=h}
+$('#bDev').onclick=()=>{$('#devOut').hidden=true;renderDev();$('#dev').hidden=false};
+$('#bDevClose').onclick=()=>{$('#dev').hidden=true;persist();if(!run)renderHub();updW2Btn()};
+$('#devBody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!save.dev)return;const d=b.dataset,ws=W.s();
+  if(d.dc&&!run){const q=d.dc==='q',v=q?save.q||0:ws.cur[d.dc]||0,n=d.op==='k'?v+1e3:d.op==='m'?v+1e6:d.op==='x'?Math.max(100,v*100):0;if(q)save.q=n;else ws.cur[d.dc]=n}
+  else if(d.db&&!run){ws.best=clamp((ws.best||0)+(+d.db),0,999);ws.cycleBest=ws.best}
+  else if(d.ds&&!run){save.devStart=+d.ds?clamp((save.devStart||stats(save).startWave)+(+d.ds),1,999):0}
+  else if(d.dt){save[d.dt]=!save[d.dt];if(d.dt==='devPerf')save.devPerf?Perf.start():Perf.stop()}
+  else if(d.dp==='clear')Perf.start();
+  else if(d.dp==='copy'){const t=Perf.report(),o=$('#devOut'),fail=()=>{o.hidden=false;o.value=t;o.focus();o.select();toast('Text steht unten, bitte markieren und kopieren')};
+    try{navigator.clipboard.writeText(t).then(()=>toast('Messung kopiert'),fail)}catch(err){fail()}return}
+  else return;
+  Snd.play('buy');persist();renderDev()});
 /* ---------- Entwicklermodus: 7× auf die Version tippen, dann Code eingeben ---------- */
 let devTaps=0,devT=0;const devHash=s=>{let h=5381;for(const c of s)h=(h*33^c.charCodeAt(0))>>>0;return h};
 $('#setVer').onclick=()=>{if(run||save.dev)return;const n=Date.now();devTaps=n-devT<2000?devTaps+1:1;devT=n;if(devTaps>=7){devTaps=0;const d=$('#devCode');d.classList.remove('shake');d.hidden=false;$('#devIn').value='';$('#devIn').focus()}};
 function devTry(){const d=$('#devCode');if(d.hidden)return;if(devHash($('#devIn').value.trim())===2085854505){d.hidden=true;save.dev=true;persist();updW2Btn();Snd.play('buy');toast('Entwicklermodus aktiv')}
   else{Snd.play('no');toast('Falscher Code');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');setTimeout(()=>{d.hidden=true;d.classList.remove('shake')},350)}}
 $('#bDevOk').onclick=devTry;$('#devIn').addEventListener('keydown',e=>{if(e.key==='Enter')devTry()});
-$('#bDevOff').onclick=()=>{save.dev=false;persist();updW2Btn();toast('Entwicklermodus beendet')};
+$('#bDevOff').onclick=()=>{save.dev=false;Perf.stop();persist();updW2Btn();toast('Entwicklermodus beendet')};
 $('#bReset').onclick=()=>{const b=$('#bReset');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Wirklich alles löschen? Nochmal tippen';Snd.play('no');setTimeout(()=>{if(b.dataset.arm){b.dataset.arm='';b.textContent='Spielstand zurücksetzen'}},4000);return}
   save=freshSave();setWorld(1);persist();$('#settings').hidden=true;goHub();toast('Spielstand wurde zurückgesetzt')};
 $('#bNova').onclick=()=>{show('nova');renderNova()};
@@ -496,15 +539,20 @@ R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
 $$('.ver').forEach(e=>e.textContent='Version '+VERSION+(STAGE?' '+STAGE:''));save.ver=VERSION;
 if(!save.ach){save.ach={};for(const a of ACH)save.ach[a.id]=achTier(a);persist()}
 goHub();
+{const mt=Music.tick.bind(Music);Music.tick=()=>{if(!Perf.on)return mt();const a=performance.now();mt();Perf.mus+=performance.now()-a}}
+if(save.dev&&save.devPerf)Perf.start();
 let last=performance.now(),acc=0,hudT=0,pendT=0;
-function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf=Perf.on,p0=pf?performance.now():0;let p1=p0,p2=p0,ns=0;
   if(run&&!paused&&run.world===2&&!buildPaused())run.tickBuild(dt);
-  if(run&&!paused){run.hw=R.hwe;run.hh=R.hhe;acc+=buildPaused()?0:dt*speed;let n=0;while(acc>=1/60&&n<20){run.step(1/60);acc-=1/60;n++}if(n>=20)acc=0;
+  if(run&&!paused){run.hw=R.hwe;run.hh=R.hhe;acc+=buildPaused()?0:dt*speed;let n=0;while(acc>=1/60&&n<20){run.step(1/60);acc-=1/60;n++}if(n>=20)acc=0;ns=n;
     if(run.over&&buildPaused())endBuild();
     if(run.over&&run.overT>1.6&&!endShown)showEnd();
     pendT+=dt;if(pendT>2&&!run.over){pendT=0;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w};persist()}
+    if(pf)p1=performance.now();
     hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}
   else if(!run)Music.set({menu:true,E:0,W:0,danger:0,boss:false,tr:W.id===2?5:0});
+  if(pf)p2=performance.now();
   if($('#tree').hidden&&$('#heroes').hidden&&$('#nova').hidden&&$('#towers').hidden&&$('#codex').hidden&&$('#achv').hidden&&$('#fleet').hidden)R.frame(run,paused?0:run&&buildPaused()?dt*.15:dt*(run?speed:1));
+  if(pf)Perf.frame(now,raw,{st:p1-p0,hud:Math.max(0,p2-p1),draw:performance.now()-p2,ns,en:run?run.en.length:0,w:run?run.w:0,sp:speed});
   requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
