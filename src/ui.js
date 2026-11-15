@@ -166,7 +166,7 @@ function renderFleet(){renderCurs();const S=stats(save),sum=fleetSum(),F=save.fl
         rows.push(['Leben',fv(S.droneHp*lm*D.hp),fv(S.droneHp*lm1*D.hp)]);prev=cmpRows(rows,D.col);
         const [c,a]=droneLvlCost(st.l);act=`<button class="btn ${canPay(c,a)?'':'poor'}" data-fl="${id}" style="--c:${D.col}">${costBtn('Aufwerten',c,a)}</button>`}
       else act='<button class="btn" disabled>Maximal ausgebaut</button>';
-      share=`<div class="fshare"><span>Anteil an der Flotte</span><span style="display:flex;align-items:center;gap:8px"><button class="btn icon sm" data-fp="${id}:-10" aria-label="Anteil ${D.name} verringern">−</button><b>${st.p} %</b><button class="btn icon sm" data-fp="${id}:10" aria-label="Anteil ${D.name} erhöhen">+</button></span></div>`}
+      share=`<div class="fshare"><span>Anteil an der Flotte</span><span style="display:flex;align-items:center;gap:8px"><button class="btn icon sm" data-fp="${id}:-5" aria-label="Anteil ${D.name} verringern">−</button><b>${st.p} %</b><button class="btn icon sm" data-fp="${id}:5" aria-label="Anteil ${D.name} erhöhen">+</button></span></div>`}
     else if(typeof D.unlock==='string')act=`<button class="btn poor" disabled>Im Skilltree: „${NODES[D.unlock].name}“</button>`;
     else{const [c,a]=D.unlock;act=`<button class="btn ${canPay(c,a)?'':'poor'}" data-fu="${id}" style="--c:${D.col}">${costBtn('Freischalten',c,a)}</button>`}
     return `<article class="hcard ${un?'':'lock'}" style="--c:${D.col}"><div class="hc-top"><canvas data-d="${id}" width="112" height="112"></canvas><div><h3>${D.name}</h3><small>${D.role}</small></div>

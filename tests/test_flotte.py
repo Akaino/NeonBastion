@@ -25,17 +25,17 @@ with sync_playwright() as p:
     k0=pg.evaluate("()=>save.cur.k");pg.click('[data-fu="abfang"]');pg.wait_for_timeout(150)
     f=pg.evaluate("()=>save.fleet");check(f['abfang']['u']==1 and pg.evaluate("()=>save.cur.k")==k0-8 and [f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[80,0,20],'Abfänger freigeschaltet für 8 Kerne, startet mit 0 %, die anderen bleiben: '+str([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]))
     # Plus geht nur mit freien Prozenten; nichts wird automatisch angepasst
-    pg.click('[data-fp="abfang:10"]');pg.wait_for_timeout(100)
+    pg.click('[data-fp="abfang:5"]');pg.wait_for_timeout(100)
     f=pg.evaluate("()=>save.fleet");check([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[80,0,20] and 'Schon 100 % verteilt' in pg.inner_text('#toast'),'bei 100 % verteilt lässt sich nichts erhöhen, Hinweis erscheint')
-    pg.click('[data-fp="jaeger:-10"]');pg.click('[data-fp="jaeger:-10"]');pg.click('[data-fp="abfang:10"]');pg.wait_for_timeout(100)
+    [pg.click('[data-fp="jaeger:-5"]') for i in range(4)];pg.click('[data-fp="abfang:5"]');pg.click('[data-fp="abfang:5"]');pg.wait_for_timeout(100)
     f=pg.evaluate("()=>save.fleet");ps=[f[i]['p'] for i in ('jaeger','abfang','kreuzer')]
     check(ps==[60,10,20] and '90 %' in pg.inner_text('#fbar') and '10 % frei' in pg.inner_text('#fbar') and 'Anteil an der Flotte' in pg.inner_text('#flist'),'Verringern macht Prozente frei, die Anzeige nennt verteilt und frei: '+str(ps))
     for cls in ('jaeger','abfang','kreuzer'):
-        for i in range(12):pg.click('[data-fp="%s:-10"]'%cls)
+        for i in range(20):pg.click('[data-fp="%s:-5"]'%cls)
     f=pg.evaluate("()=>save.fleet");check(all(f[i]['p']==0 for i in ('jaeger','abfang','kreuzer')) and 'nur Jäger' in pg.inner_text('#fbar'),'alle Klassen lassen sich auf 0 % stellen, dann baut die Basis nur Jäger')
-    for cls,n in (('jaeger',2),('abfang',2),('kreuzer',2)):
-        for i in range(n):pg.click('[data-fp="%s:10"]'%cls)
-    f=pg.evaluate("()=>save.fleet");check([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[20,20,20],'gleichmäßige Verteilung ist einstellbar: je 20 %')
+    for cls,n in (('jaeger',4),('abfang',4),('kreuzer',4)):
+        for i in range(n):pg.click('[data-fp="%s:5"]'%cls)
+    f=pg.evaluate("()=>save.fleet");check([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[20,20,20],'in 5er-Schritten gleichmäßig einstellbar: je 20 %')
     pg.evaluate("()=>{save.fleet.jaeger.p=40;save.fleet.abfang.p=40;save.fleet.kreuzer.p=20;persist();renderFleet()}")
     # Aufwerten: Vorher-Nachher, kostet Splitter, Stufe steigt
     s0=pg.evaluate("()=>save.cur.s");t=pg.inner_text('#flist .hcard:first-child');pg.click('[data-fl="jaeger"]');pg.wait_for_timeout(100)
