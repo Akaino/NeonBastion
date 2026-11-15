@@ -194,7 +194,7 @@ const DRONES={
   kreuzer:{name:'Kreuzer',role:'Schwerer Flächenschaden',col:'#ff8a3d',unlock:'u5',dmg:4,hp:4,rate:1,sp:110,r:9,splash:34,text:'Langsam und zäh. Seine Treffer schaden allen Gegnern im Umkreis.'}};
 const DRONE_IDS=Object.keys(DRONES),DRONE_MAX=60,DRONE_PRIO={bomber:1,sprinter:1,cloaker:1},REPAIR_BASE=.0015,REPAIR_ALLY=.03,REPAIR_R=120;
 const droneLvlCost=l=>heroLvlCost(l);
-const DRONE_LV=.05,droneLm=l=>1+DRONE_LV*(l-1);   // Stufenfaktor auf Schaden und Leben (flacher als bei Helden: mit +12 % je Stufe kam die Flotte allein auf Welle 51 statt 30)
+const DRONE_LV=.08,droneLm=l=>1+DRONE_LV*(l-1);   // Stufenfaktor auf Schaden und Leben (flacher als bei Helden: mit +12 % je Stufe kam die Flotte allein auf Welle 51 statt 30)
 const repairMul=l=>1+.04*(l-1);               // Stufenfaktor der Reparaturleistung
 const droneUnlocked=(save,id)=>{const D=DRONES[id],st=save.fleet&&save.fleet[id];return D.unlock===null||!!(st&&st.u)||(typeof D.unlock==='string'&&((save.nodes&&save.nodes[D.unlock])||0)>0)};
 // p = eingestellter Anteil an den gebauten Drohnen in Prozentpunkten (wird über die freigeschalteten Klassen normiert)

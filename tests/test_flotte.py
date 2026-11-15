@@ -21,16 +21,22 @@ with sync_playwright() as p:
     c=pg.evaluate("()=>({karten:document.querySelectorAll('#flist .hcard').length,zu:document.querySelectorAll('#flist .hcard.lock').length,balken:document.querySelectorAll('#fbar .fdist i').length,text:document.querySelector('#flist').innerText})")
     check(c['karten']==5 and c['zu']==3 and c['balken']==2 and all(n in c['text'] for n in ['Jäger','Abfänger','Schwarm','Reparaturdrohne','Kreuzer']),'Flotten-Menü: fünf Karten, drei gesperrt, Verteilungsbalken mit zwei Anteilen')
     pg.screenshot(path='f1_flotte.png')
-    # Freischalten kostet und gibt der neuen Klasse einen Anteil
+    # Freischalten kostet; die neue Klasse startet mit 0 %, nichts wird automatisch umverteilt
     k0=pg.evaluate("()=>save.cur.k");pg.click('[data-fu="abfang"]');pg.wait_for_timeout(150)
-    f=pg.evaluate("()=>save.fleet");check(f['abfang']['u']==1 and pg.evaluate("()=>save.cur.k")==k0-8 and f['abfang']['p']==20 and f['jaeger']['p']+f['kreuzer']['p']+f['abfang']['p']==100,'Abfänger freigeschaltet für 8 Kerne, bekommt 20 %, Summe bleibt 100: '+str([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]))
-    # Verteilung: +10 % für eine Klasse, die anderen geben anteilig ab, Summe 100
-    pg.click('[data-fp="abfang:10"]');pg.click('[data-fp="abfang:10"]');pg.wait_for_timeout(100)
+    f=pg.evaluate("()=>save.fleet");check(f['abfang']['u']==1 and pg.evaluate("()=>save.cur.k")==k0-8 and [f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[80,0,20],'Abfänger freigeschaltet für 8 Kerne, startet mit 0 %, die anderen bleiben: '+str([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]))
+    # Plus geht nur mit freien Prozenten; nichts wird automatisch angepasst
+    pg.click('[data-fp="abfang:10"]');pg.wait_for_timeout(100)
+    f=pg.evaluate("()=>save.fleet");check([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[80,0,20] and 'Schon 100 % verteilt' in pg.inner_text('#toast'),'bei 100 % verteilt lässt sich nichts erhöhen, Hinweis erscheint')
+    pg.click('[data-fp="jaeger:-10"]');pg.click('[data-fp="jaeger:-10"]');pg.click('[data-fp="abfang:10"]');pg.wait_for_timeout(100)
     f=pg.evaluate("()=>save.fleet");ps=[f[i]['p'] for i in ('jaeger','abfang','kreuzer')]
-    check(f['abfang']['p']==40 and sum(ps)==100 and 'Anteil an der Flotte' in pg.inner_text('#flist'),'Anteil in Zehnerschritten verstellbar, Summe bleibt 100: '+str(ps))
-    for i in range(12):pg.click('[data-fp="abfang:-10"]')
-    check(pg.evaluate("()=>save.fleet.abfang.p")==0,'Anteil lässt sich auf 0 stellen')
-    pg.click('[data-fp="abfang:10"]');pg.click('[data-fp="abfang:10"]')
+    check(ps==[60,10,20] and '90 %' in pg.inner_text('#fbar') and '10 % frei' in pg.inner_text('#fbar') and 'Anteil an der Flotte' in pg.inner_text('#flist'),'Verringern macht Prozente frei, die Anzeige nennt verteilt und frei: '+str(ps))
+    for cls in ('jaeger','abfang','kreuzer'):
+        for i in range(12):pg.click('[data-fp="%s:-10"]'%cls)
+    f=pg.evaluate("()=>save.fleet");check(all(f[i]['p']==0 for i in ('jaeger','abfang','kreuzer')) and 'nur Jäger' in pg.inner_text('#fbar'),'alle Klassen lassen sich auf 0 % stellen, dann baut die Basis nur Jäger')
+    for cls,n in (('jaeger',2),('abfang',2),('kreuzer',2)):
+        for i in range(n):pg.click('[data-fp="%s:10"]'%cls)
+    f=pg.evaluate("()=>save.fleet");check([f[i]['p'] for i in ('jaeger','abfang','kreuzer')]==[20,20,20],'gleichmäßige Verteilung ist einstellbar: je 20 %')
+    pg.evaluate("()=>{save.fleet.jaeger.p=40;save.fleet.abfang.p=40;save.fleet.kreuzer.p=20;persist();renderFleet()}")
     # Aufwerten: Vorher-Nachher, kostet Splitter, Stufe steigt
     s0=pg.evaluate("()=>save.cur.s");t=pg.inner_text('#flist .hcard:first-child');pg.click('[data-fl="jaeger"]');pg.wait_for_timeout(100)
     check('Aufwerten' in t and '→' in t and pg.evaluate("()=>save.fleet.jaeger.l")==2 and pg.evaluate("()=>save.cur.s")<s0,'Aufwerten zeigt Vorher-Nachher, kostet Splitter und erhöht die Stufe')
@@ -60,7 +66,7 @@ with sync_playwright() as p:
       return out}""")
     check(r['mix']=={'jaeger':12,'abfang':6,'schwarm':6,'repair':3,'kreuzer':3},'30 Drohnen im Verhältnis 40/20/20/10/10: '+json.dumps(r['mix']))
     check(r['kreuzer']==[4,4,True] and r['schwarm']==3 and r['rep']==0,'Kreuzer vierfach stark und zäh, Schwarm drei Schüsse pro Salve, Reparaturdrohne ohne Schaden')
-    check(abs(r['stufe']-pg.evaluate('()=>droneLm(11)'))<1e-9 and abs(pg.evaluate('()=>droneLm(11)')-1.5)<1e-9,'Stufe 11 gibt +50 % Schaden gegenüber Stufe 1')
+    check(abs(r['stufe']-pg.evaluate('()=>droneLm(11)'))<1e-9 and abs(pg.evaluate('()=>droneLm(11)')-(1+10*pg.evaluate('()=>DRONE_LV')))<1e-9,'Stufe 11 gibt zehnmal den Stufenbonus gegenüber Stufe 1')
     check(r['abf']=={'bomber':True,'schwarm':False} and r['jae']=={'bomber':False,'schwarm':True},'Abfänger nimmt den Bomber, der Jäger den näheren Schwärmer')
     check(r['schild']==3,'Schwarm nimmt einem Schildträger drei Ladungen pro Salve')
     check(abs(r['heil']-1.5)<1e-6 and not r['repKampf'],'Reparaturdrohne repariert 0,15 % des Basislebens pro Sekunde und greift nicht an')
