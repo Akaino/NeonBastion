@@ -29,8 +29,13 @@ node sim/sim.js probe --at 25,45,70 --runs 10              # Probe am festen Spi
 node sim/sim.js probe --at 75,95 --anteile --knoten b5c=5  # --anteile: Schadensanteile je Quelle; --knoten: Knotenstufen setzen; --held, --frei: Held bzw. Turm einsetzen
 ```
 
-Voraussetzungen: Python 3, Node.js ab 18, `pip install playwright && playwright install chromium`.
-Testen im Browser: `dist/web/index.html` direkt öffnen oder `python3 -m http.server -d dist/web 8000`. Die Tests laufen gegen `dist/web/`.
+```
+npm run format                   # Prettier über src/, sim/, tools/ (Stil: .prettierrc.json)
+npm run lint                     # ESLint über src/js und sim (eslint.config.mjs) – muss ohne Befund bleiben
+```
+
+Voraussetzungen: Python 3, Node.js ab 18, `pip install playwright && playwright install chromium`, einmal `npm install` (nur Entwicklungswerkzeuge: Prettier, ESLint, Babel-Parser; das Spiel selbst hat keine Abhängigkeiten).
+Testen im Browser: `python3 -m http.server -d dist/web 8000` und http://localhost:8000 öffnen. **Direktes Öffnen der Datei geht nicht mehr** – Module lädt der Browser nur über einen Webserver. Die Tests laufen gegen `dist/web/` und starten sich dafür selbst einen Server (`tests/_web.py`).
 
 ## 3. Beta und Release
 
@@ -39,7 +44,7 @@ Der Nutzer testet auf iPhone und MacBook im Browser. **Jede Änderung am Spiel g
 **Nichts bleibt nur lokal.** Der Nutzer will jeden Stand im Browser ansehen können (Vorgabe vom 14.11.2026: „Lokal gebaut und nicht in der Beta sollte es zukünftig nicht mehr geben“). Ist eine Änderung noch nicht reif für die Beta – etwa mitten in einem mehrstufigen Balancing mit Messläufen –, geht sie nach `/bottest/`: `python3 build.py --bottest`, Tests, Commit „Bottest vX.Y.Z: …“, Push. Im Bericht immer sagen, was unter `/bottest/` liegt und was daran noch fehlt. Sobald sie reif ist, in die Beta.
 
 Beta (nach „Umsetzen“):
-1. `VERSION` in `src/core.js` erhöhen (Schema 0.MINOR.PATCH; Features → MINOR, reine Fixes → PATCH).
+1. `VERSION` in `src/js/core/version.js` erhöhen (Schema 0.MINOR.PATCH; Features → MINOR, reine Fixes → PATCH).
 2. `python3 build.py --beta && python3 tests/run_all.py`
 3. Commit „Beta vX.Y.Z: …“ (Quelltext, Tests, `docs/beta/`), Push auf `main`. **Kein Tag, `docs/index.html` nicht anfassen.**
 4. Prüfen, dass `https://neonbastion.de/beta/` die neue Version ausliefert, dem Nutzer Bescheid geben.
@@ -47,35 +52,56 @@ Beta (nach „Umsetzen“):
 Release (wenn der Nutzer „Release“ oder „deploy“ sagt):
 1. `python3 build.py --release && python3 tests/run_all.py`
 2. Commit „Release vX.Y.Z“, Tag `vX.Y.Z`, Push auf `main`.
-3. Prüfen, dass `https://neonbastion.de` die neue `const VERSION='X.Y.Z'` ausliefert (Pages cached einige Minuten).
+3. Prüfen, dass `https://neonbastion.de` die neue Version ausliefert: `index.html` verweist auf den Ordner `vX.Y.Z/` (Pages cached einige Minuten).
 
 `docs/` und `dist/` sind Build-Ausgaben. Nie direkt bearbeiten, immer `src/` oder `assets/` ändern und neu bauen. `dist/` ist nicht im Repository.
 
-Beta und Bottest sind dieselbe Datei wie das Spiel mit angepassten Pfaden (`build.py`). Das Spiel erkennt die Stufe zur Laufzeit am Pfad `/beta/` bzw. `/bottest/` (`STAGE`, `IS_BETA` in `core.js`): Kennzeichnung „Beta“ bzw. „Bottest“ an der Version, eigener Spielstand `neon-bastion-beta` bzw. `neon-bastion-bottest`, Knopf „Live-Spielstand übernehmen“ in den Einstellungen (kopiert `neon-bastion-v1` in den Beta-Spielstand, nie umgekehrt), `noindex`. Reine Werkzeug-Änderungen (Tests, Simulation, Dokumentation) brauchen keine Beta.
+Beta und Bottest sind dasselbe Spiel in einem eigenen Ordner, zusätzlich mit Entwicklermodus (`build.py`). Das Spiel erkennt die Stufe zur Laufzeit am Pfad `/beta/` bzw. `/bottest/` (`STAGE`, `IS_BETA` in `js/core/version.js`): Kennzeichnung „Beta“ bzw. „Bottest“ an der Version, eigener Spielstand `neon-bastion-beta` bzw. `neon-bastion-bottest`, Knopf „Live-Spielstand übernehmen“ in den Einstellungen (kopiert `neon-bastion-v1` in den Beta-Spielstand, nie umgekehrt), `noindex`. Reine Werkzeug-Änderungen (Tests, Simulation, Dokumentation) brauchen keine Beta.
 
 ## 4. Architektur
 
-Eine einzige HTML-Datei, kein Framework, keine Abhängigkeiten. `build.py` setzt `src/shell.html` (HTML + CSS) und die JS-Dateien in dieser Reihenfolge zusammen (alles im globalen Scope):
+Kein Framework, keine Laufzeit-Abhängigkeiten. Seit 0.31.0 (Umbau vom 15.11.2026 auf Wunsch des Nutzers: „Warum ist das nicht ordentlich?“) besteht das Spiel aus ES-Modulen und wird in getrennten Dateien ausgeliefert. Vorher klebte `build.py` sieben Dateien mit gemeinsamem globalem Namensraum zu einer einzigen HTML-Datei zusammen; ältere Abschnitte dieses Dokuments nennen noch die alten Dateinamen (`core.js`, `game.js`, `ui.js`, `shell.html`).
 
-| Datei | Inhalt |
-|---|---|
-| `core.js` | `VERSION`, Hilfsfunktionen (`fmtN`, `fmtD`), Währungen Welt 1, Skilltree Welt 1 (`NODE_DEFS` → `NODES`), Helden, Türme (`TOWERS`), Kombinationen (`COMBOS`), Supernova (`PRESTIGE_DEFS`), Spielstand (`freshSave`, `loadSave`, `Store`), `stats(save)` |
-| `core2.js` | Welt 2 „Gitterfestung“: Währungen, Schadenstürme, weitere Kombinationen, Skilltree (`NODES2`), `stats2(save)`, Weltenboni |
-| `game.js` | `class Run` – komplette Simulation eines Runs in Welt 1 (Wellen, Gegner, Helden, Drohnen, Basis, Türme, Tippen, Belohnungen). Reine Logik, kein DOM. |
-| `game2.js` | `class Run2 extends Run` – Welt 2: Umbau-/Kampfphase, Richtungswellen, Umbaupunkte, Laser/Raketen/Tesla |
-| `render.js` | `class Renderer` – Canvas-Grafik, Sprite-Cache mit Glow, Zoom, Weltthemen |
-| `audio.js` | Web-Audio: Mischpult, Synth-Effekte (`SFX`), generativer Synthwave-Komponist (`Music`), Lautstärke |
-| `ui.js` | Bildschirme (Hub, HUD, Skilltree, Helden, Türme, Supernova, Welten, Einstellungen), Eingabe, Hauptschleife |
+```
+src/
+  index.html      Gerüst: nur Markup, bindet css/ und js/main.js ein (Platzhalter %V%, %ROOT%, %HEAD%, %SCRIPTS% füllt build.py)
+  css/            base, hub, hud, menus, modal
+  js/
+    main.js       Einstieg des Spiels (lädt alle Module)
+    dev-main.js   Einstieg des Entwicklermodus – nur Beta und Bottest
+    logic.js      die Spiellogik ohne Oberfläche, Grafik und Ton – das lädt die Simulation
+    core/         version (VERSION, STAGE), util, format (fmtN, fmtD), save (freshSave, loadSave, Store), stats, dev-hooks (Dev)
+    data/         Tabellen und Konstanten: currencies, prestige, nodes, balance, heroes, towers, drones, enemies, drops, bosses
+    run/          Run (Klasse, Kern) und Methodenpakete: combat, towers, waves, base, heroes, drones, enemies, impulse, drops, zones; util
+    world2/       Welt 2: data, nodes, save, stats, Run2
+    render/       Renderer (Kern) und Methodenpakete: sprites, towers, base
+    audio/        bus, synth, sfx, music-data, music, track, sound (Snd)
+    ui/           dom (Schattenbaum, $), state (save, run, W, R, Perf, persist), common, preview, hub, hud, input, build, tree, heroes, fleet, towers, codex, achievements, nova, worlds, settings, main (Start und Hauptschleife)
+    dev/          inject, hooks, perf, tools, mode, perf-start
+```
+
+Regeln:
+
+- **Schichten** (von unten nach oben): `core`/`data` → `run` → `world2` → `render` → `ui` → `dev`; `audio` kennt nur `core`. **Spiellogik (`core`, `data`, `run`, `world2`) darf weder Oberfläche noch Grafik, Ton oder Entwicklermodus importieren** – die Simulation lädt genau diese vier Ordner in Node. Grafik und Ton greifen nicht auf den Spielstand der Oberfläche zu: die Oberfläche reicht ihnen, was sie brauchen (`R.hubNodes`, `Vol` über `syncSound`).
+- **Große Klassen sind aufgeteilt:** `Run` und `Renderer` stehen mit Konstruktor und Kern in ihrer Datei; die übrigen Methoden liegen als Pakete (`export const runWavesMethods = {…}`) in Nachbardateien und werden mit `Object.assign(Run.prototype, …)` angehängt. Eine neue Methode gehört in das passende Paket.
+- **Veränderliche Variablen eines Moduls** (`save`, `run`, `paused`, `speed`, `W`, …) ändert ein anderes Modul nur über den Setter (`setRun(x)`, `setPaused(true)`); lesen geht direkt über den Import. Jede `let`-Variable der obersten Ebene hat einen Setter.
+- **Entwicklermodus** liegt vollständig in `js/dev/` und wird nur von Beta und Bottest geladen (`dev-main.js`). Das Spiel kennt ihn nur über das leere Objekt `Dev` (`core/dev-hooks.js`: `Dev.stats`, `Dev.wave`, `Dev.w2`, `Dev.openSettings`) und das leere `Perf` in `ui/state.js`. `build.py` bricht ab, wenn Entwickler-Code im echten Spiel landet.
+- **Auslieferung:** `build.py` kopiert `src/js` und `src/css` unverändert in einen Ordner mit der Versionsnummer (`v0.31.0/js/…`), damit ein Browser nie Dateien zweier Versionen mischt, und schreibt `index.html` sowie `css/fonts.css` mit den passenden Pfaden. Ein Bündler ist nicht im Einsatz.
+- **Tests und Konsole:** Module haben keine globalen Namen. Beta, Bottest und die Testausgabe `dist/web` laden deshalb zusätzlich `js/expose.js` (von `build.py` erzeugt): Es macht alle exportierten Namen als Eigenschaften von `window` sichtbar, veränderliche mit ihrem Setter. So funktionieren `save`, `run`, `paused=true`, `Perf.live()` in Tests und in der Konsole der Beta weiter. Das veröffentlichte Spiel lädt `expose.js` nicht.
+- **Stil:** Prettier (120 Zeichen, einfache Anführungszeichen) und ESLint; beide müssen sauber sein. Bezeichner sind noch die kurzen aus der alten Fassung (`S`, `e`, `updEnemies`) – umbenennen ist ein eigener, späterer Schritt.
 
 Wichtige Konzepte:
 
-- **Welt-Kontext `W`** in `ui.js` (`WORLDS[1|2]`): liefert Knoten, Währungen, Spielstand-Teil (`W.s()`), Stats, Türme und Run-Klasse der aktiven Welt. Neue Welten hier andocken.
+- **Welt-Kontext `W`** in `ui/state.js` (`WORLDS[1|2]`): liefert Knoten, Währungen, Spielstand-Teil (`W.s()`), Stats, Türme und Run-Klasse der aktiven Welt. Neue Welten hier andocken.
 - **Spielstand:** `localStorage['neon-bastion-v1']`. Welt 2 liegt in `save.w2`. `loadSave` füllt fehlende Felder aus `freshSave` auf. **Spielstände dürfen nie kaputtgehen**: neue Felder immer mit Standardwert, Migrationen in `loadSave`.
-- **Run-Logik ist DOM-frei** und läuft unverändert in Node (`sim/bot2.js` lädt `src/` per `vm`). Das muss so bleiben. `run.headless=true` überspringt Effekte (Partikel, Zahlen, Ringe) für die Simulation.
+- **Run-Logik ist DOM-frei** und läuft unverändert in Node (`sim/bot2.js` lädt `src/js/logic.js`). Das muss so bleiben. `run.headless=true` überspringt Effekte (Partikel, Zahlen, Ringe) für die Simulation.
 - Feste Logik-Taktrate 1/60 s im Spiel, Geschwindigkeit 1×/2×/4×/8× über mehrere Schritte pro Frame. In der Simulation `dt=0.05`. **Nicht 0.1** – dann treffen Projektile nicht mehr zuverlässig.
 - Erweiterungspunkte in `Run`, die `Run2` überschreibt: `reward(e)`, `energyMul(e)`, `towerStats(type,l)`, `towerSlots()`, `hpScale(w)`, `dmgScale(w)`, `milestone(w)`, `updWaves(dt)`, `updTowers(dt)`.
+- **Oberfläche im Schattenbaum** (`ui/dom.js`): Alles außer dem Spielfeld liegt in einem Schattenbaum, damit fremde Skripte im Browser keine Änderungen sehen (siehe Abschnitt 8). `$`/`$$` suchen dort und im Dokument.
 
-## 5. Gameplay-Systeme (Stand 0.29.1, Beta; live ist 0.19.0)
+**So wurde umgebaut (zum Nachvollziehen):** 1. Entwicklermodus aus dem Spielcode in eine eigene Datei, 2. Prettier über alles, 3. ein Einmal-Werkzeug (Babel) hat jeden Baustein der obersten Ebene anhand einer Zuordnungstabelle einem Modul zugewiesen, mit Bereichsanalyse die Importe ermittelt und fremde Zuweisungen in Setter umgeschrieben, 4. Stilregeln und Gerüst getrennt, Bau und Tests angepasst. Das Spiel selbst wurde dabei nicht verändert: Der Fingerabdruck eines Karriere-Laufs der Simulation (2 Seeds bis Welle 45, sortierte Runs-Tabelle) und eine Probe an drei Spielständen sind vor und nach dem Umbau identisch. Das Werkzeug liegt in der Git-Geschichte (`tools/zerlegen.cjs`, Commit `f9bd2ed`).
+
+## 5. Gameplay-Systeme (Stand 0.31.0 in der Beta; live ist 0.30.1)
 
 **Welt 1 „Neon-Sektor“:** Basis in der Mitte, Gegner (Schwärmer, Brecher, Fernkämpfer, Elite, Boss alle 10 Wellen, **Doppelboss alle 25 Wellen**) aus allen Richtungen. Drohnen spawnen aus der Basis. Vier Helden (Klinge, Schützin, Arkanist, Wächterin) agieren selbstständig, müssen freigeschaltet werden, haben Stufen (bis 60) und Aufstiege (bis 5). Der **Impuls** ersetzt das Tippen (siehe unten), „Autofeuer“ lässt zusätzlich die Basis selbst schießen. Nächste Welle startet nach 9 s auch mit lebenden Gegnern → Runs enden, wenn die Basis den Schaden gestauter Gegner nicht mehr aushält.
 
@@ -120,7 +146,7 @@ Wichtige Konzepte:
 
 **Impuls** (seit 0.13.0, ersetzt Klicken/Tippen): Am Zeiger löst in festen Abständen automatisch ein Flächenangriff aus (`run.cx/cy`, `impT`, in `Run.step`). Ein Ring um die Angriffsfläche füllt sich bis zum nächsten Impuls (`render.js`); seine Farbe kündigt Sondertreffer an (Magenta Taktschlag, Orange Überladung, Gold Weltenbrecher). Die Maus führt den Zeiger direkt (`aimAt` in `ui.js`). Der Finger arbeitet seit 0.13.1 wie ein Trackpad, damit er das Feld nicht verdeckt: Wischen irgendwo schiebt den Zeiger um die gewischte Strecke × 1,5 (`aimBy`, `AIM_GAIN`), kurzes Antippen setzt ihn direkt, beim Loslassen bleibt er liegen. Klicks machen keinen Schaden mehr. Start alle 2 s, Knoten „Taktgeber“ (`f1b`, 36 Stufen, −8 % je Stufe) bis 0,1 s. Schaden je Impuls = Grundschaden × 4 × √(Intervall/2): schneller heißt schwächer je Treffer, der Schaden pro Sekunde steigt über alle Stufen etwa auf das 4,5-Fache (Konstanten `IMP_*` in `core.js`). **Sonderfähigkeiten zählen Impulse bzw. Schüsse, nicht Treffer** (Vorgabe des Nutzers: wer nichts trifft, wartet wieder n ab): „Taktschlag“ (`f3a`, früher „Combo“) verstärkt jeden 5. Impuls, „Überladung“ und „Weltenbrecher“ zählen Impuls und Autofeuer gemeinsam. In der Simulation steuert `--zeiger ruht|zielt|aus` den Zeiger (`aimPointer` in `sim/bot2.js`).
 
-**Entwicklermodus nur in Beta und Bottest** (seit 0.25.1, Vorgabe des Nutzers): Alles, was zum Entwicklermodus gehört (Code-Abfrage, Testhilfen, Leistungsmessung, Test-Freischaltung der Gitterfestung, die Abfragen von `save.dev…` in `stats`, `nextWave`, `w2Unlocked`), steht im Quelltext zwischen `/*DEV{*/ … /*}DEV*/` (in `shell.html` auch `<!--DEV{--> … <!--}DEV-->`). `build.py` entfernt diese Teile für das echte Spiel und setzt dafür den Inhalt von `/*REL{ … }REL*/` ein; der Bau bricht ab, wenn Reste bleiben. Neue Testhilfen immer in solche Marken setzen. Tests, die den Entwicklermodus oder `w2test` brauchen, laufen deshalb gegen `dist/web/beta/index.html` mit dem Spielstand `neon-bastion-beta`. Die Simulation lädt `src/` unverändert (mit Entwickler-Teilen).
+**Entwicklermodus nur in Beta und Bottest** (seit 0.25.1, Vorgabe des Nutzers; seit 0.31.0 als eigene Module in `js/dev/`, siehe Abschnitt 4): Code-Abfrage, Testhilfen, Leistungsmessung und Test-Freischaltung der Gitterfestung liegen dort; ihre Bedienelemente setzt `dev/inject.js` beim Laden in die Einstellungen ein. Neue Testhilfen gehören nach `js/dev/`, ins Spiel höchstens ein weiterer Haken am Objekt `Dev`. Tests, die den Entwicklermodus oder `w2test` brauchen, laufen deshalb gegen `dist/web/beta/index.html` mit dem Spielstand `neon-bastion-beta`. Die Simulation lädt nur `src/js/logic.js` und damit keinen Entwicklermodus.
 
 **Entwicklermodus** (seit 0.11.2): In den Einstellungen 7× kurz hintereinander auf die Versionsnummer tippen, dann Code eingeben (kennt der Nutzer; im Quelltext steht nur ein Prüfwert, der Code gehört weder in dieses Dokument noch in Tests – das Repository ist öffentlich). Gespeichert als `save.dev`. Zeigt die Knöpfe „Gitterfestung testweise freischalten“ und „Entwicklermodus beenden“. Seit 0.21.1 gibt es dort außerdem den Knopf „Testhilfen“ (`renderDev` in `ui.js`): Ressourcen der aktiven Welt setzen (+1 Tsd., +1 Mio., ×100, 0), Rekordwelle verstellen, Startwelle frei wählen (`save.devStart`, wirkt in `stats()` nur mit `save.dev`), ein schillernder Gegner je Welle (`save.devShiny`), ein Abwurf je Welle (`save.devDrop`), Leistungsmessung (`save.devPerf`, Objekt `Perf`: hält jedes Bild über 28 ms fest, aufgeteilt in Logik, Anzeige, Zeichnen, Musik, Speichern und „Rest“ = Zeit außerhalb des Spiels; „Messung kopieren“ liefert den Bericht als Text). Ressourcen, Rekord und Startwelle nur außerhalb eines Runs. Weitere Testhilfen dort andocken. Tests setzen `save.dev` direkt im Spielstand.
 

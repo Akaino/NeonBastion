@@ -42,7 +42,7 @@ function playRun(X,save,opt){const r=new X.Run(save,{});if(opt.anteile)r.tally={
 const BOT_NO_HERO=['kopfjaeger','ingenieurin'];
 const botTowers=(X,opt)=>X.TOWER_IDS.filter(id=>id!=='mute'&&(id!=='mark'||(opt&&opt.zeiger==='zielt')));
 const allowBr=(opt,br)=>!opt||opt.aeste==null||opt.aeste.includes(br);
-function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),towers=!opt||opt.tuerme!=='aus';
+function options(X,save,opt){const o=[],heroes=allowBr(opt,'h'),towers=!opt||opt.tuerme!=='aus';
   for(const n of Object.values(X.NODES)){if(n.id==='root'||!allowBr(opt,n.br))continue;const l=save.nodes[n.id]||0;if(l>=n.max||!(save.nodes[n.parent]>0))continue;
     if(n.id==='e2b'&&l>=Math.floor((save.best||0)/2))continue;
     o.push({id:n.id,name:n.name,cur:n.cur,cost:X.nodeCost(n,l),apply:()=>save.nodes[n.id]=l+1,undo:()=>save.nodes[n.id]=l})}

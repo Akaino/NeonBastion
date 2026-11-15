@@ -1,5 +1,5 @@
 import { Dev } from '../core/dev-hooks.js';
-import { devTaps, setDevTaps } from './mode.js';
+import { setDevTaps } from './mode.js';
 import { updW2Btn } from './tools.js';
 import { $ } from '../ui/dom.js';
 

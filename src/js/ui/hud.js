@@ -10,21 +10,8 @@ import { endBuild } from './build.js';
 import { banner, curHTML, curIcon, show, toast } from './common.js';
 import { $, $$ } from './dom.js';
 import { goHub } from './hub.js';
-import { aimDown, aimPos, setAimDown } from './input.js';
-import {
-  R,
-  W,
-  endShown,
-  paused,
-  persist,
-  run,
-  save,
-  setEndShown,
-  setPaused,
-  setRun,
-  setSpeed,
-  speed,
-} from './state.js';
+import { aimPos, setAimDown } from './input.js';
+import { R, W, persist, run, save, setEndShown, setPaused, setRun, setSpeed, speed } from './state.js';
 
 export /* ---------- run ---------- */
 function startRun() {

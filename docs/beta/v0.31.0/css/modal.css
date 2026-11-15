@@ -1,0 +1,127 @@
+/* Dialoge: Einstellungen, Pause, Endbildschirm */
+/* modal */
+.modal {
+  background: rgba(3, 3, 14, 0.78);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.mbox {
+  width: min(400px, 100%);
+  background: var(--panel2);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 0 40px -10px var(--cyan);
+}
+.mbox h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+}
+.mbox .rec {
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(255, 225, 79, 0.6);
+  font-weight: 600;
+}
+.gainlist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+}
+.gainlist div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 17px;
+}
+.gainlist div.zero {
+  opacity: 0.35;
+}
+.gainlist svg {
+  width: 20px;
+  height: 20px;
+}
+.gainlist .cur {
+  text-align: left;
+  align-items: center;
+  gap: 10px;
+  white-space: normal;
+  min-width: 0;
+  flex: 1;
+}
+.gainlist div {
+  gap: 10px;
+}
+.gainlist .cur > span {
+  display: flex;
+  flex-direction: column;
+}
+.gainlist small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.srcs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.srcs div {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.srcs svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 2px;
+}
+.srcs b {
+  color: var(--ink);
+  font-weight: 600;
+}
+#toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 16px;
+  max-width: 90%;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+  z-index: 9;
+}
+#toast.show {
+  opacity: 1;
+}
+@media (min-width: 700px) {
+  #hub {
+    padding: 40px;
+  }
+  .hlist {
+    padding: 20px 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition: none !important;
+  }
+}

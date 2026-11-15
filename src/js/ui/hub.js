@@ -5,7 +5,7 @@ import { HEROES, HERO_IDS } from '../data/heroes.js';
 import { NOVA_MIN, PRES, presCost, quantaFor } from '../data/prestige.js';
 import { canPay, curIcon, renderCurs, show, toast } from './common.js';
 import { $, $$ } from './dom.js';
-import { R, W, paused, persist, run, save, setPaused, setRun } from './state.js';
+import { R, W, persist, run, save, setPaused, setRun } from './state.js';
 import { nodeState, renderSheet } from './tree.js';
 import { w2Unlocked } from '../world2/save.js';
 

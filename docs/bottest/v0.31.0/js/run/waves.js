@@ -38,9 +38,7 @@ export const runWavesMethods = {
   nextWave() {
     const w = ++this.w,
       S = this.S;
-    const n = Math.round(Math.min(8 + w * 2.4, 50 + w * 0.6)),
-      bS = w >= 3 ? Math.min(0.25, 0.04 * (w - 2)) : 0,
-      sS = w >= 5 ? Math.min(0.2, 0.04 * (w - 4)) : 0;
+    const n = Math.round(Math.min(8 + w * 2.4, 50 + w * 0.6));
     const eC = Math.min(0.08, 0.03 + 0.003 * w) * S.elite,
       twin = w % TWIN_EVERY === 0,
       boss = w % 10 === 0 || twin,

@@ -1,6 +1,6 @@
-# Abschluss-Testliste für Welt 1 (Beta 0.30.1)
+# Abschluss-Testliste für Welt 1 (Beta 0.31.0)
 
-Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
+Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
@@ -16,6 +16,16 @@ Die Ursache ist gefunden: Ein fremdes Skript in deinem Safari reagiert auf jede 
 - [ ] Schnellstart: Die Startwelle lässt sich nie höher stellen als deine Rekordwelle, auch mit vielen Stufen.
 - [ ] Sieht die Anzeige im Run aus wie vorher (Welle, Lebensbalken, Währungen, Bossbalken, Heldenkreise, Bauen-Knopf, Banner, Hinweise)?
 - [ ] Funktionieren Pause, Tempo, Bauen und das Turm-Menü wie vorher?
+
+## 1b. Umbau des Quelltexts (0.31.0, nur in der Beta)
+
+Das Spiel wird jetzt aus getrennten Dateien geladen (68 Module statt einer großen Datei). Am Spiel selbst ist nichts geändert; die Simulation rechnet exakt dieselben Zahlen wie vorher.
+
+- [ ] Die Beta lädt wie gewohnt, auf dem iPhone und dem MacBook, auch nach „Zum Home-Bildschirm“.
+- [ ] Erster Start nach dem Update: Dauert das Laden spürbar länger als bisher?
+- [ ] Spielstand der Beta ist noch da.
+- [ ] Ton, Musik und alle Menüs funktionieren wie vorher.
+- [ ] Mit eingeschalteter Erweiterung in Safari weiterhin keine Ruckler.
 
 ## 2. Flotte
 

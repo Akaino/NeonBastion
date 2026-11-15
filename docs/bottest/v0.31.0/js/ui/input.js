@@ -1,7 +1,6 @@
 import { Snd } from '../audio/sound.js';
 import { clamp } from '../core/util.js';
 import {
-  buildDown,
   buildSel,
   endBuild,
   ghostAt,

@@ -5,7 +5,7 @@
 //   node sim.js aeste                 Ast-Vergleich: jede Kombination der fünf Skilltree-Äste
 //   node sim.js probe --at 45,70      Probe am festen Spielstand: wenige Runs statt ganzer Karriere
 // Alle Optionen: node sim.js --hilfe
-const {Worker,isMainThread,parentPort,workerData}=require('worker_threads');
+const {Worker,isMainThread,parentPort}=require('worker_threads');
 const os=require('os'),fs=require('fs'),path=require('path');
 const bot=require('./bot2.js');
 
@@ -65,7 +65,7 @@ const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[Math.floor
 const t0=Date.now(),wall=()=>fmtT((Date.now()-t0)/1000);
 
 /* ---------- Worker-Pool ---------- */
-function pool(n){const ws=[],queue=[],busy=new Set();let onIdle=null;
+function pool(n){const ws=[],queue=[],busy=new Set();
   for(let i=0;i<n;i++){const w=new Worker(__filename);ws.push(w)}
   return{ws,run(msg,handler){return new Promise(res=>{queue.push({msg,handler,res});pump()})},close(){ws.forEach(w=>w.terminate())}};
   function pump(){for(const w of ws){if(busy.has(w)||!queue.length)continue;const job=queue.shift();busy.add(w);
@@ -106,7 +106,7 @@ async function upgrades(){const at=String(arg('at','25,50')).split(',').map(Numb
   const {res:car}=await P.run({type:'career',opt:{...base,seed:1,target:Math.max(...at),maxRuns:+arg('maxruns',600),maxGameHours:+arg('stunden',300),snapshotsAt:at}},
     row=>{if(row.event)console.log(`  [${wall()}] Run ${row.run} · Rekord ${row.best} · ${row.event}`)});
   for(const m of at){const save=car.snapshots[m];if(!save){console.log(`Welle ${m} wurde nicht erreicht, übersprungen.`);continue}
-    await bot.prepare();const cands=bot.candidates(save,N),jobs=[];console.log(`\nSchritt 2 (Welle ${m}): ${cands.length} Upgrades × ${REP} Runs + Vergleich …`);
+    await bot.prepare();const cands=bot.candidates(save,N);console.log(`\nSchritt 2 (Welle ${m}): ${cands.length} Upgrades × ${REP} Runs + Vergleich …`);
     const opt={...base};let done=0;const total=(cands.length+1)*REP;
     const runSet=mod=>Promise.all(Array.from({length:REP},(_,i)=>P.run({type:'bench',id:0,job:{save,mod,seed:1000+i,opt}}).then(x=>{done++;if(done%20===0)process.stdout.write(`  ${done}/${total} Test-Runs (${wall()})\n`);return x.res.wave})));
     const baseW=await runSet(null),b0=baseW.reduce((a,b)=>a+b,0)/REP;

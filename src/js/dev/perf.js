@@ -156,12 +156,6 @@ Object.assign(Perf, {
   },
   scan(sec = 8) {
     if (this.scanT) return;
-    const cv = R.cv,
-      pf = $('#perf'),
-      au = on => {
-        if (Snd.ctx) (on ? Snd.ctx.resume() : Snd.ctx.suspend()).catch(() => {});
-      },
-      H = document.documentElement;
     const P = this.sw();
     const one = (name, k) => [this.NAMEN[k], P[k][0], P[k][1]],
       ks = Object.keys(P);
