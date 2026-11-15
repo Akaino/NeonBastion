@@ -9,6 +9,7 @@ Alles hier ist automatisch getestet (32 Testläufe) und mit der Simulation gemes
 ## 1. Ruckeln und Ton in Safari (wichtig zuerst)
 
 - [ ] Ruckeltest unter https://neonbastion.de/beta/ruckeltest.html starten, anderthalb Minuten warten, Ergebnis kopieren und an Claude schicken.
+- [ ] Die Erweiterung „AdBlock for Safari“ für neonbastion.de oder ganz ausschalten, Safari neu starten und in der Beta messen (Testhilfen → Leistungsmessung): Sind die Ruckler weg?
 - [ ] Beta 0.29.1 in einem frisch gestarteten Safari 10 Minuten auf 4× oder 8× spielen: Bleibt es flüssig, bleibt der Ton sauber?
 - [ ] Danach die Seite neu laden: Läuft es weiter flüssig?
 
@@ -128,8 +129,8 @@ Karriere mit ruhendem Zeiger (4 Seeds):
 
 ## Bekannte Einschränkungen
 
-- Gemessen wurde mit dem Bot. Er kauft immer das Billigste und verteilt den seltenen Sternenstaub auf alle vier Verbund-Knoten. In einem Vier-Stunden-Fenster mit zielendem Zeiger kommt er dadurch mit allen fünf Ästen nur bis Welle 61 statt 67. Ein Mensch, der gezielt kauft, ist davon nicht betroffen.
+- Gemessen wurde mit dem Bot. Mit der einfachen Kaufregel (immer das Billigste) verteilt er den seltenen Sternenstaub auf alle vier Verbund-Knoten und kommt in vier Stunden mit allen fünf Ästen nur bis Welle 61. Mit der besseren Kaufregel (nach geschätztem Nutzen) erreicht er Welle 75; Basis und Flotte sind dann als letzter Ast etwa neutral (−2 und −1 Wellen), Helden bringen +9, Impuls +23, Ertrag +28.
 - Die Helden selbst machen spät nur etwa 14 % des Schadens. Ihr Ast bleibt trotzdem der wichtigste, weil die anderen von seinem Bonus leben.
 - Die Wirkung von Stör-Turm und Markier-Turm für einen Menschen ist nicht gemessen.
 - Welt 2 hat nichts von den Neuerungen.
-- Die Ursache des Sekundentakt-Rucklers in Safari ist noch nicht geklärt. 0.29.1 räumt den Ton auf und schließt ihn beim Verlassen der Seite; ob das reicht, zeigt dein Test.
+- Die Ursache des Sekundentakt-Rucklers in Safari ist noch nicht geklärt. Das Aufräumen des Tons in 0.29.1 hat ihn nicht beseitigt (deine Messung: weiter 43 bis 60 ms je Sekunde, schon im Hub).
