@@ -1,4 +1,4 @@
-const VERSION='0.25.0';
+const VERSION='0.25.1';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -232,7 +232,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.baseHp*=Math.pow(1.25,P('hp'));S.turretDmg*=pd;S.pulseDmg*=pd;S.droneDmg*=pd;S.tapDmg*=pd;S.heroDmg*=pd*ph;S.heroHp*=ph;S.drones+=2*P('drone');S.gS*=pg;S.gK*=pg;S.gP*=pg;
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
-  if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}   // Testhilfe: Startwelle frei wählbar
+  /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
   if(L('f5'))S.tapDmg*=1+S.heroDmg;
   S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}

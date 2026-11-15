@@ -28,7 +28,7 @@ const WORLDS={
 let W=WORLDS[save.world===2&&w2Unlocked(save)?2:1];
 function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);document.documentElement.dataset.wtheme=id;selNode='root'}
 /* ---------- helpers ---------- */
-/* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
+/*DEV{*//* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
    Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
 const HITCH_MS=28;
 const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
@@ -65,7 +65,7 @@ const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
       '\n\n  Zeit   Bild  Logik Anzeig Zeichn  Musik Speich   Rest | Schritte Gegner Welle Tempo\n';
     for(const h of H.slice(-60))o+=f1(h.t)+f1(h.raw)+f1(h.st)+f1(h.hud)+f1(h.draw)+f1(h.mus)+f1(h.sv)+f1(Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus))+' | '+h.ns+' '+h.en+' '+h.w+' '+h.sp+'×\n';
     return o+this.scanText()+'\nAlle Angaben in Millisekunden. Speichern ist in Logik enthalten. Rest = Zeit außerhalb des Spiels (Browser, System).\n'}};
-const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};
+const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};/*}DEV*//*REL{const Perf={on:false,noDraw:false};const persist=()=>Store.save(save);}REL*/
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
 function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
@@ -94,7 +94,7 @@ function goHub(){const wasRun=!!run;run=null;paused=false;show('hub');renderHub(
 function setVol(k,v){save[k]=+v;$('#'+k+'V').textContent=v>0?v+' %':'Aus';Snd.init();Snd.vol();clearTimeout(setVol.t);setVol.t=setTimeout(persist,300)}
 $('#volMus').oninput=e=>setVol('volMus',e.target.value);
 $('#volSfx').oninput=e=>{setVol('volSfx',e.target.value);const n=Date.now();if(!setVol.p||n-setVol.p>180){setVol.p=n;Snd.play(['tap','shoot','turret','kill'][Math.floor(n/180)%4])}};
-function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;devTaps=0;$('#devCode').hidden=true;updW2Btn();const lc=$('#bLiveCopy');lc.hidden=!IS_BETA||!!run;lc.dataset.arm='';lc.textContent='Live-Spielstand übernehmen'}
+function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;/*DEV{*/devTaps=0;$('#devCode').hidden=true;updW2Btn();/*}DEV*/const lc=$('#bLiveCopy');lc.hidden=!IS_BETA||!!run;lc.dataset.arm='';lc.textContent='Live-Spielstand übernehmen'}
 /* Nur in der Beta: Kopie des echten Spielstands holen. Geschrieben wird ausschließlich in den Beta-Spielstand. */
 $('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStorage.getItem(LIVE_KEY)}catch(e){}
   if(!t){Snd.play('no');toast('Auf diesem Gerät gibt es keinen Live-Spielstand');return}
@@ -103,7 +103,7 @@ $('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStora
   location.reload()};
 $('#bSet').onclick=openSettings;$('#bPSet').onclick=openSettings;
 $('#bSetClose').onclick=()=>{$('#settings').hidden=true};
-$('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
+/*DEV{*/$('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
 function updW2Btn(){const b=$('#bW2Test');b.textContent=save.w2test?'Test-Freischaltung Gitterfestung: an':'Gitterfestung testweise freischalten';b.hidden=!save.dev||!!run||(save.best||0)>=100;$('#bDevOff').hidden=!save.dev||!!run;$('#bDev').hidden=!save.dev}
 /* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
 function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curIds.concat(w1?['q']:[]),val=c=>c==='q'?save.q||0:ws.cur[c]||0;
@@ -138,7 +138,7 @@ $('#setVer').onclick=()=>{if(run||save.dev)return;const n=Date.now();devTaps=n-d
 function devTry(){const d=$('#devCode');if(d.hidden)return;if(devHash($('#devIn').value.trim())===2085854505){d.hidden=true;save.dev=true;persist();updW2Btn();Snd.play('buy');toast('Entwicklermodus aktiv')}
   else{Snd.play('no');toast('Falscher Code');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');setTimeout(()=>{d.hidden=true;d.classList.remove('shake')},350)}}
 $('#bDevOk').onclick=devTry;$('#devIn').addEventListener('keydown',e=>{if(e.key==='Enter')devTry()});
-$('#bDevOff').onclick=()=>{save.dev=false;Perf.stop();persist();updW2Btn();toast('Entwicklermodus beendet')};
+$('#bDevOff').onclick=()=>{save.dev=false;Perf.stop();persist();updW2Btn();toast('Entwicklermodus beendet')};/*}DEV*/
 $('#bReset').onclick=()=>{const b=$('#bReset');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Wirklich alles löschen? Nochmal tippen';Snd.play('no');setTimeout(()=>{if(b.dataset.arm){b.dataset.arm='';b.textContent='Spielstand zurücksetzen'}},4000);return}
   save=freshSave();setWorld(1);persist();$('#settings').hidden=true;goHub();toast('Spielstand wurde zurückgesetzt')};
 $('#bNova').onclick=()=>{show('nova');renderNova()};
@@ -562,8 +562,8 @@ R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
 $$('.ver').forEach(e=>e.textContent='Version '+VERSION+(STAGE?' '+STAGE:''));save.ver=VERSION;
 if(!save.ach){save.ach={};for(const a of ACH)save.ach[a.id]=achTier(a);persist()}
 goHub();
-{const mt=Music.tick.bind(Music);Music.tick=()=>{if(!Perf.on)return mt();const a=performance.now();mt();Perf.mus+=performance.now()-a}}
-if(save.dev&&save.devPerf)Perf.start();
+/*DEV{*/{const mt=Music.tick.bind(Music);Music.tick=()=>{if(!Perf.on)return mt();const a=performance.now();mt();Perf.mus+=performance.now()-a}}
+if(save.dev&&save.devPerf)Perf.start();/*}DEV*/
 let last=performance.now(),acc=0,hudT=0,pendT=0;
 function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf=Perf.on,p0=pf?performance.now():0;let p1=p0,p2=p0,ns=0;
   if(run&&!paused&&run.world===2&&!buildPaused())run.tickBuild(dt);

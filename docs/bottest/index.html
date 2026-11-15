@@ -133,7 +133,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .cmp em{font-style:normal;color:var(--c);text-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
 .btn.nova{display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(180deg,rgba(199,184,255,.18),rgba(199,184,255,.04))}
 .btn small{font-size:12px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
-/* Testhilfen (Entwicklermodus): Zeilen mit Wert und kleinen Knöpfen, Anzeige der Leistungsmessung unten links */
+/*DEV{*//* Testhilfen (Entwicklermodus): Zeilen mit Wert und kleinen Knöpfen, Anzeige der Leistungsmessung unten links */
 #dev{z-index:7}#dev .mbox{background:#100e30;text-align:left;max-height:calc(100dvh - 40px);overflow-y:auto;gap:10px}#dev h2{text-align:center}
 #devBody h3{margin:8px 0 2px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#ff8a3d}#devBody p{margin:0;color:var(--muted);font-size:13px}
 .drow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}.drow>span:first-child{flex:1;min-width:96px}.drow>b{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
@@ -141,10 +141,10 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .dwide{width:100%;padding:10px 12px;font-size:15px;margin-top:6px}.dwide.on{background:rgba(255,138,61,.25);border-color:#ff8a3d}
 #devOut{width:100%;height:160px;font:12px/1.35 ui-monospace,Menlo,monospace;color:var(--ink);background:rgba(5,5,26,.8);border:1px solid var(--line);border-radius:8px;padding:8px;-webkit-user-select:text;user-select:text}
 #perf{position:fixed;left:max(8px,env(safe-area-inset-left,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5;pointer-events:none;font:11px/1.35 ui-monospace,Menlo,monospace;color:#ffe14f;background:rgba(3,3,14,.72);border-radius:6px;padding:4px 7px;white-space:pre}
-html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!important}
+html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!important}/*}DEV*/
 #settings{z-index:6}#settings .mbox{background:#100e30}
-#devCode{display:flex;align-items:center;gap:8px;justify-content:center}#devCode label{color:var(--muted);font-size:14px}#devCode .btn{padding:9px 14px}
-#devIn{width:110px;font:inherit;font-weight:600;text-align:center;letter-spacing:.2em;color:var(--ink);background:rgba(5,5,26,.8);border:1.5px solid #ff8a3d;border-radius:10px;padding:9px 8px;-webkit-user-select:text;user-select:text}#devIn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}#devCode.shake{animation:shake .3s}
+/*DEV{*/#devCode{display:flex;align-items:center;gap:8px;justify-content:center}#devCode label{color:var(--muted);font-size:14px}#devCode .btn{padding:9px 14px}
+#devIn{width:110px;font:inherit;font-weight:600;text-align:center;letter-spacing:.2em;color:var(--ink);background:rgba(5,5,26,.8);border:1.5px solid #ff8a3d;border-radius:10px;padding:9px 8px;-webkit-user-select:text;user-select:text}#devIn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}#devCode.shake{animation:shake .3s}/*}DEV*/
 .legal{margin:0;font-size:13px;color:var(--dim)}.legal a{display:inline-block;padding:6px 8px;color:var(--muted)}.legal a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
 .vol{display:flex;flex-direction:column;gap:8px;text-align:left;padding:4px 2px}
 .vol span{display:flex;align-items:center;gap:8px;font-weight:600}.vol span svg{width:18px;height:18px;color:var(--cyan)}.vol b{margin-left:auto;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -326,12 +326,12 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 
 <section id="settings" class="screen modal" hidden>
   <div class="mbox"><h2>Einstellungen</h2><p class="ver" id="setVer" style="margin:-10px 0 -4px;padding:4px 0;color:var(--dim);font-size:12px"></p>
-    <div id="devCode" hidden><label for="devIn">Code</label><input id="devIn" type="text" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Code für den Entwicklermodus"><button class="btn" id="bDevOk" style="--c:#ff8a3d">Bestätigen</button></div>
+    <!--DEV{--><div id="devCode" hidden><label for="devIn">Code</label><input id="devIn" type="text" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Code für den Entwicklermodus"><button class="btn" id="bDevOk" style="--c:#ff8a3d">Bestätigen</button></div><!--}DEV-->
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Musik<b id="volMusV"></b></span><input type="range" id="volMus" min="0" max="100" step="5"></label>
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>Effekte<b id="volSfxV"></b></span><input type="range" id="volSfx" min="0" max="100" step="5"></label>
     <p id="resetInfo" style="margin:6px 0 0;color:var(--muted);font-size:13px">Zurücksetzen löscht deinen gesamten Fortschritt auf diesem Gerät, auch Quanten und Rekorde.</p>
-    <button class="btn" id="bDev" style="--c:#ff8a3d" hidden>Testhilfen</button>
-    <button class="btn" id="bW2Test" style="--c:#ff8a3d" hidden></button><button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button>
+    <!--DEV{--><button class="btn" id="bDev" style="--c:#ff8a3d" hidden>Testhilfen</button>
+    <button class="btn" id="bW2Test" style="--c:#ff8a3d" hidden></button><button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button><!--}DEV-->
     <button class="btn" id="bLiveCopy" style="--c:#c7b8ff" hidden>Live-Spielstand übernehmen</button>
     <button class="btn" id="bReset" style="--c:#ff4f6d">Spielstand zurücksetzen</button><button class="btn big" id="bSetClose">Fertig</button>
     <p class="legal"><a href="../impressum.html" target="_blank" rel="noopener">Impressum</a> · <a href="../datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p></div>
@@ -346,16 +346,16 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
   <div class="mbox"><h2 id="eTitle">Basis zerstört</h2><div id="eWave"></div><div class="gainlist" id="eGain"></div><button class="btn big" id="bBack">Zur Basis</button></div>
 </section>
 <div id="flash"></div>
-<section id="dev" class="screen modal" hidden>
+<!--DEV{--><section id="dev" class="screen modal" hidden>
   <div class="mbox"><h2>Testhilfen</h2><div id="devBody"></div>
     <textarea id="devOut" readonly hidden aria-label="Messung als Text"></textarea>
     <button class="btn big" id="bDevClose">Fertig</button></div>
 </section>
-<div id="perf" hidden></div>
+<div id="perf" hidden></div><!--}DEV-->
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.25.0';
+const VERSION='0.25.1';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -589,7 +589,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.baseHp*=Math.pow(1.25,P('hp'));S.turretDmg*=pd;S.pulseDmg*=pd;S.droneDmg*=pd;S.tapDmg*=pd;S.heroDmg*=pd*ph;S.heroHp*=ph;S.drones+=2*P('drone');S.gS*=pg;S.gK*=pg;S.gP*=pg;
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
-  if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}   // Testhilfe: Startwelle frei wählbar
+  /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
   if(L('f5'))S.tapDmg*=1+S.heroDmg;
   S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
@@ -666,7 +666,7 @@ for(const [id,br,parent,depth,lat,name,max,cur,base,g,fx] of NODE_DEFS2){const a
 function freshW2(){return{cur:{c:0,m:0},nodes:{root:1},towers:{laser:{u:1,l:1},frost:{u:1,l:1},rocket:{u:0,l:1},tesla:{u:0,l:1},weak:{u:0,l:1},cryo:{u:0,l:1}},best:0,cycleBest:0,runs:0}}
 // Neue Welten öffnen sich alle 100 Wellen im Neon-Sektor: Welt 2 bei 100, Welt 3 bei 200, … Welt 10 bei 900. Welt 3–10 haben noch keinen Inhalt.
 const WORLD_MAX=10,worldUnlockWave=id=>(id-1)*100;
-const w2Unlocked=save=>(save.best||0)>=worldUnlockWave(2)||!!save.w2test;
+const w2Unlocked=save=>(save.best||0)>=worldUnlockWave(2)||/*DEV{*/!!save.w2test||/*}DEV*/false;
 
 function stats2(save){const w=save.w2,L=id=>w.nodes[id]||0;
   const S=stats({nodes:{root:1},pr:{},best:0});   // neutrale Grundwerte
@@ -910,8 +910,8 @@ nextWave(){const w=++this.w,S=this.S;
   const eC=Math.min(.08,.03+.003*w)*S.elite,twin=w%TWIN_EVERY===0,boss=w%10===0||twin,cnt=boss?Math.round(n*.5):n,q=[];this.twin=twin;this.bossPt=null;this.twinMax=0;this.twinDown=0;
   const mix=waveMix(w);
   for(let i=0;i<cnt;i++){let r=Math.random(),type='swarm';for(const [t,s] of mix){if(r<s){type=t;break}r-=s}q.push({type,elite:Math.random()<eC,shiny:Math.random()<SHINY_P})}
-  if(this.save&&this.save.dev&&this.save.devShiny&&q.length)q[0].shiny=true;
-  if((Math.random()<DROP_P||(this.save&&this.save.dev&&this.save.devDrop))&&q.length)q[Math.floor(Math.random()*q.length)].drop=true;   // vor den Bossen: Bosse werfen nichts ab   // Testhilfe: ein schillernder Gegner je Welle
+  /*DEV{*/if(this.save&&this.save.dev&&this.save.devShiny&&q.length)q[0].shiny=true;/*}DEV*/
+  if((Math.random()<DROP_P/*DEV{*/||(this.save&&this.save.dev&&this.save.devDrop)/*}DEV*/)&&q.length)q[Math.floor(Math.random()*q.length)].drop=true;   // vor den Bossen: Bosse werfen nichts ab   // Testhilfe: ein schillernder Gegner je Welle
   if(boss)q.splice(Math.floor(q.length/3),0,{type:'boss',elite:false});
   if(twin)q.splice(Math.floor(q.length*2/3),0,{type:'boss',elite:false,twin:true});
   if(w>1)this.energy+=10;
@@ -1737,7 +1737,7 @@ const WORLDS={
 let W=WORLDS[save.world===2&&w2Unlocked(save)?2:1];
 function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);document.documentElement.dataset.wtheme=id;selNode='root'}
 /* ---------- helpers ---------- */
-/* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
+/*DEV{*//* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
    Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
 const HITCH_MS=28;
 const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
@@ -1774,7 +1774,7 @@ const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
       '\n\n  Zeit   Bild  Logik Anzeig Zeichn  Musik Speich   Rest | Schritte Gegner Welle Tempo\n';
     for(const h of H.slice(-60))o+=f1(h.t)+f1(h.raw)+f1(h.st)+f1(h.hud)+f1(h.draw)+f1(h.mus)+f1(h.sv)+f1(Math.max(0,h.raw-h.st-h.hud-h.draw-h.mus))+' | '+h.ns+' '+h.en+' '+h.w+' '+h.sp+'×\n';
     return o+this.scanText()+'\nAlle Angaben in Millisekunden. Speichern ist in Logik enthalten. Rest = Zeit außerhalb des Spiels (Browser, System).\n'}};
-const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};
+const persist=()=>{if(!Perf.on){Store.save(save);return}const a=performance.now();Store.save(save);Perf.sv+=performance.now()-a};/*}DEV*//*REL{const Perf={on:false,noDraw:false};const persist=()=>Store.save(save);}REL*/
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function banner(t,sub){const b=$('#banner');b.querySelector('b').textContent=t;b.querySelector('span').textContent=sub||'';b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
 function show(id){for(const s of['hub','hud','tree','heroes','nova','towers','worlds','codex','achv','fleet'])$('#'+s).hidden=s!==id;if(id!=='hud'){$('#pause').hidden=true;$('#end').hidden=true}}
@@ -1803,7 +1803,7 @@ function goHub(){const wasRun=!!run;run=null;paused=false;show('hub');renderHub(
 function setVol(k,v){save[k]=+v;$('#'+k+'V').textContent=v>0?v+' %':'Aus';Snd.init();Snd.vol();clearTimeout(setVol.t);setVol.t=setTimeout(persist,300)}
 $('#volMus').oninput=e=>setVol('volMus',e.target.value);
 $('#volSfx').oninput=e=>{setVol('volSfx',e.target.value);const n=Date.now();if(!setVol.p||n-setVol.p>180){setVol.p=n;Snd.play(['tap','shoot','turret','kill'][Math.floor(n/180)%4])}};
-function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;devTaps=0;$('#devCode').hidden=true;updW2Btn();const lc=$('#bLiveCopy');lc.hidden=!IS_BETA||!!run;lc.dataset.arm='';lc.textContent='Live-Spielstand übernehmen'}
+function openSettings(){$('#settings').hidden=false;for(const k of['volMus','volSfx']){$('#'+k).value=save[k];$('#'+k+'V').textContent=save[k]>0?save[k]+' %':'Aus'}$('#bReset').textContent='Spielstand zurücksetzen';$('#bReset').dataset.arm='';$('#bReset').hidden=!!run;$('#resetInfo').hidden=!!run;/*DEV{*/devTaps=0;$('#devCode').hidden=true;updW2Btn();/*}DEV*/const lc=$('#bLiveCopy');lc.hidden=!IS_BETA||!!run;lc.dataset.arm='';lc.textContent='Live-Spielstand übernehmen'}
 /* Nur in der Beta: Kopie des echten Spielstands holen. Geschrieben wird ausschließlich in den Beta-Spielstand. */
 $('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStorage.getItem(LIVE_KEY)}catch(e){}
   if(!t){Snd.play('no');toast('Auf diesem Gerät gibt es keinen Live-Spielstand');return}
@@ -1812,7 +1812,7 @@ $('#bLiveCopy').onclick=()=>{const b=$('#bLiveCopy');let t=null;try{t=localStora
   location.reload()};
 $('#bSet').onclick=openSettings;$('#bPSet').onclick=openSettings;
 $('#bSetClose').onclick=()=>{$('#settings').hidden=true};
-$('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
+/*DEV{*/$('#bW2Test').onclick=()=>{save.w2test=!save.w2test;if(!save.w2test&&W.id===2&&!w2Unlocked(save))setWorld(1);persist();updW2Btn();renderHub()};
 function updW2Btn(){const b=$('#bW2Test');b.textContent=save.w2test?'Test-Freischaltung Gitterfestung: an':'Gitterfestung testweise freischalten';b.hidden=!save.dev||!!run||(save.best||0)>=100;$('#bDevOff').hidden=!save.dev||!!run;$('#bDev').hidden=!save.dev}
 /* ---------- Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernde Gegner, Leistungsmessung ---------- */
 function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curIds.concat(w1?['q']:[]),val=c=>c==='q'?save.q||0:ws.cur[c]||0;
@@ -1847,7 +1847,7 @@ $('#setVer').onclick=()=>{if(run||save.dev)return;const n=Date.now();devTaps=n-d
 function devTry(){const d=$('#devCode');if(d.hidden)return;if(devHash($('#devIn').value.trim())===2085854505){d.hidden=true;save.dev=true;persist();updW2Btn();Snd.play('buy');toast('Entwicklermodus aktiv')}
   else{Snd.play('no');toast('Falscher Code');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');setTimeout(()=>{d.hidden=true;d.classList.remove('shake')},350)}}
 $('#bDevOk').onclick=devTry;$('#devIn').addEventListener('keydown',e=>{if(e.key==='Enter')devTry()});
-$('#bDevOff').onclick=()=>{save.dev=false;Perf.stop();persist();updW2Btn();toast('Entwicklermodus beendet')};
+$('#bDevOff').onclick=()=>{save.dev=false;Perf.stop();persist();updW2Btn();toast('Entwicklermodus beendet')};/*}DEV*/
 $('#bReset').onclick=()=>{const b=$('#bReset');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Wirklich alles löschen? Nochmal tippen';Snd.play('no');setTimeout(()=>{if(b.dataset.arm){b.dataset.arm='';b.textContent='Spielstand zurücksetzen'}},4000);return}
   save=freshSave();setWorld(1);persist();$('#settings').hidden=true;goHub();toast('Spielstand wurde zurückgesetzt')};
 $('#bNova').onclick=()=>{show('nova');renderNova()};
@@ -2271,8 +2271,8 @@ R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
 $$('.ver').forEach(e=>e.textContent='Version '+VERSION+(STAGE?' '+STAGE:''));save.ver=VERSION;
 if(!save.ach){save.ach={};for(const a of ACH)save.ach[a.id]=achTier(a);persist()}
 goHub();
-{const mt=Music.tick.bind(Music);Music.tick=()=>{if(!Perf.on)return mt();const a=performance.now();mt();Perf.mus+=performance.now()-a}}
-if(save.dev&&save.devPerf)Perf.start();
+/*DEV{*/{const mt=Music.tick.bind(Music);Music.tick=()=>{if(!Perf.on)return mt();const a=performance.now();mt();Perf.mus+=performance.now()-a}}
+if(save.dev&&save.devPerf)Perf.start();/*}DEV*/
 let last=performance.now(),acc=0,hudT=0,pendT=0;
 function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf=Perf.on,p0=pf?performance.now():0;let p1=p0,p2=p0,ns=0;
   if(run&&!paused&&run.world===2&&!buildPaused())run.tickBuild(dt);

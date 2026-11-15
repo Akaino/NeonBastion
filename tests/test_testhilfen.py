@@ -1,7 +1,7 @@
 """Testhilfen im Entwicklermodus: Ressourcen, Rekord, Startwelle, schillernder Gegner, Leistungsmessung. Ohne Entwicklermodus unsichtbar und wirkungslos."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
-GAME='file://'+os.path.join(os.path.dirname(HERE),'dist','web','index.html')
+GAME='file://'+os.path.join(os.path.dirname(HERE),'dist','web','beta','index.html')
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):

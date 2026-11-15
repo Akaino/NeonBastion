@@ -227,8 +227,8 @@ nextWave(){const w=++this.w,S=this.S;
   const eC=Math.min(.08,.03+.003*w)*S.elite,twin=w%TWIN_EVERY===0,boss=w%10===0||twin,cnt=boss?Math.round(n*.5):n,q=[];this.twin=twin;this.bossPt=null;this.twinMax=0;this.twinDown=0;
   const mix=waveMix(w);
   for(let i=0;i<cnt;i++){let r=Math.random(),type='swarm';for(const [t,s] of mix){if(r<s){type=t;break}r-=s}q.push({type,elite:Math.random()<eC,shiny:Math.random()<SHINY_P})}
-  if(this.save&&this.save.dev&&this.save.devShiny&&q.length)q[0].shiny=true;
-  if((Math.random()<DROP_P||(this.save&&this.save.dev&&this.save.devDrop))&&q.length)q[Math.floor(Math.random()*q.length)].drop=true;   // vor den Bossen: Bosse werfen nichts ab   // Testhilfe: ein schillernder Gegner je Welle
+  /*DEV{*/if(this.save&&this.save.dev&&this.save.devShiny&&q.length)q[0].shiny=true;/*}DEV*/
+  if((Math.random()<DROP_P/*DEV{*/||(this.save&&this.save.dev&&this.save.devDrop)/*}DEV*/)&&q.length)q[Math.floor(Math.random()*q.length)].drop=true;   // vor den Bossen: Bosse werfen nichts ab   // Testhilfe: ein schillernder Gegner je Welle
   if(boss)q.splice(Math.floor(q.length/3),0,{type:'boss',elite:false});
   if(twin)q.splice(Math.floor(q.length*2/3),0,{type:'boss',elite:false,twin:true});
   if(w>1)this.energy+=10;

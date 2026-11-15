@@ -1,7 +1,7 @@
 """Skilltree: Äste tragen sichtbare Namen, der Hintergrund hat Sektoren und Ringe; gilt für beide Welten."""
 import os,sys,json
 HERE=os.path.dirname(os.path.abspath(__file__))
-GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'dist','web','index.html'))
+GAME=os.environ.get('GAME_URL','file://'+os.path.join(os.path.dirname(HERE),'dist','web','beta','index.html'))
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'out'))
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
@@ -10,7 +10,7 @@ save={"v":2,"cur":{"s":5000,"k":50,"p":5,"d":0},"nodes":{"root":1,"b1":3,"u1":2,
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
-    pg.add_init_script("if(!sessionStorage.x){sessionStorage.x=1;localStorage.setItem('neon-bastion-v1',"+json.dumps(json.dumps(save))+")}")
+    pg.add_init_script("if(!sessionStorage.x){sessionStorage.x=1;localStorage.setItem('neon-bastion-beta',"+json.dumps(json.dumps(save))+")}")
     pg.goto(GAME);pg.wait_for_timeout(300)
     check(pg.evaluate("()=>Object.values(BR).map(b=>b.name)")==['Basis','Flotte','Helden','Impuls','Ertrag'],'Äste heißen Basis, Flotte, Helden, Impuls, Ertrag')
     pg.click('#bTree');pg.wait_for_timeout(300)

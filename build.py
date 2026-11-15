@@ -17,14 +17,21 @@ ORDER = ['core.js', 'core2.js', 'game.js', 'game2.js', 'render.js', 'audio.js', 
 
 shell = open(os.path.join(SRC, 'shell.html'), encoding='utf-8').read()
 js = '\n'.join(open(os.path.join(SRC, f), encoding='utf-8').read() for f in ORDER)
-html = shell.replace('/*JS*/', js)
+full = shell.replace('/*JS*/', js)
+# Entwicklermodus (Testhilfen, Leistungsmessung, Test-Freischaltung) steckt nur in Beta und Bottest. Im echten Spiel fallen die mit
+# /*DEV{*/ … /*}DEV*/ bzw. <!--DEV{--> … <!--}DEV--> markierten Teile weg, der Ersatz steht in /*REL{ … }REL*/.
+html = re.sub(r'/\*DEV\{\*/.*?/\*\}DEV\*/', '', full, flags=re.S)
+html = re.sub(r'<!--DEV\{-->.*?<!--\}DEV-->', '', html, flags=re.S)
+html = re.sub(r'/\*REL\{(.*?)\}REL\*/', r'\1', html, flags=re.S)
+assert 'DEV{' not in html and '}DEV' not in html and 'renderDev' not in html and 'devCode' not in html, 'Entwicklermodus ist im echten Spiel gelandet'
 version = re.search(r"const VERSION='([^']+)'", js).group(1)
 
 fonts = ''.join("@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:%d;font-display:swap;src:url(fonts/chakra-petch-latin-%d-normal.woff2) format('woff2')}" % (w, w) for w in (400, 500, 600, 700))
-web = html.replace('<style>', '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" type="image/png" href="icon-32.png">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<style>' + fonts, 1)
+head = lambda h: h.replace('<style>', '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" type="image/png" href="icon-32.png">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<style>' + fonts, 1)
+web = head(html)
 
 # Beta: liegt eine Ebene tiefer, nutzt Schrift, Icons und Rechtsseiten der Hauptseite, kein eigenes Manifest, für Suchmaschinen gesperrt
-beta = web.replace('<link rel="manifest" href="manifest.webmanifest">\n', '<meta name="robots" content="noindex,nofollow">\n', 1)
+beta = head(full).replace('<link rel="manifest" href="manifest.webmanifest">\n', '<meta name="robots" content="noindex,nofollow">\n', 1)
 for a, b in (('url(fonts/', 'url(../fonts/'), ('href="icon-32.png"', 'href="../icon-32.png"'), ('href="apple-touch-icon.png"', 'href="../apple-touch-icon.png"'),
              ('href="impressum.html"', 'href="../impressum.html"'), ('href="datenschutz.html"', 'href="../datenschutz.html"')):
     assert a in beta, a
