@@ -130,20 +130,9 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .cmp em{font-style:normal;color:var(--c);text-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
 .btn.nova{display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(180deg,rgba(199,184,255,.18),rgba(199,184,255,.04))}
 .btn small{font-size:12px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
-/*DEV{*//* Testhilfen (Entwicklermodus): Zeilen mit Wert und kleinen Knöpfen, Anzeige der Leistungsmessung unten links */
-#dev{z-index:7}#dev .mbox{background:#100e30;text-align:left;max-height:calc(100dvh - 40px);overflow-y:auto;gap:10px}#dev h2{text-align:center}
-#devBody h3{margin:8px 0 2px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#ff8a3d}#devBody p{margin:0;color:var(--muted);font-size:13px}
-.drow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}.drow>span:first-child{flex:1;min-width:96px}.drow>b{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
-.dbtn{display:flex;gap:4px}.dbtn button,.dwide{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:rgba(5,5,26,.6);border:1.5px solid rgba(255,138,61,.6);border-radius:8px;padding:7px 8px;cursor:pointer}
-.dwide{width:100%;padding:10px 12px;font-size:15px;margin-top:6px}.dwide.on{background:rgba(255,138,61,.25);border-color:#ff8a3d}
-#devOut{width:100%;height:160px;font:12px/1.35 ui-monospace,Menlo,monospace;color:var(--ink);background:rgba(5,5,26,.8);border:1px solid var(--line);border-radius:8px;padding:8px;-webkit-user-select:text;user-select:text}
-#perf{position:fixed;left:max(8px,env(safe-area-inset-left,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5;pointer-events:none;font:11px/1.35 ui-monospace,Menlo,monospace;color:#ffe14f;background:rgba(3,3,14,.72);border-radius:6px;padding:4px 7px;white-space:pre}
-html.nofont *{font-family:system-ui,sans-serif!important}html.nofx *,html.nofx *::before,html.nofx *::after{box-shadow:none!important;text-shadow:none!important;filter:none!important;backdrop-filter:none!important}
-html.onlycv body *{visibility:hidden!important}html.onlycv #cv{visibility:visible!important}html.blank body{display:none!important}
-html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!important}/*}DEV*/
+
 #settings{z-index:6}#settings .mbox{background:#100e30}
-/*DEV{*/#devCode{display:flex;align-items:center;gap:8px;justify-content:center}#devCode label{color:var(--muted);font-size:14px}#devCode .btn{padding:9px 14px}
-#devIn{width:110px;font:inherit;font-weight:600;text-align:center;letter-spacing:.2em;color:var(--ink);background:rgba(5,5,26,.8);border:1.5px solid #ff8a3d;border-radius:10px;padding:9px 8px;-webkit-user-select:text;user-select:text}#devIn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}#devCode.shake{animation:shake .3s}/*}DEV*/
+
 .legal{margin:0;font-size:13px;color:var(--dim)}.legal a{display:inline-block;padding:6px 8px;color:var(--muted)}.legal a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
 .vol{display:flex;flex-direction:column;gap:8px;text-align:left;padding:4px 2px}
 .vol span{display:flex;align-items:center;gap:8px;font-weight:600}.vol span svg{width:18px;height:18px;color:var(--cyan)}.vol b{margin-left:auto;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -239,7 +228,6 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 <body>
 <div id="app">
 <canvas id="cv" aria-label="Spielfeld"></canvas>
-
 <section id="hub" class="screen">
   <div class="logo"><h1>Neon<span>Bastion</span></h1><p id="hubWorld" class="worldname"></p><p id="hubBest">Verteidige den Kern</p></div>
   <div class="hubbox">
@@ -253,7 +241,6 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
     <div class="hubfoot"><span><b class="ver"></b> · Fortschritt wird auf diesem Gerät gespeichert</span><button id="bSet" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Einstellungen</button></div>
   </div>
 </section>
-
 <section id="hud" class="screen" hidden>
   <div class="top">
     <div class="row1">
@@ -274,9 +261,7 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
   <div id="tray" hidden><div id="trayHead"></div><p class="trayinfo">Energie bekommst du für jeden besiegten Gegner. Damit baust und verbesserst du Türme in diesem Run. Tippe später auf einen Turm, um ihn aufzuwerten, zu verschieben oder abzubauen.</p><div id="trayList"></div><button class="btn" id="bTrayClose" style="--c:var(--muted)">Schließen</button></div>
   <div id="hHeroes"></div>
 </section>
-
 <div id="banner"><b></b><span></span></div>
-
 <section id="tree" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Skilltree</h2><div class="curs" data-cur></div></div>
   <div id="tv"><div id="tw"></div>
@@ -284,73 +269,54 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
   </div>
   <div class="sheet" id="sheet"></div>
 </section>
-
 <section id="heroes" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Helden</h2><div class="curs" data-cur></div></div>
   <div class="slots" id="slots"></div>
   <div class="hlist" id="hlist"></div>
 </section>
-
 <section id="fleet" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Flotte</h2><div class="curs" data-cur></div></div>
   <div class="slots" id="fbar"></div>
   <div class="hlist" id="flist"></div>
 </section>
-
 <section id="codex" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Enzyklopädie</h2></div>
   <div class="hlist" id="clist"></div>
 </section>
-
 <section id="achv" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Erfolge</h2></div>
   <div class="hlist" id="alist"></div>
 </section>
-
 <section id="worlds" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Welten</h2><div class="curs" data-cur></div></div>
   <div class="hlist" id="wlist"></div>
 </section>
-
 <section id="towers" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Türme</h2><div class="curs" data-cur></div></div>
   <div class="slots" id="tslots"></div>
   <div class="hlist" id="tlist"></div>
 </section>
-
 <section id="nova" class="screen" hidden>
   <div class="head"><button class="btn icon" data-back aria-label="Zurück"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>Supernova</h2><div class="curs" data-cur></div></div>
   <div class="hlist"><article class="hcard novatop" id="novaTop" style="--c:#c7b8ff"></article><div id="novaList" style="display:contents"></div></div>
 </section>
-
 <section id="settings" class="screen modal" hidden>
   <div class="mbox"><h2>Einstellungen</h2><p class="ver" id="setVer" style="margin:-10px 0 -4px;padding:4px 0;color:var(--dim);font-size:12px"></p>
-    <!--DEV{--><div id="devCode" hidden><label for="devIn">Code</label><input id="devIn" type="text" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Code für den Entwicklermodus"><button class="btn" id="bDevOk" style="--c:#ff8a3d">Bestätigen</button></div><!--}DEV-->
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Musik<b id="volMusV"></b></span><input type="range" id="volMus" min="0" max="100" step="5"></label>
     <label class="vol"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>Effekte<b id="volSfxV"></b></span><input type="range" id="volSfx" min="0" max="100" step="5"></label>
     <p id="resetInfo" style="margin:6px 0 0;color:var(--muted);font-size:13px">Zurücksetzen löscht deinen gesamten Fortschritt auf diesem Gerät, auch Quanten und Rekorde.</p>
-    <!--DEV{--><button class="btn" id="bDev" style="--c:#ff8a3d" hidden>Testhilfen</button>
-    <button class="btn" id="bW2Test" style="--c:#ff8a3d" hidden></button><button class="btn" id="bDevOff" style="--c:var(--muted)" hidden>Entwicklermodus beenden</button><!--}DEV-->
     <button class="btn" id="bLiveCopy" style="--c:#c7b8ff" hidden>Live-Spielstand übernehmen</button>
     <button class="btn" id="bReset" style="--c:#ff4f6d">Spielstand zurücksetzen</button><button class="btn big" id="bSetClose">Fertig</button>
     <p class="legal"><a href="impressum.html" target="_blank" rel="noopener">Impressum</a> · <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p></div>
 </section>
-
 <section id="pause" class="screen modal" hidden>
   <div class="mbox"><h2>Pausiert</h2><p style="margin:0;color:var(--muted)">Wenn du den Run beendest, bekommst du alle bisher gesammelten Belohnungen.</p>
     <button class="btn big" id="bResume">Weiterspielen</button><button class="btn" id="bPSet" style="--c:var(--muted)">Lautstärke</button><button class="btn" id="bQuit" style="--c:var(--mag)">Run beenden</button></div>
 </section>
-
 <section id="end" class="screen modal" hidden>
   <div class="mbox"><h2 id="eTitle">Basis zerstört</h2><div id="eWave"></div><div class="gainlist" id="eGain"></div><button class="btn big" id="bBack">Zur Basis</button></div>
 </section>
 <div id="flash"></div>
-<!--DEV{--><section id="dev" class="screen modal" hidden>
-  <div class="mbox"><h2>Testhilfen</h2><div id="devBody"></div>
-    <textarea id="devOut" readonly hidden aria-label="Messung als Text"></textarea>
-    <button class="btn big" id="bDevClose">Fertig</button></div>
-</section>
-<div id="perf" hidden></div><!--}DEV-->
 <div id="toast" role="status"></div>
 </div>
 <script>

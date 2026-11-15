@@ -44,7 +44,7 @@ with sync_playwright() as p:
 # Das echte Spiel enthält den Entwicklermodus gar nicht: weder Code noch Knöpfe, und gesetzte Felder im Spielstand wirken nicht
 ROOT=os.path.join(os.path.dirname(HERE),'dist','web')
 rel=open(os.path.join(ROOT,'index.html'),encoding='utf-8').read();bet=open(os.path.join(ROOT,'beta','index.html'),encoding='utf-8').read()
-WORDS=['renderDev','Testhilfen','devCode','bW2Test','bDevOff','2085854505','Perf.scan','Leistungsmessung','devStart)','devShiny&&','devDrop)','w2test||']
+WORDS=['renderDev','devCode','bW2Test','bDevOff','2085854505','Perf.scan','Dev.stats=','Dev.wave=','Dev.w2=','devTaps','Ursachensuche']
 check(not [w for w in WORDS if w in rel],'echtes Spiel: kein Entwicklermodus im Quelltext '+str([w for w in WORDS if w in rel]))
 check(all(w in bet for w in WORDS),'Beta: Entwicklermodus vollständig enthalten '+str([w for w in WORDS if w not in bet]))
 with sync_playwright() as p:

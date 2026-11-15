@@ -1,8 +1,11 @@
-const VERSION='0.30.1';
+const VERSION='0.31.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+/* Haken für den Entwicklermodus. Im echten Spiel bleibt das Objekt leer; Beta und Bottest laden zusätzlich dev.js und tragen sich hier ein:
+   Dev.stats(save,S)  Testhilfe Startwelle · Dev.wave(run) → {shiny,drop}  erzwungene Gegner · Dev.w2(save)  Test-Freischaltung der Gitterfestung · Dev.openSettings() */
+const Dev={};
 const verNum=v=>{const p=String(v||'0').split('.').map(Number);return(p[0]||0)*1e6+(p[1]||0)*1e3+(p[2]||0)};
 const NUM_UNITS=['','K','M','B','T','Qa','Qi'];
 // Einheit für 1000^e: bis Qi die bekannten Kürzel, danach aa, ab, … zz
@@ -256,7 +259,7 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   // Vorgabe des Nutzers: Schnellstart darf nie höher starten lassen als die höchste bisher erreichte Welle.
   S.startMax=Math.min(S.startMax,Math.max(1,save.best||0));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
-  /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
+  if(Dev.stats)Dev.stats(save,S);   // Testhilfen (nur Beta und Bottest, siehe dev.js)
   // Verbund mit den Helden: Der Heldenschaden-Bonus wächst spät sehr stark (Knoten und Supernova). Impuls, Basis und Flotte bekommen je einen Knoten, der ihn in fünf Stufen übernimmt –
   // sonst trägt ab Welle 70 allein der Impuls (gemessen: 65–86 % des Schadens).
   // Jede Stufe ist derselbe Faktor (geometrisch), damit keine Stufe einen Sprung macht: Stufe l gibt (1+Bonus)^(l/5), Stufe 5 den vollen Bonus.
