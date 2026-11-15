@@ -3,6 +3,27 @@ import { fmtN } from '../core/format.js';
 import { drawRun5, paintHero5 } from '../render/world5.js';
 import { Run5 } from '../world5/Run5.js';
 import {
+  BOX_COST5,
+  BOX_W5,
+  GEAR_Q5,
+  GEAR_SLOTS5,
+  GEAR_TYPES5,
+  GEAR_TYPE_IDS5,
+  SETS5,
+  SLOT_NAMES5,
+  buyBox5,
+  equip5,
+  itemName5,
+  itemScore5,
+  itemText5,
+  recycle5,
+  recycleAll5,
+  scrapOf5,
+  setCounts5,
+  slotType5,
+  unequip5,
+} from '../world5/gear.js';
+import {
   CLASSES5,
   CLASS_IDS5,
   CRYSTALS5,
@@ -72,10 +93,15 @@ export function setW5Speed(v) {
 export function setW5Slot(v) {
   return (w5Slot = v);
 }
-let acc = 0,
+let invDirty = false,
+  acc = 0,
   hudT = 0,
   saveT = 0,
-  lastRes = null; // Ergebnis des zuletzt geöffneten Kristalls
+  lastRes = null, // Ergebnis des zuletzt geöffneten Kristalls
+  lastBox = null, // Inhalt der zuletzt geöffneten Ausrüstungsbox
+  gearHero = null, // Held, dessen Ausrüstung gerade offen ist (Reiter Helden)
+  gearSlot = 'waffe', // dort gewählter Platz
+  invType = 'alle'; // Filter im Inventar
 const W = () => save.w5;
 const tag = (rar, extra) =>
   `<span class="tag" style="--c:${RARITY5[rar].col}">${RARITY5[rar].name}${extra || ''}</span>`;
@@ -88,7 +114,15 @@ const dur = min =>
 
 export function openW5() {
   const got = claimIdle5(W(), Date.now());
-  setRun5(new Run5(W(), { sfx: n => n !== 'kill' && Snd.play(n), event: () => (hudT = 1) }));
+  setRun5(
+    new Run5(W(), {
+      sfx: n => n !== 'kill' && Snd.play(n),
+      event: k => {
+        hudT = 1;
+        if (k === 'gear') invDirty = true; // neue Beute: Inventar-Reiter bei Gelegenheit auffrischen
+      },
+    }),
+  );
   setW5On(true);
   show('w5');
   $('#w5Note').hidden = !got;
@@ -126,7 +160,8 @@ $('#w5tabs').addEventListener('click', e => {
   const b = e.target.closest('[data-t]');
   if (!b) return;
   setW5Tab(b.dataset.t);
-  lastRes = null;
+  lastRes = lastBox = null;
+  gearHero = null;
   renderW5();
 });
 $('#w5Note').addEventListener('click', e => {
@@ -162,6 +197,13 @@ export function w5Frame(dt) {
     hudT = 0;
     updW5Hud();
     updAfford();
+    // Neue Ausrüstung zeigt der Inventar-Reiter erst, wenn gerade kein Finger auf einem Knopf liegt
+    if (invDirty && !$('#w5panel :active')) {
+      invDirty = false;
+      const el = $('#w5InvN');
+      if (el) setT(el, String(W().inv.length));
+      if (w5Tab === 'inv') renderW5();
+    }
   }
   saveT += dt;
   if (saveT > 5) {
@@ -201,7 +243,7 @@ export function updW5Hud() {
 
 /* ---------- Reiter ---------- */
 // Wertung eines gefundenen Helden und der ganzen Gruppe
-const up5 = id => heroPower5(id, W().heroes[id].l, W().heroes[id].r);
+const up5 = id => heroPower5(id, W().heroes[id].l, W().heroes[id].r, W().gear[id]);
 const upTag = id => `<span class="tag up">UP ${fmtN(up5(id))}</span>`;
 // Heldenübersicht: der stärkste zuerst (Vorgabe des Nutzers), bei Gleichstand die höhere Seltenheit
 const ownedSorted = () =>
@@ -232,11 +274,12 @@ function heroCard(id) {
     st = w.heroes[id];
   if (!st)
     return `<div class="w5card lock"><div class="w5q">?</div><div class="w5body"><h3>Noch nicht gefunden ${tag(H.rar)}</h3><p>${C.name}</p></div></div>`;
-  const a = heroStats5(id, st.l, st.r),
+  const G = w.gear[id],
+    a = heroStats5(id, st.l, st.r, G),
     lc = levelCost5(w, id),
-    b = lc ? heroStats5(id, st.l + 1, st.r) : null,
+    b = lc ? heroStats5(id, st.l + 1, st.r, G) : null,
     rn = rankNeed5(w, id),
-    c = rn ? heroStats5(id, st.l, st.r + 1) : null,
+    c = rn ? heroStats5(id, st.l, st.r + 1, G) : null,
     R = RARITY5[H.rar],
     inTeam = w.team.includes(id);
   let h = `<div class="w5card${H.rar === 'champ' ? ' champ' : ''}" style="--c:${R.col}">${portrait(id, 22)}<div class="w5body">
@@ -260,9 +303,108 @@ function heroCard(id) {
     : `<button class="btn" disabled>Höchster Rang</button>`;
   if (H.rar === 'basis' && st.s > 0)
     h += `<button class="btn" data-act="sync" data-id="${id}" style="--c:${CUR5.d.col}"><span class="price"><span>Synchronisieren</span>${core5(H.rar, st.s)}<span class="plus">→</span>${cur5('d', st.s * R.sync)}</span></button>`;
+  h += `<button class="btn" data-act="gear" data-id="${id}" style="--c:${CUR5.x.col}">Ausrüstung · ${Object.keys(G || {}).length} von ${GEAR_SLOTS5.length}</button>`;
   return h + `</div></div></div>`;
 }
+/* ---------- Ausrüstung ---------- */
+const SYMX = '⛭';
+const scrap5 = n => `<span class="c5" style="color:${CUR5.x.col}">${SYMX} ${fmtN(n)}</span>`;
+const qTag = it => `<span class="tag" style="--c:${GEAR_Q5[it.q].col}">${GEAR_Q5[it.q].name}</span>`;
+const setTag = it =>
+  it.set ? `<span class="tag" style="--c:${SETS5[it.set].col}">Set ${SETS5[it.set].name}</span>` : '';
+// Zeile eines Gegenstands; extra = Knöpfe oder Zusatztext rechts
+const itemRow = (it, extra) =>
+  `<div class="w5item" style="--c:${GEAR_Q5[it.q].col}"><div class="w5ibody"><b>${itemName5(it)}</b><span>${itemText5(it)} · Stufe ${it.s}</span><span>${qTag(it)}${setTag(it)}</span></div>${extra || ''}</div>`;
+// Wertung des Helden, wenn auf dem Platz dieser Gegenstand läge (null = leer)
+function upWith(id, slot, it) {
+  const st = W().heroes[id],
+    g = { ...(W().gear[id] || {}) };
+  if (it) g[slot] = it;
+  else delete g[slot];
+  return heroPower5(id, st.l, st.r, g);
+}
+// Ausrüstung eines Helden: neun Plätze, Set-Boni, für den gewählten Platz die passenden Teile aus dem Inventar mit Vergleich
+function panelGear(id) {
+  const w = W(),
+    H = HEROES5[id],
+    G = w.gear[id] || {},
+    cur = G[gearSlot],
+    now = up5(id),
+    n = setCounts5(G);
+  let h = `<div class="w5acts"><button class="btn" data-act="gback" style="--c:#6dffb0">‹ Zurück zu den Helden</button></div>
+    <div class="w5card" style="--c:${RARITY5[H.rar].col}">${portrait(id, 22)}<div class="w5body"><h3>${H.name} ${tag(H.rar)}${upTag(id)}</h3><p>Tippe einen Platz an, um ihn zu belegen. Was du ablegst, kommt zurück ins Inventar.</p></div></div>
+    <div class="w5gslots">`;
+  for (const slot of GEAR_SLOTS5) {
+    const it = G[slot];
+    h += `<button class="w5gslot${slot === gearSlot ? ' sel' : ''}${it ? '' : ' empty'}" data-gslot="${slot}" style="--c:${it ? GEAR_Q5[it.q].col : '#5f5c8c'}"><small>${SLOT_NAMES5[slot]}</small>${it ? `<b>${itemText5(it).replace(/ (Leben|Angriff|Tempo|weniger Schaden|Energie je Sekunde)$/, '')}</b><em style="color:${it.set ? SETS5[it.set].col : 'inherit'}">${it.set ? SETS5[it.set].name : GEAR_Q5[it.q].name}</em>` : '<b>–</b><em>leer</em>'}</button>`;
+  }
+  h += `</div>`;
+  const sets = Object.keys(n);
+  if (sets.length)
+    h += sets
+      .map(sid => {
+        const S = SETS5[sid];
+        return `<div class="w5card" style="--c:${S.col}"><div class="w5body"><h3>Set ${S.name} <span class="tag" style="--c:${S.col}">${n[sid]} von ${S.parts.length}</span></h3><p>${S.bonus.map(([need, , text]) => `<span class="${n[sid] >= need ? 'w5on' : 'w5off'}">${need} Teile: ${text}</span>`).join('<br>')}</p></div></div>`;
+      })
+      .join('');
+  h += `<p class="w5hint"><b>${SLOT_NAMES5[gearSlot]}</b>${cur ? '' : ' ist leer.'}</p>`;
+  if (cur) {
+    const ohne = upWith(id, gearSlot, null);
+    h += itemRow(
+      cur,
+      `<div class="w5iact"><span class="w5cmp">angelegt</span><button class="btn" data-act="unequip" style="--c:#ff6b84">Ablegen<small> UP ${fmtN(now)} → ${fmtN(ohne)}</small></button></div>`,
+    );
+  }
+  const fit = w.inv.filter(it => it.t === slotType5(gearSlot)).sort((a, b) => itemScore5(b) - itemScore5(a));
+  h += fit.length
+    ? fit
+        .map(it => {
+          const neu = upWith(id, gearSlot, it);
+          return itemRow(
+            it,
+            `<div class="w5iact"><button class="btn" data-act="equip" data-id="${it.id}" style="--c:${neu >= now ? '#6dffb0' : '#ff8a3d'}">Anlegen<small> UP ${fmtN(now)} → ${fmtN(neu)}</small></button></div>`,
+          );
+        })
+        .join('')
+    : `<p class="w5hint">Im Inventar liegt nichts für diesen Platz. Ausrüstung fällt von besiegten Gegnern (Bosse sicher) und steckt in Ausrüstungsboxen im Shop.</p>`;
+  return h;
+}
+// Inventar: Währungen, Material, Kerne und Ausrüstung, nach Art sortiert
+function panelInv() {
+  const w = W(),
+    cores = HERO_IDS5.filter(id => w.heroes[id] && w.heroes[id].s > 0),
+    list = w.inv
+      .filter(it => invType === 'alle' || it.t === invType)
+      .sort(
+        (a, b) =>
+          GEAR_TYPE_IDS5.indexOf(a.t) - GEAR_TYPE_IDS5.indexOf(b.t) || b.q - a.q || itemScore5(b) - itemScore5(a),
+      ),
+    junk = q => w.inv.filter(it => it.q <= q && !it.set);
+  let h = `<div class="w5card" style="--c:#9b98c8"><div class="w5body"><h3>Währungen</h3><p class="w5wrap">${cur5('l', Math.floor(w.cur.l))} Lumen · ${cur5('k', w.cur.k)} Kryon · ${cur5('d', w.cur.d)} Synchron-Staub · ${scrap5(w.cur.x)} Schrott</p></div></div>
+    <div class="w5card" style="--c:#9b98c8"><div class="w5body"><h3>Material</h3><p class="w5wrap">${essLine()}</p></div></div>
+    <div class="w5card" style="--c:#9b98c8"><div class="w5body"><h3>Kerne</h3><p class="w5wrap">${cores.length ? cores.map(id => `${core5(HEROES5[id].rar, w.heroes[id].s)} ${HEROES5[id].name}`).join(' · ') : 'Keine. Kerne entstehen, wenn ein Kristall einen Helden enthält, den du schon hast.'}</p></div></div>
+    <p class="w5hint"><b>Ausrüstung (${w.inv.length})</b> · Recyceln macht aus einem Teil Schrott; für ${BOX_COST5} Schrott gibt es im Shop eine Ausrüstungsbox.</p>
+    <div class="w5filter"><button class="w5f${invType === 'alle' ? ' sel' : ''}" data-invf="alle">Alle</button>${GEAR_TYPE_IDS5.map(t => `<button class="w5f${invType === t ? ' sel' : ''}" data-invf="${t}">${GEAR_TYPES5[t].name} ${w.inv.filter(it => it.t === t).length}</button>`).join('')}</div>
+    <div class="w5acts">${[0, 1]
+      .map(q => {
+        const j = junk(q);
+        return `<button class="btn" data-act="recyall" data-id="${q}" style="--c:${CUR5.x.col}"${j.length ? '' : ' disabled'}><span class="price"><span>${q ? 'Gewöhnliches und Seltenes' : 'Alles Gewöhnliche'} recyceln (${j.length})</span>${scrap5(j.reduce((a, it) => a + scrapOf5(it), 0))}</span></button>`;
+      })
+      .join('')}</div><p class="w5hint">Set-Teile bleiben dabei liegen.</p>`;
+  h += list.length
+    ? list
+        .map(it =>
+          itemRow(
+            it,
+            `<div class="w5iact"><button class="btn" data-act="recy" data-id="${it.id}" style="--c:${CUR5.x.col}"><span class="price"><span>Recyceln</span>${scrap5(scrapOf5(it))}</span></button></div>`,
+          ),
+        )
+        .join('')
+    : `<p class="w5hint">${w.inv.length ? 'Nichts von dieser Art.' : 'Noch keine Ausrüstung. Sie fällt von besiegten Gegnern, Bosse lassen immer zwei Teile fallen. Angelegt wird sie auf der Karte eines Helden (Reiter „Helden“ → „Ausrüstung“).'}</p>`;
+  return h;
+}
 function panelHelden() {
+  if (gearHero && W().heroes[gearHero]) return panelGear(gearHero);
   const own = ownedSorted(),
     rest = HERO_IDS5.filter(id => !W().heroes[id]).sort(
       (a, b) => RARITY_IDS5.indexOf(HEROES5[a].rar) - RARITY_IDS5.indexOf(HEROES5[b].rar),
@@ -317,6 +459,11 @@ function panelShop() {
         : `Der Fund wurde zu einem Kern für den Rang von ${H.name} (jetzt ${w.heroes[lastRes.id].s}).`
     }</p></div></div>`;
   }
+  if (lastBox)
+    h += `<div class="w5res" style="--c:${GEAR_Q5[lastBox.q].col}"><div class="w5box"></div><div><h3>Aus der Box: ${itemName5(lastBox)}</h3><p>${itemText5(lastBox)} · Stufe ${lastBox.s} · ${qTag(lastBox)}${setTag(lastBox)}<br>Liegt jetzt im Inventar.</p></div></div>`;
+  h += `<div class="w5card" style="--c:${CUR5.x.col}"><div class="w5box"></div><div class="w5body"><h3>Ausrüstungsbox</h3>
+      <p>Ein zufälliges Ausrüstungsteil auf der Stufe deiner höchsten gewonnenen Welle. ${GEAR_Q5.map((Q, i) => `<span style="color:${Q.col}">${Q.name} ${BOX_W5[i]} %</span>`).join(' · ')}. Schrott gibt es fürs Recyceln im Inventar.</p>
+      <div class="w5acts"><button class="btn" data-act="box" style="--c:${CUR5.x.col}"><span class="price"><span>Öffnen</span>${scrap5(BOX_COST5)}</span></button></div></div></div>`;
   h += `<p class="w5hint">Kristalle kosten Kryon. Kryon gibt es nur im Spiel: für jeden ersten Sieg in einer Welle, von Bossen und gelegentlich aus Wellen. Jeder Kristall enthält einen Helden.</p>`;
   for (const cid of CRYSTAL_IDS5) {
     const C = CRYSTALS5[cid];
@@ -354,7 +501,7 @@ function panelZonen() {
 export function renderW5() {
   $$('#w5tabs [data-t]').forEach(b => b.classList.toggle('sel', b.dataset.t === w5Tab));
   const p = $('#w5panel');
-  p.innerHTML = { helden: panelHelden, team: panelTeam, shop: panelShop, zonen: panelZonen }[w5Tab]();
+  p.innerHTML = { helden: panelHelden, team: panelTeam, inv: panelInv, shop: panelShop, zonen: panelZonen }[w5Tab]();
   $$('#w5panel canvas.w5p').forEach(cv => paintHero5(cv, cv.dataset.h, +cv.dataset.r));
   updAfford();
 }
@@ -372,7 +519,9 @@ function updAfford() {
             ? canRank5(w, id)
             : a === 'pull'
               ? w.cur.k >= CRYSTALS5[id].cost
-              : true;
+              : a === 'box'
+                ? w.cur.x >= BOX_COST5
+                : true;
     b.classList.toggle('poor', !ok);
   });
 }
@@ -429,12 +578,54 @@ $('#w5panel').addEventListener('click', e => {
       lastRes = r;
       Snd.play(r.rar === 'champ' || r.rar === 'legend' ? 'nova' : 'buy');
       $('#w5panel').scrollTop = 0;
+    } else if (a === 'gear') {
+      gearHero = id;
+      $('#w5panel').scrollTop = 0;
+      return renderW5();
+    } else if (a === 'gback') {
+      gearHero = null;
+      return renderW5();
+    } else if (a === 'equip') {
+      if (!equip5(w, gearHero, gearSlot, +id)) return;
+      Snd.play('buy');
+    } else if (a === 'unequip') {
+      if (!unequip5(w, gearHero, gearSlot)) return;
+      Snd.play('ui');
+    } else if (a === 'recy') {
+      const n = recycle5(w, +id);
+      if (!n) return;
+      Snd.play('buy');
+      toast(`+${n} Schrott`);
+    } else if (a === 'recyall') {
+      const n = recycleAll5(w, +id);
+      Snd.play('buy');
+      toast(`+${n} Schrott`);
+    } else if (a === 'box') {
+      const it = buyBox5(w);
+      if (!it) {
+        Snd.play('no');
+        return toast(`Dir fehlen ${BOX_COST5 - w.cur.x} Schrott – recycle Ausrüstung im Inventar`);
+      }
+      lastBox = it;
+      lastRes = null;
+      Snd.play(it.q >= 2 ? 'nova' : 'buy');
+      $('#w5panel').scrollTop = 0;
     } else if (a === 'clear') {
       if (setSlot5(w, w5Slot, null)) run5.begin(true);
     } else if (a === 'hold') {
       w.hold = !w.hold; // die laufende Welle geht weiter, nur das Vorrücken danach ändert sich
     }
     return again();
+  }
+  const gs = t.closest('[data-gslot]');
+  if (gs) {
+    gearSlot = gs.dataset.gslot;
+    return renderW5();
+  }
+  const fl = t.closest('[data-invf]');
+  if (fl) {
+    invType = fl.dataset.invf;
+    return renderW5();
   }
   const sl = t.closest('[data-slot]');
   if (sl) {

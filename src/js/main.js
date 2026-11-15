@@ -33,6 +33,7 @@ import './run/drops.js';
 import './run/zones.js';
 import './run/impulse.js';
 import './world2/Run2.js';
+import './world5/gear.js';
 import './world5/data.js';
 import './world5/save.js';
 import './world5/Run5.js';

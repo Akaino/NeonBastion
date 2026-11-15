@@ -1,3 +1,4 @@
+import { GEAR_Q5, dropGear5, itemName5 } from './gear.js';
 import {
   BOSS_CLEAVE5,
   BOSS_CLEAVE_CD5,
@@ -51,6 +52,7 @@ export class Run5 {
     this.heroes = [];
     this.en = [];
     this.wins = 0;
+    this.loot = 0; // gefundene Ausrüstung in diesem Lauf
     this.wipes = 0;
     this.guard = 0; // Bollwerk: Schaden an der Gruppe gesenkt
     this.invul = 0; // Aegis: kein Schaden
@@ -68,7 +70,7 @@ export class Run5 {
     this.s.team.forEach((id, slot) => {
       const st = id && this.s.heroes[id];
       if (!st) return;
-      const v = heroStats5(id, st.l, st.r),
+      const v = heroStats5(id, st.l, st.r, this.s.gear[id]),
         H = HEROES5[id];
       this.heroes.push({
         id,
@@ -91,6 +93,7 @@ export class Run5 {
         cast: 0,
         tr: H.trait, // Eigenheit des Helden
         hits: 0,
+        gdr: v.dr, // Schadensminderung aus der Ausrüstung
         spk: 0, // Stachelpanzer (Poller) läuft noch so lange
         out: false, // Nahkämpfer, der gerade keinen Gegner erreicht (steht zu weit hinten) – nur für die Anzeige
         at: 0, // läuft ab, solange die Angriffsbewegung gezeigt wird
@@ -101,12 +104,14 @@ export class Run5 {
   refresh() {
     for (const h of this.heroes) {
       const st = this.s.heroes[h.id],
-        v = heroStats5(h.id, st.l, st.r),
+        v = heroStats5(h.id, st.l, st.r, this.s.gear[h.id]),
         f = h.hp / h.max;
       h.max = v.hp;
       h.hp = h.dead ? 0 : Math.max(1, Math.round(v.hp * f));
       h.atk = v.atk;
       h.reg = v.en;
+      h.cd0 = v.cd;
+      h.gdr = v.dr;
     }
   }
   begin(fresh) {
@@ -208,7 +213,7 @@ export class Run5 {
   hurt(h, d, from) {
     if (h.dead || this.invul > 0) return;
     if (this.guard > 0) d *= 0.75;
-    d *= (1 - (h.tr.dr || 0)) * (1 - this.auraDr);
+    d *= (1 - (h.tr.dr || 0)) * (1 - this.auraDr) * (1 - h.gdr);
     if (from && !from.ranged && (h.tr.thorns || h.spk > 0)) this.hit(from, d * (h.spk > 0 ? 1 : h.tr.thorns), null);
     if (h.sh > 0) {
       const a = Math.min(h.sh, d);
@@ -247,6 +252,12 @@ export class Run5 {
       const l = enemyLoot5(this.stage, e.type);
       this.s.cur.l += l;
       this.note(e.x, e.lane, '+' + l, '#9fd8ff');
+      // Ausrüstung als Beute: landet im Inventar
+      for (const it of dropGear5(this.s, this.stage, e.boss)) {
+        this.loot++;
+        this.note(e.x, e.lane - 1.6, itemName5(it), GEAR_Q5[it.q].col);
+        this.h.event && this.h.event('gear', it);
+      }
       this.h.sfx && this.h.sfx(e.boss ? 'killbig' : 'kill');
     } else if (col && !this.headless && d >= 1) this.note(e.x, e.lane, String(Math.round(d)), col);
   }

@@ -1,4 +1,5 @@
 import { STAGE } from '../core/version.js';
+import { loadGear5 } from './gear.js';
 import {
   CLASSES5,
   CLASS_IDS5,
@@ -34,7 +35,7 @@ import {
    (bis „Boss herausfordern“ läuft die Welle davor) · cleared = höchste gewonnene Stufe · last = Zeitpunkt der letzten Abrechnung (ms). */
 export function freshW5() {
   return {
-    cur: { l: 0, k: START_KRYON5, d: 0 },
+    cur: { l: 0, k: START_KRYON5, d: 0, x: 0 },
     ess: Object.fromEntries(CLASS_IDS5.map(c => [c, 0])),
     heroes: { [START_HERO5]: { l: 1, r: 0, s: 0 } },
     team: [null, START_HERO5, null, null, null, null, null, null, null], // 3×3-Raster, der Startheld steht vorn in der Mitte
@@ -45,6 +46,9 @@ export function freshW5() {
     last: 0,
     pulls: 0,
     frac: {}, // Bruchteile aus dem Abwesenheitsertrag, damit nichts verloren geht
+    inv: [], // Inventar: Ausrüstung, die niemand trägt
+    gear: {}, // gear[Held][Platz] = angelegter Gegenstand
+    uid: 1, // nächste Nummer für einen Gegenstand
   };
 }
 // Spielstand aus der Datei übernehmen; fehlende Felder bekommen ihren Startwert
@@ -71,6 +75,7 @@ export function loadW5(s) {
   });
   if (!o.team.some(Boolean)) o.team[1] = Object.keys(o.heroes)[0];
   o.frac = Object.assign({}, s.frac || {});
+  loadGear5(o, s);
   return o;
 }
 // Der Prototyp ist vorerst nur in Beta und Bottest betretbar

@@ -3,7 +3,7 @@
 // erlaubte Gruppe auf (Verteidiger und Angreifer vorn), kauft die billigste Stufe, erhöht Ränge, sammelt Material in der passenden
 // Zone und fordert einen wartenden Boss alle zwei Minuten heraus. Kein Ersatz für eine richtige Simulation – nur ein Beleg, dass
 // der Fortschritt nicht hängt, und ein erster Blick aufs Tempo.
-// Aufruf: node sim/welt5.mjs [Minuten] [Seed]
+// Aufruf: node sim/welt5.mjs [Minuten] [Seed] [ohne]   (ohne = ohne Ausrüstung, zum Vergleich)
 import { fileURLToPath } from 'url';
 import path from 'path';
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -20,6 +20,9 @@ Math.random = () => {
 const m = await import(root + '/src/js/world5/data.js'),
   S = await import(root + '/src/js/world5/save.js'),
   { Run5 } = await import(root + '/src/js/world5/Run5.js');
+const G = await import(root + '/src/js/world5/gear.js'),
+  GEAR = process.argv[4] !== 'ohne'; // „ohne“ als drittes Argument: Bot legt keine Ausrüstung an (zum Vergleich)
+let boxes = 0;
 const w5 = S.freshW5(),
   r = new Run5(w5, {});
 r.headless = true;
@@ -76,6 +79,18 @@ function shop() {
     S.levelUp5(w5, c);
   }
   team();
+  // Ausrüstung: jedem Helden der Gruppe je Platz das stärkste passende Teil, den Rest recyceln, Boxen kaufen (zweimal, damit Box-Inhalt angelegt wird)
+  if (GEAR)
+    for (let pass = 0; pass < 2; pass++) {
+      for (const id of w5.team.filter(Boolean))
+        for (const slot of G.GEAR_SLOTS5) {
+          const cur = (w5.gear[id] || {})[slot],
+            best = w5.inv.filter(it => it.t === G.slotType5(slot)).sort((x, y) => G.itemScore5(y) - G.itemScore5(x))[0];
+          if (best && (!cur || G.itemScore5(best) > G.itemScore5(cur))) G.equip5(w5, id, slot, best.id);
+        }
+      G.recycleAll5(w5, 3, true);
+      while (G.buyBox5(w5)) boxes++;
+    }
   r.refresh();
   // Fehlt Material für einen Durchbruch, in der passenden Zone sammeln (höchste gewonnene Welle dort), sonst vorn weiterlaufen
   const need = w5.team
@@ -148,6 +163,17 @@ console.log(
   (r.wins / MIN).toFixed(1),
 );
 const idle = S.idleRate5(w5);
+console.log(
+  '  Ausrüstung:',
+  GEAR
+    ? `${r.loot} Teile gefunden, ${boxes} Boxen, angelegt ${w5.team
+        .filter(Boolean)
+        .map(id => Object.keys(w5.gear[id] || {}).length)
+        .join('/')}`
+    : 'nicht benutzt',
+  '· UP der Gruppe',
+  w5.team.filter(Boolean).reduce((a, id) => a + m.heroPower5(id, w5.heroes[id].l, w5.heroes[id].r, w5.gear[id]), 0),
+);
 console.log(
   '  Abwesenheit je Stunde:',
   Math.round(idle.l * 60),

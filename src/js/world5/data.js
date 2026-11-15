@@ -1,3 +1,5 @@
+import { gearBonus5 } from './gear.js';
+
 /* ================= WELT 5: Expedition (Arbeitstitel) – Daten =================
    Idle-Runner mit Heldensammlung (Idee des Nutzers vom 15.11.2026). Eine Gruppe von bis zu fünf Helden läuft von selbst von links
    nach rechts und kämpft sich durch Zonen zu je zehn Wellen; die zehnte ist ein Boss. Der Spieler handelt nicht selbst: Er sammelt
@@ -285,24 +287,27 @@ export const breakCost5 = l => (l % 10 === 0 ? 3 * Math.pow(2, l / 10 - 1) : 0);
 export const rankCost5 = r => r + 1;
 
 // Werte eines Helden bei Stufe l und Rang r
-export function heroStats5(id, l, r) {
+// gear = angelegte Ausrüstung des Helden ({ Platz: Gegenstand }) oder nichts
+export function heroStats5(id, l, r, gear) {
   const h = HEROES5[id],
     C = CLASSES5[h.cls],
     m = RARITY5[h.rar].mul * Math.pow(LVL_MUL5, l - 1) * (1 + RANK_MUL5 * r);
-  const T = h.trait;
+  const T = h.trait,
+    G = gearBonus5(gear);
   return {
-    hp: Math.round(C.hp * m * (T.hp || 1)),
-    atk: Math.round(C.atk * m * (T.atk || 1) * 10) / 10,
-    cd: C.cd * (T.cd || 1),
-    en: C.en + h.en,
+    hp: Math.round(C.hp * m * (T.hp || 1) * (1 + G.hp)),
+    atk: Math.round(C.atk * m * (T.atk || 1) * (1 + G.atk) * 10) / 10,
+    cd: (C.cd * (T.cd || 1)) / (1 + G.haste),
+    en: C.en + h.en + G.en,
+    dr: G.dr, // Anteil, um den Ausrüstung den Schaden senkt
   };
 }
 /* Wertung „UP“ (Wunsch des Nutzers: eine Zahl, die sagt, wie stark ein Held insgesamt ist; danach wird die Heldenübersicht sortiert).
    Leben und Schaden je Sekunde, Stufe, Rang und Seltenheit stecken über heroStats5 darin; dazu ein Zuschlag für Energie (häufigere
-   Fähigkeit). Ausrüstung kommt dazu, sobald es sie gibt. Die Zahl ist ein Richtwert, kein Kampfergebnis. */
-export const heroPower5 = (id, l, r) => {
-  const s = heroStats5(id, l, r);
-  return Math.round((s.hp / 4 + (s.atk / s.cd) * 6) * (1 + (s.en - 7) * 0.015));
+   Fähigkeit) und für Schadensminderung. Angelegte Ausrüstung zählt mit. Die Zahl ist ein Richtwert, kein Kampfergebnis. */
+export const heroPower5 = (id, l, r, gear) => {
+  const s = heroStats5(id, l, r, gear);
+  return Math.round((s.hp / (4 * (1 - s.dr)) + (s.atk / s.cd) * 6) * (1 + (s.en - 7) * 0.015));
 };
 
 // Kryo-Kristalle: Zufallspakete mit je einem Helden. p = Chancen in Prozent für Basis, Elite, Legendär, Champion.
@@ -321,6 +326,7 @@ export const CUR5 = {
   l: { name: 'Lumen', col: '#9fd8ff' },
   k: { name: 'Kryon', col: '#c79bff' },
   d: { name: 'Synchron-Staub', col: '#ffe14f' },
+  x: { name: 'Schrott', col: '#b9c6d6' }, // aus recycelter Ausrüstung, für Ausrüstungsboxen
 };
 
 // Zonen: je zehn Wellen, die zehnte ist der Boss. Jede Zone gibt vor allem das Material einer Klasse – so lohnt es sich,
