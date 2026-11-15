@@ -355,7 +355,7 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.28.1';
+const VERSION='0.29.1';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -407,6 +407,7 @@ const LADDER=[50,1.12],QUICK_G=1.4,PULSE_PCT=.012,BASE_GUN=8,DRONE_DMG=2.6,MEGA_
 const IMP_BASE=2,IMP_MIN=.1,IMP_STEP=.92,IMP_LV=36,IMP_MUL=4,BEAT_N=5;
 const impInterval=l=>Math.max(IMP_MIN,IMP_BASE*Math.pow(IMP_STEP,l));
 // id, branch, parent, depth, lateral, name, max, currency, base cost, growth, effect text, [Knickstufe, Zusatzfaktor]
+const HERO_SELF=.35;   // Kampfrausch: Exponent auf Stufe 5
 const F5_MAX=5;   // Heldenimpuls: früher ein Knoten mit einer Stufe (Sprung), seit 0.27.0 fünf Stufen
 const NODE_DEFS=[
  // ---- Basis ----
@@ -418,6 +419,7 @@ const NODE_DEFS=[
  ['b4a','b','b3a',4,-1.6,'Kaliber',10,'p',1,1.35,l=>`+${l*40} % Schaden für Geschütze und Autofeuer`],
  ['b4c','b','b3a',4,-.3,'Feuerleitung',10,'k',4,1.4,l=>`+${l*10} % Feuerrate der Geschütze`],
  ['b4b','b','b3b',4,1.4,'Resonanz',4,'p',1,1.6,l=>`−${l*12} % Abklingzeit der Schockwelle`],
+ ['b5c','b','b4c',5,0,'Feuerleitstand',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Geschütze, Autofeuer und Schockwelle wachsen mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Geschütze, Autofeuer und Schockwelle wachsen noch nicht mit dem Heldenschaden-Bonus mit'],
  ['b5','b','b4a',5,-1,'Bollwerk',1,'d',3,1,l=>'Doppeltes Basisleben, +50 % Geschützreichweite'],
  ['b5b','b','b4b',5,1.2,'Nova-Ring',5,'k',8,1.6,l=>`+${l*15} % Radius der Schockwelle`],
  ['b6b','b','b5b',6,1.5,'Bunker',10,'k',12,1.4,l=>`−${l*4} % Schaden durch Geschosse von Fernkämpfern und Belagerern`],
@@ -436,6 +438,7 @@ const NODE_DEFS=[
  ['u3b','u','u2b',3,1.3,'Schwarm',4,'k',4,1.8,l=>`+${l*2} zusätzliche Drohnen`],
  ['u4','u','u3a',4,-1,'Lanzenstrahl',3,'p',1,1.8,l=>l?`Strahlwaffen, +${l*50} % Reichweite`:'Normale Bordkanonen'],
  ['u4b','u','u3b',4,1.3,'Schwarmintelligenz',10,'k',6,1.45,l=>`+${l*2} % Drohnenschaden pro aktiver Drohne`],
+ ['u5c','u','u4b',5,.4,'Heldengeschwader',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Drohnen wachsen mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Drohnen wachsen noch nicht mit dem Heldenschaden-Bonus mit'],
  ['u5b','u','u4b',5,1.3,'Feldreparatur',5,'k',10,1.5,l=>`Drohnen reparieren sich um ${l*2} % ihres Lebens pro Sekunde`],
  ['u5','u','u4',5,-.5,'Mutterschiff',1,'d',3,1,l=>'Schaltet in der Flotte die Klasse Kreuzer frei'],
  ['u6','u','u5',6,0,'Nanoschmiede',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Drohnenschaden und -leben`],
@@ -453,6 +456,7 @@ const NODE_DEFS=[
  ['h3c','h','h2b',3,1.8,'Kampftempo',15,'s',150,1.3,l=>`+${l*6} % Angriffstempo der Helden`],
  ['h4','h','h3a',4,-1,'Fähigkeitsfokus',4,'p',1,1.7,l=>`−${l*10} % Abklingzeit der Fähigkeiten`],
  ['h4b','h','h3b',4,1,'Heldenkrit',10,'k',5,1.45,l=>`${l*4} % Chance auf 2,5-fachen Heldenschaden`],
+ ['h5c','h','h4b',5,.35,'Kampfrausch',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Die Treffer der Helden selbst werden mit wachsendem Heldenschaden-Bonus zusätzlich stärker`:'Kein Kampfrausch'],
  ['h5b','h','h4b',5,1.2,'Feldsanitäter',10,'k',8,1.4,l=>`Helden heilen sich um ${l} % ihres Lebens pro Sekunde`],
  ['h5','h','h4',5,-.5,'Vierter Platz',1,'d',4,1,l=>'Vierter Heldenplatz'],
  ['h6','h','h5',6,0,'Kampfgeist',30,'k',15,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Heldenschaden`],
@@ -472,7 +476,7 @@ const NODE_DEFS=[
  ['f3c','b','f2c',3.5,.5,'Zielsystem',10,'k',3,1.4,l=>l?`Autofeuer zielt auf die dichteste Gruppe, +${l*20} % Schaden`:'Autofeuer zielt auf den nächsten Gegner'],
  ['f4','f','f3a',4,-1,'Kettenblitz',3,'p',1,1.8,l=>l?`Impulse springen auf ${l} weitere Gegner`:'Kein Kettenblitz'],
  ['f4b','f','f3b',4,1,'Impulsgewitter',30,'k',10,1.33,l=>`×${fmtD(Math.pow(1.06,l),2)} Impulsschaden`],
- ['f5','f','f4',5,-.5,'Heldenimpuls',F5_MAX,'d',.7,1.25,l=>`Dein Impuls erhält ${l*100/F5_MAX} % des Heldenschaden-Bonus`],
+ ['f5','f','f4',5,-.5,'Heldenimpuls',F5_MAX,'d',.7,1.25,l=>l?`Stufe ${l} von ${F5_MAX}: Dein Impuls wächst mit dem Heldenschaden-Bonus mit${l<F5_MAX?', volle Wirkung auf Stufe '+F5_MAX:''}`:'Dein Impuls wächst noch nicht mit dem Heldenschaden-Bonus mit'],
  ['f5b','f','f4b',5,1,'Brennpunkt',10,'p',2,1.4,l=>`+${l*8} % Impulsschaden gegen Elite-Gegner und Bosse`],
  ['f6','f','f5',6,0,'Fokuskristall',15,'p',2,1.4,l=>`×${fmtD(Math.pow(1.08,l),2)} Impulsschaden`],
  ['f7','b','f3c',4.5,.6,'Sturmfeuer',8,'p',3,1.5,l=>`×${fmtD(Math.pow(1.25,l),2)} Autofeuer-Rate`],
@@ -608,7 +612,14 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
-  if(L('f5'))S.tapDmg*=1+S.heroDmg*Math.min(1,L('f5')/F5_MAX);
+  // Verbund mit den Helden: Der Heldenschaden-Bonus wächst spät sehr stark (Knoten und Supernova). Impuls, Basis und Flotte bekommen je einen Knoten, der ihn in fünf Stufen übernimmt –
+  // sonst trägt ab Welle 70 allein der Impuls (gemessen: 65–86 % des Schadens).
+  // Jede Stufe ist derselbe Faktor (geometrisch), damit keine Stufe einen Sprung macht: Stufe l gibt (1+Bonus)^(l/5), Stufe 5 den vollen Bonus.
+  const bond=id=>Math.pow(1+S.heroDmg,Math.min(1,L(id)/F5_MAX));
+  if(L('f5'))S.tapDmg*=bond('f5');
+  if(L('b5c')){const m=bond('b5c');S.turretDmg*=m;S.pulseDmg*=m}
+  if(L('u5c'))S.droneDmg*=bond('u5c');
+  S.heroSelf=Math.pow(1+S.heroDmg,HERO_SELF*L('h5c')/F5_MAX);   // Kampfrausch: nur die eigenen Treffer der Helden, nicht der Bonus, den die anderen übernehmen
   S.impInt=impInterval(L('f1b'));S.impMul=IMP_MUL*Math.sqrt(S.impInt/IMP_BASE);
   return S}
 
@@ -813,7 +824,7 @@ constructor(save,hooks){
 }
 makeHero(id,i,n){const d=HEROES[id],st=this.save.heroes[id],lm=1+.12*(st.l-1),a=i/Math.max(1,n)*TAU-PI/2;
   const max=d.hp*lm*this.S.heroHp;
-  return{id,d,col:d.col,x:Math.cos(a)*55,y:Math.sin(a)*55,r:11,max,hp:max,dmg:d.dmg*lm*this.S.heroDmg,rate:d.rate*this.S.heroRate,range:d.range,
+  return{id,d,col:d.col,x:Math.cos(a)*55,y:Math.sin(a)*55,r:11,max,hp:max,dmg:d.dmg*lm*this.S.heroDmg*(this.S.heroSelf||1),rate:d.rate*this.S.heroRate,range:d.range,
     sp:d.speed,cd:d.cd*this.S.abilityCd*(1-.08*st.a),pow:(1+.35*st.a)*this.S.abilPow,abT:d.cd*.5,atkT:0,dead:0,face:a,idleA:a,flash:0,healT:1,lunge:0,spin:0,hits:0,swDir:1}}
 
 /* ---------- helpers ---------- */
@@ -839,7 +850,7 @@ burst(x,y,n,col,sp=180,life=.5,size=3){if(this.headless)return;if(this.parts.len
   for(let i=0;i<n;i++){const a=rnd(0,TAU),s=rnd(.3,1)*sp;this.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:0,m:life*rnd(.6,1.2),col,s:size*rnd(.7,1.3)})}}
 num(x,y,t,col,big){if(this.headless)return;if(this.nums.length<70)this.nums.push({x:x+rnd(-6,6),y,v:-46,l:0,t,col,big})}
 ring(x,y,r0,r1,col,m=.35,w=6){if(this.headless)return;if(this.rings.length<40)this.rings.push({x,y,r0,r1,col,l:0,m,w})}
-shoot(x,y,a,sp,dmg,col,o={}){if(this.pr.length>320)return;this.pr.push({x,y,tx:x,ty:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,dmg,col,tg:o.tg||null,size:o.size||3,pierce:o.pierce||0,hitSet:o.pierce?new Set():null,life:1.6,o})}
+shoot(x,y,a,sp,dmg,col,o={}){if(this.pr.length>320)return;this.pr.push({x,y,tx:x,ty:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,dmg,col,tg:o.tg||null,size:o.size||3,pierce:o.pierce||0,hitSet:o.pierce?new Set():null,life:1.6,o,src:this.src})}
 shootAt(x,y,tg,sp,dmg,col,o={}){o.tg=tg;this.shoot(x,y,Math.atan2(tg.y-y,tg.x-x),sp,dmg,col,o)}
 
 /* ---------- towers ---------- */
@@ -899,7 +910,7 @@ updTowers(dt){
 /* ---------- damage ---------- */
 hitE(e,dmg,o={}){if(e.hp<=0||e.cloak)return;
   if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
-  dmg*=e.vuln||1;if(o.imp){if(e.mark>1)dmg*=e.mark;if(e.boss||e.elite)dmg*=1+(this.S.impBig||0)}if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+  dmg*=e.vuln||1;if(o.imp){if(e.mark>1)dmg*=e.mark;if(e.boss||e.elite)dmg*=1+(this.S.impBig||0)}if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}if(this.tally)this.tally[this.src]=(this.tally[this.src]||0)+Math.min(dmg,e.hp)/e.max;e.hp-=dmg;e.flash=.08;
   if(e.type==='mirror'&&!e.mute&&this.t-e.mirT>MIRROR_CD){e.mirT=this.t;let a=null,bd=MIRROR_R*MIRROR_R;for(const h of this.heroes){if(h.dead>0)continue;const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}for(const h of this.drones){const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}
     if(a){this.hurtAlly(a,a.max*MIRROR_PCT);this.headless||this.bolts.push({pts:[[e.x,e.y],[a.x,a.y]],l:0,m:.15,col:e.col,w:2})}}
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
@@ -1141,7 +1152,7 @@ updProj(dt){const lim=Math.max(this.hw,this.hh)+120;
     p.tx+=(p.x-p.tx)*Math.min(1,dt*18);p.ty+=(p.y-p.ty)*Math.min(1,dt*18);p.x+=p.vx*dt;p.y+=p.vy*dt;
     let hitE=null;this.query(p.x,p.y,p.size+20,e=>{if(hitE||(p.hitSet&&p.hitSet.has(e)))return;if(hyp(e.x-p.x,e.y-p.y)<e.r+p.size)hitE=e});
     if(hitE&&p.o.splash&&this.explodeAt){this.explodeAt(p,hitE);p.life=0}
-    else if(hitE){this.hitE(hitE,p.dmg,{num:p.o.num,col:p.col});this.burst(p.x,p.y,3,p.col,120,.25,2);
+    else if(hitE){this.src=p.src;this.hitE(hitE,p.dmg,{num:p.o.num,col:p.col});this.burst(p.x,p.y,3,p.col,120,.25,2);
       if(p.pierce>0){p.pierce--;p.hitSet.add(hitE)}else p.life=0}
     if(Math.abs(p.x)>lim||Math.abs(p.y)>lim)p.life=0}
   this.pr=this.pr.filter(p=>p.life>0);
@@ -1202,11 +1213,11 @@ step(dt){if(this.over){this.overT+=dt;this.fx(dt);this.shake=Math.max(0,this.sha
       this.ring(0,0,10,360,'#3df5ff',1.1,16);this.ring(0,0,10,240,'#ff4fd8',.9,10);this.ring(0,0,6,130,'#ffffff',.5,8);this.shake=26;this.h.sfx&&this.h.sfx('boss')}
     return}
   this.t+=dt;if(this.rushT>0)this.rushT-=dt;
-  this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
-  this.updHeroes(dt);this.updDrones(dt);
+  this.src='basis';this.updBase(dt);this.updWaves(dt);this.src='tuerme';this.updTowers(dt);
+  this.src='helden';this.updHeroes(dt);this.src='flotte';this.updDrones(dt);this.src='basis';
   if(this.S.autoRate>0&&this.en.length){this.autoT=(this.autoT||0)-dt;if(this.autoT<=0){const tg=(this.S.autoAim&&this.cluster())||this.threat(420);if(tg){this.autoShot(tg.x,tg.y);this.autoT=1/this.S.autoRate}}}
   // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
-  if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt*(this.buff.haste>0?DROP_HASTE:1);this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
+  this.src='impuls';if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt*(this.buff.haste>0?DROP_HASTE:1);this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updDrops(dt);
   this.updEnemies(dt);this.updZones(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
@@ -1762,13 +1773,27 @@ const Music={step:0,next:0,timer:null,tempo:100,secTempo:100,tr:0,st:{menu:true,
   target(){const S=this.st;return S.menu?100:112+60*Math.min(1,S.W||0)},
   tick(){const B=Snd.B;if(!B||!(save.volMus>0)||B.ctx.state!=='running')return;const now=B.ctx.currentTime;
     if(this.next<now)this.next=now+.05;
-    while(this.next<now+.15){this.tempo+=(this.secTempo-this.tempo)*.06;const beat=60/this.tempo/4;this.scheduleStep(B,this.step,this.next,this.st,beat);this.step++;this.next+=beat}},
+    while(this.next<now+.15){this.tempo+=(this.secTempo-this.tempo)*.06;const beat=60/this.tempo/4;Track.run(()=>this.scheduleStep(B,this.step,this.next,this.st,beat));this.step++;this.next+=beat}},
   start(){if(this.timer)return;this.timer=setInterval(()=>this.tick(),30)},
   set(st){const was=this.st.menu;Object.assign(this.st,st);if(was!==this.st.menu){this.sec=null;this.secN=0;this.mel=null;this.step=Math.ceil(this.step/16)*16}}};
 
+/* ---- Aufräumen ----
+   Jeder Effekt und jede Musiknote baut mehrere Ton-Bausteine (Oszillator, Filter, Lautstärke) und hängt sie ans Mischpult. Safari gibt solche Bausteine nicht frei,
+   solange sie verbunden sind – auch wenn der Ton längst verklungen ist. Nach einigen Minuten sind es Zehntausende, und der Browser hängt etwa einmal pro Sekunde
+   für 60 bis 150 ms (vom Nutzer gemessen, wächst mit der Spieldauer). Deshalb merkt sich Track alle Bausteine, die während eines Aufrufs entstehen, und trennt sie,
+   sobald die letzte Tonquelle dieses Aufrufs zu Ende ist. */
+const Track={cur:null,list:[],made:0,freed:0,ctx:null,
+  // Jede Tonquelle bekommt ihr Ende über stop(t) gesagt; das späteste Ende eines Aufrufs gilt für alle seine Bausteine. Auf das Ereignis „ended“ ist in Safari kein Verlass.
+  wrap(ctx){this.ctx=ctx;for(const m of['createOscillator','createBufferSource','createGain','createBiquadFilter','createStereoPanner','createDelay','createWaveShaper','createConstantSource']){const f=ctx[m];if(!f)continue;
+    ctx[m]=function(){const n=f.apply(ctx,arguments),b=Track.cur;if(b){b.nodes.push(n);Track.made++;
+        if(typeof n.stop==='function'){const st=n.stop;n.stop=function(t){if(t>b.end)b.end=t;return st.call(n,t)}}}return n}}
+    if(!this.timer)this.timer=setInterval(()=>Track.sweep(),500)},
+  run(fn){const prev=this.cur,b=this.cur={nodes:[],end:0};try{fn()}finally{this.cur=prev;if(b.nodes.length){if(!b.end)b.end=this.ctx.currentTime+30;this.list.push(b)}}},
+  sweep(){if(!this.ctx)return;const now=this.ctx.currentTime-.3,L=this.list;if(!L.length)return;let k=0;
+    for(let i=0;i<L.length;i++){const b=L[i];if(b.end<now){for(const x of b.nodes){try{x.disconnect()}catch(e){}}this.freed+=b.nodes.length}else L[k++]=b}L.length=k}};
 /* ---- Steuerung ---- */
 const Snd={ctx:null,B:null,last:{},unlocked:false,
-  init(){if(!this.ctx){try{const AC=window.AudioContext||window.webkitAudioContext;this.ctx=new AC({latencyHint:'interactive'});this.B=buildBus(this.ctx,this.ctx.destination);this.vol()}catch(e){return}}
+  init(){if(!this.ctx){try{const AC=window.AudioContext||window.webkitAudioContext;this.ctx=new AC({latencyHint:'interactive'});this.B=buildBus(this.ctx,this.ctx.destination);Track.wrap(this.ctx);this.vol()}catch(e){return}}
     if(this.ctx.state!=='running')this.ctx.resume().catch(()=>{});
     if(!this.unlocked){this.unlocked=true;
       try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
@@ -1779,8 +1804,12 @@ const Snd={ctx:null,B:null,last:{},unlocked:false,
     B.mus.gain.setTargetAtTime(.53*cv(save.volMus),t,.05);B.sfx.gain.setTargetAtTime(1*cv(save.volSfx),t,.05)},
   play(n){const B=this.B;if(!(save.volSfx>0)||!B||this.ctx.state!=='running')return;const now=this.ctx.currentTime;
     const lim={killbig:.08,drone:.09,beam:.09,turret:.1,shoot:.06,shoot2:.08,kill:.05,hit:.06,slash:.07,heavy:.1,tap:.09,zap:.08,base:.12,shield:.1,ui:.04,crit:.09}[n]||.05;
-    if(this.last[n]&&now-this.last[n]<lim)return;this.last[n]=now;const f=SFX[n];if(f)f(B,B.sfx,now+.005)},
+    if(this.last[n]&&now-this.last[n]<lim)return;this.last[n]=now;const f=SFX[n];if(f)Track.run(()=>f(B,B.sfx,now+.005))},
   suspend(){if(this.ctx&&this.ctx.state==='running')this.ctx.suspend().catch(()=>{})}};
+// Beim Verlassen oder Neuladen der Seite den Ton-Unterbau schließen. Sonst bleibt er in Safari über das Neuladen hinaus im selben Prozess liegen (vom Nutzer beobachtet:
+// Ruckler und stotternder Ton auch direkt nach dem Neuladen). Beim nächsten Antippen baut Snd.init alles neu auf.
+addEventListener('pagehide',()=>{try{for(const b of Track.list)for(const x of b.nodes){try{x.disconnect()}catch(e){}}Track.list.length=0;Track.ctx=null;
+  if(Snd.ctx){const c=Snd.ctx;Snd.ctx=null;Snd.B=null;Snd.unlocked=false;Snd.last={};Music.next=0;c.close().catch(()=>{})}}catch(e){}});
 for(const ev of['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Snd.init(),{capture:true,passive:true});
 document.addEventListener('click',e=>{if(e.target.closest('.btn'))Snd.play('ui')});
 
@@ -2141,6 +2170,8 @@ const PREV={
  h7b:[['Heldenschaden',S=>S.heroDmg,'x']],h8:[['Heldenschaden',S=>S.heroDmg,'x']],h9:[['Stärke der Fähigkeiten',S=>S.abilPow,'x']],
  f2c:[['Autofeuer pro Sekunde',S=>S.autoRate,'n'],['Schaden pro Schuss',S=>S.autoRate?S.turretDmg*S.autoDmg:0,'n']],f3c:[['Schaden pro Schuss',S=>S.turretDmg*S.autoDmg,'n'],['Zielt auf Gruppen',S=>S.autoAim?'Ja':'Nein','t']],f4b:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],
  f6:[['Schaden pro Impuls',S=>S.tapDmg*S.impMul,'n']],f7:[['Autofeuer pro Sekunde',S=>S.autoRate,'n']],
+ h5c:[['Klinge-Schaden',S=>S.heroDmg*S.heroSelf*HEROES.klinge.dmg,'n']],
+ b5c:[['Schaden pro Geschütz- und Autofeuer-Schuss',S=>S.turretDmg,'n'],['Schaden der Schockwelle',S=>S.pulseDmg,'n']],u5c:[['Drohnenschaden',S=>S.droneDmg,'n']],
  b6b:[['Schaden durch Geschosse',S=>S.rangedRes*100,'pct']],b8b:[['Geschützreichweite',S=>S.turretRange,'i']],u5b:[['Reparatur der Drohnen pro Sekunde',S=>S.droneRegen*100,'pct']],u8b:[['Tempo der Drohnen',S=>S.droneSp,'x']],
  h5b:[['Heilung der Helden pro Sekunde',S=>S.heroRegen*100,'pct']],h8b:[['Heldenplätze',S=>S.slots,'i']],f5b:[['Impulsschaden gegen Elite und Bosse',S=>1+S.impBig,'x']],
  f7b:[['Impulsradius im Schatten',S=>S.tapR*S.shadeMul,'i']],e4c:[['Energie aus Gegnern',S=>S.energyGain,'x']],f8:[['Weltenbrecher alle … Impulse',S=>S.megaTap||'–','t']],

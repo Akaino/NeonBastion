@@ -203,13 +203,27 @@ const Music={step:0,next:0,timer:null,tempo:100,secTempo:100,tr:0,st:{menu:true,
   target(){const S=this.st;return S.menu?100:112+60*Math.min(1,S.W||0)},
   tick(){const B=Snd.B;if(!B||!(save.volMus>0)||B.ctx.state!=='running')return;const now=B.ctx.currentTime;
     if(this.next<now)this.next=now+.05;
-    while(this.next<now+.15){this.tempo+=(this.secTempo-this.tempo)*.06;const beat=60/this.tempo/4;this.scheduleStep(B,this.step,this.next,this.st,beat);this.step++;this.next+=beat}},
+    while(this.next<now+.15){this.tempo+=(this.secTempo-this.tempo)*.06;const beat=60/this.tempo/4;Track.run(()=>this.scheduleStep(B,this.step,this.next,this.st,beat));this.step++;this.next+=beat}},
   start(){if(this.timer)return;this.timer=setInterval(()=>this.tick(),30)},
   set(st){const was=this.st.menu;Object.assign(this.st,st);if(was!==this.st.menu){this.sec=null;this.secN=0;this.mel=null;this.step=Math.ceil(this.step/16)*16}}};
 
+/* ---- Aufräumen ----
+   Jeder Effekt und jede Musiknote baut mehrere Ton-Bausteine (Oszillator, Filter, Lautstärke) und hängt sie ans Mischpult. Safari gibt solche Bausteine nicht frei,
+   solange sie verbunden sind – auch wenn der Ton längst verklungen ist. Nach einigen Minuten sind es Zehntausende, und der Browser hängt etwa einmal pro Sekunde
+   für 60 bis 150 ms (vom Nutzer gemessen, wächst mit der Spieldauer). Deshalb merkt sich Track alle Bausteine, die während eines Aufrufs entstehen, und trennt sie,
+   sobald die letzte Tonquelle dieses Aufrufs zu Ende ist. */
+const Track={cur:null,list:[],made:0,freed:0,ctx:null,
+  // Jede Tonquelle bekommt ihr Ende über stop(t) gesagt; das späteste Ende eines Aufrufs gilt für alle seine Bausteine. Auf das Ereignis „ended“ ist in Safari kein Verlass.
+  wrap(ctx){this.ctx=ctx;for(const m of['createOscillator','createBufferSource','createGain','createBiquadFilter','createStereoPanner','createDelay','createWaveShaper','createConstantSource']){const f=ctx[m];if(!f)continue;
+    ctx[m]=function(){const n=f.apply(ctx,arguments),b=Track.cur;if(b){b.nodes.push(n);Track.made++;
+        if(typeof n.stop==='function'){const st=n.stop;n.stop=function(t){if(t>b.end)b.end=t;return st.call(n,t)}}}return n}}
+    if(!this.timer)this.timer=setInterval(()=>Track.sweep(),500)},
+  run(fn){const prev=this.cur,b=this.cur={nodes:[],end:0};try{fn()}finally{this.cur=prev;if(b.nodes.length){if(!b.end)b.end=this.ctx.currentTime+30;this.list.push(b)}}},
+  sweep(){if(!this.ctx)return;const now=this.ctx.currentTime-.3,L=this.list;if(!L.length)return;let k=0;
+    for(let i=0;i<L.length;i++){const b=L[i];if(b.end<now){for(const x of b.nodes){try{x.disconnect()}catch(e){}}this.freed+=b.nodes.length}else L[k++]=b}L.length=k}};
 /* ---- Steuerung ---- */
 const Snd={ctx:null,B:null,last:{},unlocked:false,
-  init(){if(!this.ctx){try{const AC=window.AudioContext||window.webkitAudioContext;this.ctx=new AC({latencyHint:'interactive'});this.B=buildBus(this.ctx,this.ctx.destination);this.vol()}catch(e){return}}
+  init(){if(!this.ctx){try{const AC=window.AudioContext||window.webkitAudioContext;this.ctx=new AC({latencyHint:'interactive'});this.B=buildBus(this.ctx,this.ctx.destination);Track.wrap(this.ctx);this.vol()}catch(e){return}}
     if(this.ctx.state!=='running')this.ctx.resume().catch(()=>{});
     if(!this.unlocked){this.unlocked=true;
       try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
@@ -220,7 +234,11 @@ const Snd={ctx:null,B:null,last:{},unlocked:false,
     B.mus.gain.setTargetAtTime(.53*cv(save.volMus),t,.05);B.sfx.gain.setTargetAtTime(1*cv(save.volSfx),t,.05)},
   play(n){const B=this.B;if(!(save.volSfx>0)||!B||this.ctx.state!=='running')return;const now=this.ctx.currentTime;
     const lim={killbig:.08,drone:.09,beam:.09,turret:.1,shoot:.06,shoot2:.08,kill:.05,hit:.06,slash:.07,heavy:.1,tap:.09,zap:.08,base:.12,shield:.1,ui:.04,crit:.09}[n]||.05;
-    if(this.last[n]&&now-this.last[n]<lim)return;this.last[n]=now;const f=SFX[n];if(f)f(B,B.sfx,now+.005)},
+    if(this.last[n]&&now-this.last[n]<lim)return;this.last[n]=now;const f=SFX[n];if(f)Track.run(()=>f(B,B.sfx,now+.005))},
   suspend(){if(this.ctx&&this.ctx.state==='running')this.ctx.suspend().catch(()=>{})}};
+// Beim Verlassen oder Neuladen der Seite den Ton-Unterbau schließen. Sonst bleibt er in Safari über das Neuladen hinaus im selben Prozess liegen (vom Nutzer beobachtet:
+// Ruckler und stotternder Ton auch direkt nach dem Neuladen). Beim nächsten Antippen baut Snd.init alles neu auf.
+addEventListener('pagehide',()=>{try{for(const b of Track.list)for(const x of b.nodes){try{x.disconnect()}catch(e){}}Track.list.length=0;Track.ctx=null;
+  if(Snd.ctx){const c=Snd.ctx;Snd.ctx=null;Snd.B=null;Snd.unlocked=false;Snd.last={};Music.next=0;c.close().catch(()=>{})}}catch(e){}});
 for(const ev of['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Snd.init(),{capture:true,passive:true});
 document.addEventListener('click',e=>{if(e.target.closest('.btn'))Snd.play('ui')});
