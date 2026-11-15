@@ -32,7 +32,7 @@ with sync_playwright() as p:
     pg.screenshot(path='s1_skilltree.png')
     pg.click('#tzOut');pg.click('#tzOut');pg.click('#tzOut');pg.wait_for_timeout(200);pg.screenshot(path='s2_skilltree_weit.png')
     # Welt 2: vier Äste, eigene Namen
-    pg.click('#tree [data-back]');pg.click('#bWorlds');pg.click('#wmap [data-w="2"]');pg.click('#bEnter');pg.wait_for_timeout(400);pg.click('#bTree');pg.wait_for_timeout(300)
+    pg.click('#tree [data-back]');pg.click('#bWorlds');pg.click('#wmap [data-w="2"] .hit');pg.click('#bEnter');pg.wait_for_timeout(400);pg.click('#bTree');pg.wait_for_timeout(300)
     t2=pg.evaluate("()=>[...new Set([...$$('#tw svg text.brname')].map(e=>e.textContent))].sort()")
     check(t2==['KERN','LOGISTIK','UNTERSTÜTZUNG','WAFFEN'] and pg.evaluate("()=>$$('#tw svg path[fill-opacity]').length")==4,'Gitterfestung: vier Sektoren mit eigenen Astnamen')
     pg.screenshot(path='s3_skilltree_w2.png')

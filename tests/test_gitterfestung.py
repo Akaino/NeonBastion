@@ -13,7 +13,7 @@ with sync_playwright() as p:
     pg.goto(GAME);pg.wait_for_timeout(400)
     print('worlds btn hidden',pg.evaluate("()=>$('#bWorlds').hidden"))
     pg.click('#bWorlds');pg.wait_for_timeout(300);pg.screenshot(path='w2a.png')
-    pg.click('#wmap [data-w="2"]');pg.click('#bEnter');pg.wait_for_timeout(500);pg.screenshot(path='w2b.png');print('world',pg.evaluate("()=>W.id"),'heroes hidden',pg.evaluate("()=>$('#bHeroes').hidden"))
+    pg.click('#wmap [data-w="2"] .hit');pg.click('#bEnter');pg.wait_for_timeout(500);pg.screenshot(path='w2b.png');print('world',pg.evaluate("()=>W.id"),'heroes hidden',pg.evaluate("()=>$('#bHeroes').hidden"))
     pg.click('#bTowers');pg.wait_for_timeout(300);pg.screenshot(path='w2c.png');pg.click('#towers [data-back]')
     pg.click('#bTree');pg.wait_for_timeout(300);pg.screenshot(path='w2d.png');pg.click('#tree [data-back]')
     pg.click('#bStart');pg.wait_for_timeout(800);print('run world',pg.evaluate("()=>run.world"),'phase',pg.evaluate("()=>run.phase"),'energy',pg.evaluate("()=>run.energy"),'dirs',pg.evaluate("()=>run.dirs"))

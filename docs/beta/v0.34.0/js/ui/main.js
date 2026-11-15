@@ -5,6 +5,7 @@ import { buildPaused, endBuild, updBuildBtn } from './build.js';
 import { toast } from './common.js';
 import { $, $$, UI } from './dom.js';
 import { goHub } from './hub.js';
+import { openWorlds } from './worlds.js';
 import { musicState, showEnd, updHud } from './hud.js';
 import { Perf, R, W, endShown, paused, persist, run, save, speed } from './state.js';
 
@@ -35,7 +36,9 @@ if (!save.ach) {
   persist();
 }
 
-goHub();
+// Startseite ist die Weltenkarte (Vorgabe des Nutzers). Mit „#hub“ in der Adresse geht es direkt ins Menü der aktiven Welt.
+if (location.hash === '#hub') goHub();
+else openWorlds();
 
 export let last = performance.now(),
   acc = 0,

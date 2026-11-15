@@ -42,7 +42,9 @@ def start():
     return _port
 
 
-def web(path):
+def web(path, karte=False):
+    """Adresse einer Datei unter dist/web. Das Spiel startet auf der Weltenkarte; die meisten Tests wollen das Menü der
+    aktiven Welt und bekommen deshalb „#hub“ angehängt. karte=True lässt die Startseite, wie sie ist."""
     rel = os.path.relpath(os.path.abspath(path), WEB).replace(os.sep, '/')
     assert not rel.startswith('..'), 'liegt nicht unter dist/web: ' + path
-    return 'http://localhost:%d/%s' % (start(), rel)
+    return 'http://localhost:%d/%s%s' % (start(), rel, '#hub' if rel.endswith('index.html') and not karte else '')

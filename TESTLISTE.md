@@ -1,4 +1,4 @@
-# Testliste für Welt 1 (Beta 0.33.0)
+# Testliste für Welt 1 (Beta 0.34.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
@@ -6,13 +6,15 @@ Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellung
 
 Alles hier ist automatisch getestet (36 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
-## 00. Neu in 0.33.0: Weltenkarte
+## 00. Neu in 0.34.0: Weltenkarte als Startseite
 
-- [ ] Knopf „Welten“ ist von Anfang an im Hauptmenü. Die Karte zeigt den Kern in der Mitte und fünf Welten darum, ähnlich dem Skilltree. Gefällt dir die Anordnung?
-- [ ] Neon-Sektor ist offen, in der Beta auch die Gitterfestung („Welt betreten“). Arcade und Classic Tower Defense stehen auf „Demnächst“, die fünfte Welt ist verdeckt.
+- [ ] Das Spiel startet auf der Weltenkarte. „Weiterspielen“ führt ins Menü der aktiven Welt, der Knopf „Welten“ dort zurück zur Karte. Passt der Ablauf?
+- [ ] Jede Welt hat einen eigenen Knoten mit bewegtem Motiv, der Name steht im Knoten. Fancy genug? Welcher Knoten gefällt dir am wenigsten?
+- [ ] Hintergrund mit Sternen, Leuchten und Energiepuls vom Kern: lebendig genug oder zu unruhig?
+- [ ] Antippen der Knoten: Die Karte behält ihre Größe und zoomt nicht mehr (bitte am iPhone prüfen, auch schnelles Antippen hintereinander).
+- [ ] Läuft die Karte am iPhone und in Safari flüssig?
+- [ ] In der Beta ist die Gitterfestung spielbar, Arcade und Classic Tower Defense stehen auf „Demnächst“, die fünfte Welt ist verdeckt.
 - [ ] Hinter jeder Welt liegt außen ein verdecktes „?“ für ihre zweite Version. Passt das als Andeutung, oder soll dort mehr stehen (zum Beispiel die Bedingung)?
-- [ ] Beschreibungstexte von Arcade und Classic Tower Defense: stimmen sie mit deiner Vorstellung überein?
-- [ ] Wechsel Neon-Sektor ↔ Gitterfestung funktioniert, Rekord und Weltenbonus stehen auf der Karte.
 
 ## 0. Neu in 0.32.0 (aus deiner Rückmeldung)
 
