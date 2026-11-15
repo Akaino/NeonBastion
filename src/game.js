@@ -45,6 +45,7 @@ const DROPS={bomb:{name:'Bombe',text:'Sprengt alles im Umkreis',col:'#ff8a3d'},d
   haste:{name:'Schneller Impuls',text:'5 Sekunden doppeltes Tempo',col:'#3df5ff'},repair:{name:'Reparatur',text:'Die Basis wird 5 Sekunden lang repariert',col:'#5dffb0'},
   gain:{name:'Splitterregen',text:'5 Sekunden doppelte Splitter',col:'#ffe14f'}},DROP_IDS=Object.keys(DROPS);
 const SHINY_P=1/5000,SHINY_HP=3.5;
+const BOOM_T=.35;   // Sekunden vom Fall der Basis bis zur Explosion
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
@@ -197,7 +198,8 @@ damageBase(d){d*=this.S.dmgTaken;const b=this.base;let r=d;if(b.ov>0){const a=Ma
   if(b.hp<=0&&!this.over){b.hp=0;this.end()}}
 hurtAlly(a,d){a.hp-=d;a.flash=.1;if(a.hp<=0){this.burst(a.x,a.y,a.d?24:8,a.col||'#3df5ff',200,.5);
   if(a.d){a.hp=0;a.dead=this.S.revive;this.h.sfx&&this.h.sfx('down')}}}
-end(){this.over=true;this.burst(0,0,90,'#3df5ff',380,1.2,5);this.burst(0,0,40,'#ff4fd8',300,1,4);this.ring(0,0,10,320,'#3df5ff',1,14);this.shake=20;
+end(){this.over=true;this.boomed=!!this.quit;
+  if(this.quit){this.burst(0,0,30,'#3df5ff',260,.8,4);this.ring(0,0,10,200,'#3df5ff',.7,8)}else{this.burst(0,0,26,'#ffffff',240,.4,3);this.shake=9}
   for(const c of CUR_IDS)this.gain[c]=Math.floor(this.gain[c]);this.h.sfx&&this.h.sfx('lose')}
 
 /* ---------- waves ---------- */
@@ -425,7 +427,10 @@ fx(dt){for(const p of this.parts){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-dt*3
   for(const s of this.slashes)s.l+=dt;this.slashes=this.slashes.filter(s=>s.l<s.m);
   for(const s of this.ghosts)s.l+=dt;this.ghosts=this.ghosts.filter(s=>s.l<s.m);
   this.shake*=Math.exp(-dt*9)}
-step(dt){if(this.over){this.overT+=dt;this.fx(dt);return}
+step(dt){if(this.over){this.overT+=dt;this.fx(dt);this.shake=Math.max(0,this.shake-dt*26);
+    if(!this.boomed&&this.overT>=BOOM_T){this.boomed=true;this.burst(0,0,90,'#3df5ff',420,1.3,5);this.burst(0,0,50,'#ff4fd8',320,1.1,4);this.burst(0,0,30,'#ffffff',520,.7,3);
+      this.ring(0,0,10,360,'#3df5ff',1.1,16);this.ring(0,0,10,240,'#ff4fd8',.9,10);this.ring(0,0,6,130,'#ffffff',.5,8);this.shake=26;this.h.sfx&&this.h.sfx('boss')}
+    return}
   this.t+=dt;if(this.rushT>0)this.rushT-=dt;
   this.updBase(dt);this.updWaves(dt);this.updTowers(dt);
   this.updHeroes(dt);this.updDrones(dt);

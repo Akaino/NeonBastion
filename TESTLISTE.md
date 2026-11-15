@@ -1,4 +1,4 @@
-# Testliste für die Beta 0.22.0
+# Testliste für die Beta 0.23.0
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
 
@@ -6,7 +6,7 @@ Zum schnellen Einstieg: In der Beta unter „Einstellungen“ den Knopf „Live-
 
 Zum Testen später Inhalte: Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle).
 
-Alles hier ist automatisch getestet (25 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+Alles hier ist automatisch getestet (26 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
 
 ## 0. Abwürfe (neu in 0.22.0)
 
@@ -18,6 +18,17 @@ Alles hier ist automatisch getestet (25 Testläufe) und mit der Simulation gemes
 - [ ] Doppelter Schaden, schneller Impuls, Reparatur, Splitterregen wirken je 5 Sekunden. Der Bogen um die Basis zeigt die Restzeit. Merkt man die Wirkung?
 - [ ] Sind die fünf Zeichen (Bombe, Kreuz, Blitz, Plus, Raute) auseinanderzuhalten?
 - [ ] Ohne Testhilfe: 10 % je Welle, also etwa drei Abwürfe bis Welle 30. Zu selten, zu oft?
+
+## 0b. Basis: Aussehen und Zerfall (neu in 0.23.0)
+
+- [ ] Fällt die Basis, flackert sie kurz, explodiert und zerfällt in Trümmer. Ist der Effekt ordentlich genug?
+- [ ] Der Endbildschirm kommt jetzt etwa 0,7 Sekunden später, damit man den Zerfall sieht. Zu lang?
+- [ ] Beim Beenden über das Pausenmenü zerfällt die Basis nicht. Richtig so?
+- [ ] Mit den Testhilfen Ressourcen holen und im Basis-Ast kaufen: Panzerung ab Stufe 10, 25 und 50 bringt Panzerplatten. Sieht man den Unterschied?
+- [ ] Bollwerk (Bastionen), Festungskern (goldene Krone), Kernreaktor (goldener Innenkern), Autofeuer und Sturmfeuer (Läufe): Passt das Aussehen?
+- [ ] Kleinere Zeichen: Reparatur (grüne Punkte), Schildmatrix (zweiter Ring), Abwehrnetz (Linien), Kaliber (längere Läufe), Schockwelle und Nova-Ring, Unzerstörbar (weißer Schein). Zu viel, zu wenig?
+- [ ] Voll ausgebaut: Ist die Basis noch gut lesbar oder überladen?
+- [ ] Die Basis im Hub zeigt denselben Ausbau.
 
 ## 1. Flotte (neu)
 

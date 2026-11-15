@@ -567,7 +567,7 @@ function loop(now){const raw=now-last,dt=Math.min(.1,raw/1000);last=now;const pf
   if(run&&!paused&&run.world===2&&!buildPaused())run.tickBuild(dt);
   if(run&&!paused){run.hw=R.hwe;run.hh=R.hhe;acc+=buildPaused()?0:dt*speed;let n=0;while(acc>=1/60&&n<20){run.step(1/60);acc-=1/60;n++}if(n>=20)acc=0;ns=n;
     if(run.over&&buildPaused())endBuild();
-    if(run.over&&run.overT>1.6&&!endShown)showEnd();
+    if(run.over&&run.overT>(run.quit?1.2:2.3)&&!endShown)showEnd();
     pendT+=dt;if(pendT>2&&!run.over){pendT=0;save.pending={world:W.id,g:Object.fromEntries(W.curIds.map(c=>[c,Math.floor(run.gain[c]||0)])),w:run.w};persist()}
     if(pf)p1=performance.now();
     hudT+=dt;if(hudT>.1){hudT=0;updHud();updBuildBtn();musicState()}}

@@ -75,13 +75,13 @@ frame(run,dt){this.t+=dt;
   // radar sweep
   c.globalCompositeOperation='lighter';const sw=this.t*.9;c.strokeStyle='rgba(61,245,255,.10)';c.lineWidth=14;c.beginPath();c.arc(0,0,95,sw,sw+.9);c.stroke();
   c.strokeStyle='rgba(255,79,216,.08)';c.lineWidth=6;c.beginPath();c.arc(0,0,150,-sw*.6,-sw*.6+1.4);c.stroke();c.globalCompositeOperation='source-over';
-  if(!run){this.drawBase({r:30,rot:this.t*.6,hp:1,max:1,sh:1,shMax:1,ov:0,flash:0,turrets:[]},null);
+  if(!run){this.drawBase({r:30,rot:this.t*.6,hp:1,max:1,sh:1,shMax:1,ov:0,flash:0,turrets:[]},null,this.theme===1&&typeof save!=='undefined'?this.baseLook(save.nodes):null);
     for(let i=0;i<5;i++){const a=this.t*.5+i*TAU/5;this.draw(this.droneSprite('jaeger'),Math.cos(a)*70,Math.sin(a)*70,a+PI/2)}
     if(this.theme===2){for(let i=0;i<4;i++){const a=-this.t*.25+i*TAU/4,ty=['laser','frost','rocket','tesla'][i];this.draw(this.towerSprite(ty,TOWERS[ty].col),Math.cos(a)*118,Math.sin(a)*118,a+PI)}}
     else for(let i=0;i<3;i++){const a=-this.t*.3+i*TAU/3,col=['#ff4fd8','#8cff4f','#b98cff'][i];this.draw(this.heroSprite(['klinge','schuetzin','arkanist'][i],col),Math.cos(a)*118,Math.sin(a)*118,a-PI/2)}
     c.setTransform(1,0,0,1,0,0);c.drawImage(this.vig,0,0);return}
   this.drawTowers(run);
-  this.drawBase(run.base,run);
+  this.drawBase(run.base,run,run.world===1?(run.look||(run.look=this.baseLook(run.save.nodes))):null);
   // enemy projectiles
   c.globalCompositeOperation='lighter';for(const q of run.ep)this.draw(this.dot(q.col),q.x,q.y,0,q.big?2:.9);c.globalCompositeOperation='source-over';
   // enemies
@@ -214,12 +214,44 @@ drawTowers(run){const c=this.c;
     c.globalAlpha=1;c.globalCompositeOperation='source-over';const pop=T.born<.3?.6+T.born/.3*.4:1;const rot=T.type==='frost'?T.pulse*.4:(T.type==='laser'||T.type==='rocket')?(T.aim||0):0;if(T.jam)c.globalAlpha=.3;this.draw(this.towerSprite(T.type,T.col),T.x,T.y,rot,pop);c.globalAlpha=1}
   const sel=this.selTower;if(sel&&run.towers.includes(sel)){c.strokeStyle='#ffffff';c.lineWidth=2;c.setLineDash([4,4]);c.lineDashOffset=-this.t*20;c.beginPath();c.arc(sel.x,sel.y,24,0,TAU);c.stroke();c.setLineDash([])}
   const g=this.ghost;if(g){const col=g.ok?TOWERS[g.type].col:'#ff4f6d';this.drawTowerArea(g.x,g.y,g.r,col,1.6);c.globalAlpha=.75;this.draw(this.towerSprite(g.type,col),g.x,g.y,0);c.globalAlpha=1}}
-drawBase(b,run){const c=this.c,fl=b.flash>0;
+/* Aussehen der Basis nach den größeren Basis-Upgrades (Welt 1). Reine Anzeige, liest nur die Knotenstufen. */
+baseLook(n){n=n||{};const L=k=>n[k]||0,pz=L('b1');
+  return{plates:pz>=50?3:pz>=25?2:pz>=10?1:0,bast:L('b5')>0,crown:L('b8')>0,emit:L('b3b')>0,nova:L('b5b')>0,guns:L('f2c')>0?(L('f7')>0?6:3):0,
+    reactor:L('b6')>0,rep:L('b2b')?Math.min(4,1+Math.floor(L('b2b')/4)):0,matrix:L('b7a')>0,net:L('b7b')>0,cal:L('b4a')>=5?2:L('b4a')>0?1:0,aura:L('b9')>0}}
+// Anbauten als ein gecachtes Sprite: Panzerplatten (Panzerung 10/25/50), Bastionen (Bollwerk), Krone (Festungskern), Emitter (Schockwelle, Nova-Ring), Läufe (Autofeuer, Sturmfeuer)
+baseKit(k){const key='kit'+k.plates+(+k.bast)+(+k.crown)+(+k.emit)+(+k.nova)+k.guns;return this.sprite(key,62,(c,K)=>{
+  if(k.crown)this.neon(c,K,c=>this.poly(c,6,35,PI/6),'#ffe14f',1.6,10);
+  if(k.bast)for(let i=0;i<6;i++){const a=i*TAU/6;this.neon(c,K,c=>{c.beginPath();c.moveTo(Math.cos(a-.17)*32,Math.sin(a-.17)*32);c.lineTo(Math.cos(a)*44,Math.sin(a)*44);c.lineTo(Math.cos(a+.17)*32,Math.sin(a+.17)*32);c.closePath()},'#3df5ff',2,10,'rgba(6,10,36,.92)')}
+  if(k.plates)for(let i=0;i<6;i++){if(k.plates===1&&i%2)continue;const a=i*TAU/6+PI/6;this.neon(c,K,c=>{c.beginPath();c.arc(0,0,38.5,a-.34,a+.34)},'#9fd8ff',k.plates===3?4.5:3,8)}
+  if(k.guns)for(let i=0;i<6;i++){if(k.guns===3&&i%2)continue;const a=i*TAU/6;this.neon(c,K,c=>{c.beginPath();c.moveTo(Math.cos(a)*29,Math.sin(a)*29);c.lineTo(Math.cos(a)*(k.bast?48:40),Math.sin(a)*(k.bast?48:40))},'#ffffff',2.4,8)}
+  if(k.nova)this.neon(c,K,c=>{c.beginPath();c.arc(0,0,23.5,0,TAU)},'#ff4fd8',1.2,8);
+  if(k.emit)for(let i=0;i<6;i++){const a=i*TAU/6+PI/6;this.neon(c,K,c=>{c.beginPath();c.arc(Math.cos(a)*23.5,Math.sin(a)*23.5,1.8,0,TAU)},'#ff4fd8',1.6,8,'#ff4fd8')}})}
+// Trümmer nach der Explosion: jede Kante der beiden Kerne, Platten und Geschütze fliegt als Splitter davon. Reine Funktion der Zeit seit dem Fall (kein Zustand).
+drawWreck(b,k,look){const c=this.c,h=(i,s)=>{const v=Math.sin(i*12.9898+s*78.233)*43758.5453;return v-Math.floor(v)},fade=clamp(1-k/1.6,0,1),out=1-Math.exp(-2.4*k);
+  c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.arc(0,0,34,0,TAU);c.fill();
+  c.globalCompositeOperation='lighter';
+  const sh=(i,a0,r,len,col,lw)=>{const a=a0+(h(i,1)-.5)*.7,d=r+(50+h(i,2)*190)*out,rot=a0+PI/2+(h(i,3)-.5)*14*k,x=Math.cos(a)*d,y=Math.sin(a)*d,dx=Math.cos(rot)*len/2,dy=Math.sin(rot)*len/2;
+    c.globalAlpha=fade;c.strokeStyle=col;c.lineWidth=lw;c.beginPath();c.moveTo(x-dx,y-dy);c.lineTo(x+dx,y+dy);c.stroke();c.strokeStyle='#ffffff';c.lineWidth=lw*.35;c.stroke()};
+  if(fade>0){let n=0;for(let i=0;i<6;i++){const a=b.rot+i*TAU/6+PI/6;sh(n++,a,26,30,'#3df5ff',3);sh(n++,-b.rot*1.6+i*TAU/6+PI/6,15,17,'#ff4fd8',2.2);
+      if(look.plates&&(look.plates>1||i%2===0))sh(n++,a,38,24,'#9fd8ff',3);if(look.bast)sh(n++,b.rot+i*TAU/6,38,14,'#3df5ff',2)}
+    for(const tu of b.turrets)sh(n++,tu.a,44,12,'#3df5ff',3)}
+  if(k<.3){c.globalAlpha=1-k/.3;this.draw(this.dot('#ffffff'),0,0,0,4+k*40)}
+  c.globalAlpha=.35+.2*Math.sin(this.t*5);this.draw(this.dot('#ff4f6d'),0,0,0,1.3);
+  c.globalAlpha=1;c.globalCompositeOperation='source-over'}
+drawBase(b,run,look){const c=this.c,dying=!!(run&&run.over&&!run.quit),fl=dying?Math.floor(run.overT*40)%2===0:b.flash>0;look=look||this.baseLook(null);
+  if(dying&&run.overT>=BOOM_T){this.drawWreck(b,run.overT-BOOM_T,look);return}
+  if(look.aura){c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(255,255,255,${.1+.08*Math.sin(this.t*2)})`;c.lineWidth=5;c.beginPath();c.arc(0,0,62,0,TAU);c.stroke();c.globalCompositeOperation='source-over'}
   if(b.shMax>0&&b.sh>0){const f=b.sh/b.shMax;c.globalCompositeOperation='lighter';c.fillStyle=`rgba(61,245,255,${.04+.05*f})`;c.beginPath();c.arc(0,0,50,0,TAU);c.fill();
-    c.strokeStyle=fl?'#ffffff':`rgba(61,245,255,${.25+.5*f})`;c.lineWidth=2;c.beginPath();c.arc(0,0,50,0,TAU);c.stroke();c.globalCompositeOperation='source-over'}
+    c.strokeStyle=fl?'#ffffff':`rgba(61,245,255,${.25+.5*f})`;c.lineWidth=2;c.beginPath();c.arc(0,0,50,0,TAU);c.stroke();
+    if(look.matrix){c.lineWidth=1.5;c.setLineDash([7,6]);c.lineDashOffset=this.t*14;c.beginPath();c.arc(0,0,54,0,TAU);c.stroke();c.setLineDash([])}c.globalCompositeOperation='source-over'}
   if(b.ov>0){c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(255,225,79,${.4+.4*Math.sin(this.t*6)**2})`;c.lineWidth=3;c.beginPath();c.arc(0,0,56,0,TAU);c.stroke();c.globalCompositeOperation='source-over'}
-  for(const tu of b.turrets){const x=Math.cos(tu.a)*44,y=Math.sin(tu.a)*44;c.save();c.translate(x,y);c.rotate(tu.aim);c.strokeStyle='#3df5ff';c.lineWidth=3;c.beginPath();c.moveTo(0,0);c.lineTo(11,0);c.stroke();c.fillStyle='rgba(6,10,36,.95)';c.fillRect(-5,-5,10,10);c.lineWidth=1.6;c.strokeRect(-5,-5,10,10);c.restore()}
+  if(look.net&&b.turrets.length>1){c.strokeStyle='rgba(61,245,255,.35)';c.lineWidth=1;c.beginPath();for(const tu of b.turrets)c.lineTo(Math.cos(tu.a)*44,Math.sin(tu.a)*44);c.closePath();c.stroke()}
+  for(const tu of b.turrets){const x=Math.cos(tu.a)*44,y=Math.sin(tu.a)*44,bl=look.cal?15:11;c.save();c.translate(x,y);c.rotate(tu.aim);c.strokeStyle='#3df5ff';c.lineWidth=look.cal===1?4:3;c.beginPath();if(look.cal===2){c.moveTo(0,-2.6);c.lineTo(bl,-2.6);c.moveTo(0,2.6);c.lineTo(bl,2.6)}else{c.moveTo(0,0);c.lineTo(bl,0)}c.stroke();c.fillStyle='rgba(6,10,36,.95)';c.fillRect(-5,-5,10,10);c.lineWidth=1.6;c.strokeRect(-5,-5,10,10);c.restore()}
+  if(look.plates||look.bast||look.crown||look.emit||look.nova||look.guns)this.draw(this.baseKit(look),0,0,b.rot||1e-9);
   const col=fl?'#ffffff':'#3df5ff';this.draw(this.coreSprite(30,6,3,col,'core1'+col),0,0,b.rot);
   const col2=fl?'#ffffff':'#ff4fd8';this.draw(this.coreSprite(17,6,2.2,col2,'core2'+col2),0,0,-b.rot*1.6);
-  const p=.6+.4*Math.sin(this.t*3),hf=b.max?b.hp/b.max:1;c.globalCompositeOperation='lighter';this.draw(this.dot(hf<.3?'#ff4f6d':'#3df5ff'),0,0,0,1.1+p*.4);c.globalCompositeOperation='source-over'}
+  if(look.reactor)this.draw(this.coreSprite(8,3,1.6,'#ffe14f','core3'),0,0,this.t*2.4);
+  const p=.6+.4*Math.sin(this.t*3),hf=b.max?b.hp/b.max:1;c.globalCompositeOperation='lighter';this.draw(this.dot(hf<.3?'#ff4f6d':look.reactor?'#ffe14f':'#3df5ff'),0,0,0,1.1+p*.4);
+  for(let i=0;i<look.rep;i++){const a=this.t*1.7+i*TAU/look.rep;this.draw(this.dot('#5dffb0'),Math.cos(a)*34,Math.sin(a)*34,0,.5)}
+  if(dying)this.draw(this.dot('#ffffff'),0,0,0,1.5+run.overT/BOOM_T*5);c.globalCompositeOperation='source-over'}
 }
