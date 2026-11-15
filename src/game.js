@@ -35,6 +35,18 @@ const ETYPES={
   // Brüter: hinterlässt beim Tod ein Ei, aus dem Schwärmer schlüpfen
   brooder:{name:'Brüter',hp:70,sp:30,r:14,dmg:8,val:8,col:'#ffa64f',bar:1,from:90,step:.006,max:.03,text:'Hinterlässt beim Tod ein Ei. Wird es nicht rechtzeitig zerstört, schlüpfen vier Schwärmer.'},
   egg:{name:'Ei',hp:20,sp:0,r:9,dmg:0,val:1,col:'#ffd27a',text:'Bleibt liegen, wo der Brüter fiel. Nach vier Sekunden schlüpfen vier Schwärmer.'},
+  // Dieb: läuft an allem vorbei zur Basis und stiehlt Energie statt Leben
+  thief:{name:'Dieb',hp:14,sp:95,r:8,dmg:0,val:3,col:'#ffd24f',from:33,step:.01,max:.05,text:'Läuft an allem vorbei zur Basis und stiehlt ein Fünftel deiner Energie. Vorher abfangen.'},
+  // Mörser: beschießt Helden und Drohnen mit Granaten (Einschlag verzögert, Kreis kündigt ihn an)
+  mortar:{name:'Mörser',hp:32,sp:30,r:12,dmg:8,val:5,col:'#ff7a5a',ranged:1,bar:1,from:48,step:.008,max:.04,text:'Bleibt auf Abstand und beschießt Helden und Drohnen mit Granaten. Der Kreis zeigt, wo sie einschlagen.'},
+  // Giftträger: hinterlässt beim Tod eine Wolke, die Verbündeten schadet
+  gas:{name:'Giftträger',hp:36,sp:36,r:12,dmg:6,val:5,col:'#a6ff4f',bar:1,from:63,step:.008,max:.04,text:'Hinterlässt beim Tod eine Giftwolke, die Helden und Drohnen sechs Sekunden lang schadet.'},
+  // Scharfschütze: zielt lange auf den stärksten Helden und trifft dann sehr hart
+  sniper:{name:'Scharfschütze',hp:24,sp:34,r:10,dmg:10,val:6,col:'#ff4fa0',ranged:1,from:73,step:.006,max:.03,text:'Zielt drei Sekunden lang auf den stärksten Helden und trifft dann sehr hart. Die Linie zeigt sein Ziel.'},
+  // Spiegel: wirft bei Treffern Schaden auf den nächsten Verbündeten zurück
+  mirror:{name:'Spiegel',hp:50,sp:30,r:13,dmg:7,val:6,col:'#d6f5ff',bar:1,from:78,step:.006,max:.03,text:'Wirft bei Treffern Schaden auf den nächsten Helden oder die nächste Drohne zurück. Wenige starke Treffer sind besser als viele kleine.'},
+  // Gespann: zwei verbundene Gegner, die sich gegenseitig heilen
+  pair:{name:'Gespann',hp:60,sp:34,r:12,dmg:9,val:6,col:'#ff9a4f',bar:1,from:95,step:.005,max:.025,text:'Kommt immer zu zweit. Solange beide leben, heilen sie sich gegenseitig. Fällt einer, rast der andere los.'},
   // Schwarmkönigin: bringt laufend Schwärmer hervor
   queen:{name:'Schwarmkönigin',hp:60,sp:28,r:14,dmg:5,val:8,col:'#ff9de0',bar:1,from:25,step:.008,max:.04,text:'Bringt alle drei Sekunden zwei Schwärmer hervor, solange sie lebt.'},
   // Rammbock: wird immer schneller, je länger er lebt
@@ -58,10 +70,11 @@ const DROPS={bomb:{name:'Bombe',text:'Sprengt alles im Umkreis',col:'#ff8a3d'},d
 const SHINY_P=1/5000,SHINY_HP=3.5;
 const HUNT_MUL=3,HUNT_SHOT=12,ENGI_AMP=1.3,ENGI_DUR=6,ENGI_ENERGY=1.25;   // Kopfjäger und Ingenieurin
 const BOOM_T=.35;   // Sekunden vom Fall der Basis bis zur Explosion
-const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander','jumper','shade','phaser','hacker','brooder'];
+const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander','jumper','shade','phaser','hacker','brooder','thief','mortar','gas','sniper','mirror','pair'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
 // Mischung einer Welle. Zusammen dürfen die besonderen Typen höchstens MIX_MAX der Welle stellen; darüber werden alle anteilig gekürzt, der Rest bleibt Schwärmer.
 const JUMP_CD=3,JUMP_D=90,SHADE_R=130,SHADE_MUL=.5,PHASE_ON=1.5,PHASE_OFF=2.5,HACK_R=130,EGG_T=4,EGG_HP=.4,EGG_N=4;
+const THIEF_PCT=.2,MORTAR_CD=3.5,MORTAR_R=46,MORTAR_DELAY=1.3,MORTAR_MUL=2.5,MORTAR_RANGE=330,GAS_R=70,GAS_DUR=6,GAS_PCT=.06,SNIPE_T=3,SNIPE_MUL=6,SNIPE_BASE=3,MIRROR_PCT=.04,MIRROR_R=220,MIRROR_CD=.3,PAIR_HEAL=.08,PAIR_RAGE=1.6;
 const MIX_MAX=.85,HEAL_R=110,HEAL_PCT=.04,CLOAK_R=150,JAM_R=120,QUEEN_CD=3,RAM_ACC=.25,RAM_MAX=3,TANK_CAP=.12,REV_DOWN=1.5,CMD_R=120,CMD_DMG=1.4,CMD_SP=1.25;
 const waveMix=w=>{const m=WAVE_MIX.map(t=>[t,waveShare(t,w)]),sum=m.reduce((a,x)=>a+x[1],0),k=sum>MIX_MAX?MIX_MAX/sum:1;return m.map(([t,s])=>[t,s*k])};
 // Doppelboss: alle TWIN_EVERY Wellen kommen zwei Bosse von gegenüberliegenden Seiten, jeder mit TWIN_HP (75 %) des normalen Bosslebens
@@ -89,7 +102,7 @@ constructor(save,hooks){
   for(let i=0;i<S.turrets;i++)this.base.turrets.push({a:i/S.turrets*TAU+PI/4,t:Math.random(),aim:i/S.turrets*TAU+PI/4});
   this.en=[];this.heroes=[];this.drones=[];this.pr=[];this.ep=[];
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
-  this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;this.drops=[];this.dropN=0;this.engiAt=-9;this.ampT=0;this.buff={dmg:0,haste:0,repair:0,gain:0};
+  this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;this.drops=[];this.dropN=0;this.zones=[];this.engiAt=-9;this.ampT=0;this.buff={dmg:0,haste:0,repair:0,gain:0};
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
   this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.killsBy={};this.pend=[];this.rushT=0;this.dcount={};this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
@@ -186,6 +199,8 @@ updTowers(dt){
 hitE(e,dmg,o={}){if(e.hp<=0||e.cloak)return;
   if(e.sh>0){e.sh--;e.flash=.08;if(!this.headless){this.burst(e.x,e.y,e.sh?3:10,'#9fd8ff',e.sh?120:200,.25,2);if(!e.sh)this.ring(e.x,e.y,e.r,e.r*2.4,'#9fd8ff',.3,4)}return}
   dmg*=e.vuln||1;if(o.imp){if(e.mark>1)dmg*=e.mark;if(e.boss||e.elite)dmg*=1+(this.S.impBig||0)}if(this.buff.dmg>0)dmg*=2;if(e.armorT>0)dmg*=.2;if(e.type==='tank')dmg=Math.min(dmg,e.max*TANK_CAP);if(e.shat&&e.frozen>0)dmg*=2;let cr=o.crit;if(e.critB&&Math.random()<e.critB){dmg*=2;cr=true}e.hp-=dmg;e.flash=.08;
+  if(e.type==='mirror'&&!e.mute&&this.t-e.mirT>MIRROR_CD){e.mirT=this.t;let a=null,bd=MIRROR_R*MIRROR_R;for(const h of this.heroes){if(h.dead>0)continue;const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}for(const h of this.drones){const q=sq(h.x-e.x)+sq(h.y-e.y);if(q<bd){bd=q;a=h}}
+    if(a){this.hurtAlly(a,a.max*MIRROR_PCT);this.headless||this.bolts.push({pts:[[e.x,e.y],[a.x,a.y]],l:0,m:.15,col:e.col,w:2})}}
   if(!this.headless&&(o.num!==false||cr))this.num(e.x,e.y-e.r-4,fmtN(Math.max(1,dmg))+(cr?'!':''),cr?'#ffe14f':(o.col||'#d6fdff'),!!(cr||o.big));
   if(e.hp<=0)this.kill(e)}
 kill(e){
@@ -195,6 +210,7 @@ kill(e){
   const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss){kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;if(this.twin&&++this.twinDown===2)kb.twin=(kb.twin||0)+1}
   if(e.shiny){kb['shiny:'+e.type]=(kb['shiny:'+e.type]||0)+1;this.ring(e.x,e.y,e.r,e.r*5,'#ffffff',.7,8);this.h.banner&&this.h.banner('Schillernd!',ETYPES[e.type].name+' besiegt');this.h.sfx&&this.h.sfx('abil')}
   if(e.type==='brooder')this.pend.push(['egg',e.x,e.y,e.max*EGG_HP]);
+  if(e.type==='gas'){this.zones.push({kind:'gas',x:e.x,y:e.y,r:GAS_R,t:GAS_DUR,col:e.col});this.ring(e.x,e.y,8,GAS_R,e.col,.5,5)}
   if(e.type==='splitter')for(let i=0;i<3;i++){const a=i*TAU/3+rnd(0,1);this.pend.push(['mite',e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,e.max*MITE_HP])}
   this.burst(e.x,e.y,e.boss?60:e.elite?22:8,e.col,e.boss?320:200,e.boss?.9:.5,e.boss?5:3);
   this.reward(e);if(e.drop)this.spawnDrop(e.x,e.y);
@@ -246,7 +262,7 @@ spawnPt(){const W=this.hw+40,H=this.hh+40;let u=Math.random()*(4*W+4*H);
 spawnEnemy(type,elite,x,y,shiny){const T=ETYPES[type],w=this.w,hm=this.hpScale(w),dm=this.dmgScale(w);
   let hp=T.hp*hm*(type==='boss'?(500/900)*(1+w*.03)*(this.twin?TWIN_HP:1):1),r=T.r,val=T.val;if(elite){hp*=5;r*=1.35;val*=4}if(shiny)hp*=SHINY_HP;
   this.en.push({type,x,y,r,hp,max:hp,sp:T.sp*rnd(.9,1.1)*(elite?.85:1),dmg:T.dmg*dm*(elite?2:1),val,elite,boss:type==='boss',
-    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,healT:rnd(0,1),cloak:type==='cloaker',heavy:type==='giant',acc:1,down:0,rev:false,qT:QUEEN_CD,jT:JUMP_CD*rnd(.5,1),phT:PHASE_OFF*rnd(.3,1),eggT:EGG_T,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
+    ranged:!!T.ranged,col:T.col,flash:0,name:type==='boss'?this.bossName():null,atkT:rnd(0,1),ang:Math.atan2(-y,-x),sumT:4,wob:rnd(0,TAU),stop:type==='siege'||type==='sniper'?Math.min(rnd(250,270),Math.min(this.hw,this.hh)-14):rnd(200,240),sh:0,sh0:0,bd:0,shiny:!!shiny,healT:rnd(0,1),cloak:type==='cloaker',heavy:type==='giant',acc:1,down:0,rev:false,qT:QUEEN_CD,aimT:0,tgA:null,mirT:-9,mate:null,rage:false,jT:JUMP_CD*rnd(.5,1),phT:PHASE_OFF*rnd(.3,1),eggT:EGG_T,cast:0,cast0:0,abT:rnd(4,7),armorT:0,
     // Alle später benutzten Felder schon hier anlegen: Gegner haben dann immer dieselbe Form, das hält den Rechenkern schnell.
     mute:false,mark:1,spMul:1,vuln:1,dmgMul:1,critB:0,combo:0,perma:false,shat:false,nullp:false,tw:[],frozen:0,chill:0,frzImm:0,sF:false,sZ:false,sK:false,kbT:0,psn:0,psT:0,acid:0});
   if(type==='shield'){const e=this.en[this.en.length-1];e.sh=e.sh0=SHIELD_HITS+Math.floor(w/SHIELD_PER)}}
@@ -254,7 +270,8 @@ updWaves(dt){if(this.queue.length){this.spawnT-=dt;if(this.spawnT<=0){const k=Ma
     const [x,y]=this.spawnPt();for(let i=0;i<k;i++){const q=this.queue.shift();let px=x,py=y;
       // der zweite Boss eines Doppelbosses kommt von der gegenüberliegenden Seite
       if(q.type==='boss'){if(q.twin&&this.bossPt){px=-this.bossPt[0];py=-this.bossPt[1]}else this.bossPt=[x,y]}
-      this.spawnEnemy(q.type,q.elite,px+rnd(-22,22),py+rnd(-22,22),q.shiny);if(q.drop)this.en[this.en.length-1].drop=true}
+      this.spawnEnemy(q.type,q.elite,px+rnd(-22,22),py+rnd(-22,22),q.shiny);if(q.drop)this.en[this.en.length-1].drop=true;
+      if(q.type==='pair'){const a=this.en[this.en.length-1];this.spawnEnemy('pair',false,a.x+rnd(-30,30),a.y+rnd(-30,30));const m=this.en[this.en.length-1];a.mate=m;m.mate=a}}
     this.spawnT=this.spawnI*k*rnd(.7,1.3)}}
   else{this.waveEndT+=dt;if(this.en.length<=3||this.waveEndT>9){this.waveGap-=dt;if(this.waveGap<=0){this.nextWave();this.waveGap=1.5}}}}
 
@@ -378,6 +395,7 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
     if(e.frozen>0)continue;e.atkT-=dt;const d=hyp(e.x,e.y)||1;
     if(e.type==='jumper'&&!e.mute){e.jT-=dt;if(e.jT<=0&&d>b.r+e.r+30){e.jT=JUMP_CD;const j=Math.min(JUMP_D,d-b.r-e.r-6);this.ring(e.x,e.y,e.r*2,3,e.col,.3,3);e.x-=e.x/d*j;e.y-=e.y/d*j;this.ring(e.x,e.y,3,e.r*2.4,e.col,.3,3);continue}}
     let buff=false;if(cmd.length)for(const c of cmd)if(c!==e&&hyp(c.x-e.x,c.y-e.y)<CMD_R){buff=true;break}
+    if(e.mate){if(e.mate.hp>0){if(!e.mute&&e.hp<e.max)e.hp=Math.min(e.max,e.hp+e.max*PAIR_HEAL*dt)}else if(!e.rage){e.rage=true;e.acc=PAIR_RAGE;this.ring(e.x,e.y,e.r,e.r*3,'#ff4f4f',.4,4)}}
     if(e.type==='ram')e.acc=Math.min(RAM_MAX,e.acc+RAM_ACC*dt);
     if(e.type==='queen'&&!e.mute){e.qT-=dt;if(e.qT<=0){e.qT=QUEEN_CD;for(let j=0;j<2;j++)this.pend.push(['swarm',e.x+rnd(-20,20),e.y+rnd(-20,20),0])}}
     const dm=e.dmg*(e.dmgMul||1)*(buff?CMD_DMG:1),spd=e.sp*(e.spMul||1)*(this.rushT>0?1.5:1)*e.acc*(buff?CMD_SP:1);
@@ -388,10 +406,16 @@ updEnemies(dt){const b=this.base,allies=[];for(const h of this.heroes)if(!(h.dea
       e.abT-=dt;if(e.abT<=0&&d<BOSS_ABIL_RANGE){const K=BOSS_KINDS[e.name];e.cast=e.cast0=K.charge;e.abT=K.cd;this.h.sfx&&this.h.sfx('bosswave');continue}}
     if(e.type==='healer'&&!e.mute){e.healT-=dt;if(e.healT<=0){e.healT=1;let any=false;this.query(e.x,e.y,HEAL_R,o=>{if(o===e||o.hp>=o.max||hyp(o.x-e.x,o.y-e.y)>HEAL_R)return;o.hp=Math.min(o.max,o.hp+o.max*HEAL_PCT*(o.boss?.25:1));any=true});if(any)this.ring(e.x,e.y,8,HEAL_R,'#6dffb0',.5,3)}}
     if(e.cloak&&e.type==='cloaker'&&d<CLOAK_R){e.cloak=false;this.ring(e.x,e.y,4,e.r*3,'#9aa7ff',.4,4);this.burst(e.x,e.y,10,'#9aa7ff',160,.4,2)}
-    let bl=null;const am=e.r+ar+3;if(!e.ranged&&e.type!=='bomber'&&e.x>ax0-am&&e.x<ax1+am&&e.y>ay0-am&&e.y<ay1+am)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
+    let bl=null;const am=e.r+ar+3;if(!e.ranged&&e.type!=='bomber'&&e.type!=='thief'&&e.x>ax0-am&&e.x<ax1+am&&e.y>ay0-am&&e.y<ay1+am)for(const a of allies){const rr=e.r+a.r+3;if(Math.abs(a.x-e.x)<rr&&Math.abs(a.y-e.y)<rr&&hyp(a.x-e.x,a.y-e.y)<rr){bl=a;break}}
     if(bl){if(e.atkT<=0){this.hurtAlly(bl,dm);e.atkT=1}continue}
+    if(e.type==='mortar'&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){e.atkT=MORTAR_CD;let t=null,bd=MORTAR_RANGE*MORTAR_RANGE;for(const a of allies){const q=sq(a.x-e.x)+sq(a.y-e.y);if(q<bd){bd=q;t=a}}
+        if(t){this.zones.push({kind:'shell',x:t.x,y:t.y,r:MORTAR_R,t:MORTAR_DELAY,t0:MORTAR_DELAY,dmg:dm*MORTAR_MUL,col:e.col});e.ang=Math.atan2(t.y-e.y,t.x-e.x)}else this.ep.push({x:e.x,y:e.y,vx:-e.x/d*200,vy:-e.y/d*200,dmg:dm,col:e.col,big:false})}continue}
+    if(e.type==='sniper'&&d<e.stop){if(e.tgA&&(e.tgA.dead>0||e.tgA.hp<=0))e.tgA=null;if(!e.tgA&&e.aimT===0){let bh=0;for(const a of this.heroes)if(!(a.dead>0)&&a.max>bh){bh=a.max;e.tgA=a}}
+      const tx=e.tgA?e.tgA.x:0,ty=e.tgA?e.tgA.y:0;e.ang=Math.atan2(ty-e.y,tx-e.x);e.aimT+=dt;
+      if(e.aimT>=SNIPE_T){e.aimT=0;this.headless||this.bolts.push({pts:[[e.x,e.y],[tx,ty]],l:0,m:.2,col:'#ffffff',w:4});if(e.tgA)this.hurtAlly(e.tgA,dm*SNIPE_MUL);else this.damageBase(dm*SNIPE_BASE);e.tgA=null;this.burst(tx,ty,10,e.col,220,.3,3);this.h.sfx&&this.h.sfx('turret')}continue}
     if(e.ranged&&d<e.stop){e.ang=Math.atan2(-e.y,-e.x);if(e.atkT<=0){const sg=e.type==='siege',v=sg?150:220;e.atkT=sg?3.6:1.8;this.ep.push({x:e.x,y:e.y,vx:-e.x/d*v,vy:-e.y/d*v,dmg:dm,col:e.col,big:sg})}continue}
-    if(d<b.r+e.r+2){if(e.type==='bomber'){this.damageBase(dm);e.hp=0;this.ring(e.x,e.y,6,70,'#ff5a3d',.4,10);this.burst(e.x,e.y,26,'#ff5a3d',260,.5,3);this.shake=Math.max(this.shake,7);this.h.sfx&&this.h.sfx('killbig');continue}
+    if(d<b.r+e.r+2){if(e.type==='thief'){const st=this.energy*THIEF_PCT;this.energy-=st;e.hp=0;this.num(e.x,e.y-16,'−'+fmtN(Math.max(1,st))+' Energie','#ffd24f',true);this.ring(e.x,e.y,4,40,e.col,.4,5);this.burst(e.x,e.y,12,e.col,200,.4,2);this.h.sfx&&this.h.sfx('down');continue}
+      if(e.type==='bomber'){this.damageBase(dm);e.hp=0;this.ring(e.x,e.y,6,70,'#ff5a3d',.4,10);this.burst(e.x,e.y,26,'#ff5a3d',260,.5,3);this.shake=Math.max(this.shake,7);this.h.sfx&&this.h.sfx('killbig');continue}
       if(e.atkT<=0){this.damageBase(dm);e.atkT=1}continue}
     e.wob+=dt*3;const ux=-e.x/d,uy=-e.y/d,lat=e.boss?0:Math.sin(e.wob)*.25;
     e.x+=(ux-uy*lat)*spd*dt;e.y+=(uy+ux*lat)*spd*dt;if(!this.headless)e.ang=Math.atan2(uy,ux)}}
@@ -445,6 +469,13 @@ useDrop(d){const D=DROPS[d.kind];this.dropN++;this.h.banner&&this.h.banner(D.nam
 updDrops(dt){const B=this.buff;for(const k in B)if(B[k]>0)B[k]-=dt;
   if(B.repair>0){const b=this.base;if(b.hp<b.max)b.hp=Math.min(b.max,b.hp+b.max*DROP_REPAIR*dt)}
   if(this.drops.length){for(const d of this.drops){d.life-=dt;d.t+=dt;d.flash-=dt}this.drops=this.drops.filter(d=>d.life>0)}}
+/* ---------- Zonen: angekündigte Granaten (shell) und Giftwolken (gas) treffen nur Helden und Drohnen ---------- */
+updZones(dt){if(!this.zones.length)return;
+  for(const z of this.zones){z.t-=dt;const hit=z.kind==='gas'||z.t<=0;if(!hit)continue;
+    for(const a of this.heroes)if(!(a.dead>0)&&hyp(a.x-z.x,a.y-z.y)<z.r+a.r)this.hurtAlly(a,z.kind==='gas'?a.max*GAS_PCT*dt:z.dmg);
+    for(const a of this.drones)if(a.hp>0&&hyp(a.x-z.x,a.y-z.y)<z.r+a.r)this.hurtAlly(a,z.kind==='gas'?a.max*GAS_PCT*dt:z.dmg);
+    if(z.kind==='shell'){this.ring(z.x,z.y,6,z.r+8,z.col,.35,8);this.burst(z.x,z.y,14,z.col,220,.4,3);this.shake=Math.max(this.shake,3);this.h.sfx&&this.h.sfx('killbig')}}
+  this.zones=this.zones.filter(z=>z.t>0)}
 shaded(x,y){for(const e of this.en)if(e.type==='shade'&&e.hp>0&&!e.mute&&hyp(e.x-x,e.y-y)<SHADE_R)return true;return false}
 tap(x,y){if(this.over)return;const S=this.S,n=++this.imps;this.taps=n;
   let dmg=S.tapDmg*S.impMul,beat=false;if(S.beat&&n%BEAT_N===0){dmg*=1+S.beat;beat=true}
@@ -476,7 +507,7 @@ step(dt){if(this.over){this.overT+=dt;this.fx(dt);this.shake=Math.max(0,this.sha
   // Impuls am Zeiger: feste Taktung, unabhängig davon, ob dort Gegner stehen
   if(this.S.impInt>0&&!this.noImpulse){this.impT-=dt;for(let n=0;this.impT<=0&&n<4;n++){this.impT+=this.S.impInt*(this.buff.haste>0?DROP_HASTE:1);this.tap(this.cx,this.cy)}if(this.impT<0)this.impT=0}
   this.updDrops(dt);
-  this.updEnemies(dt);
+  this.updEnemies(dt);this.updZones(dt);
   this.en=this.en.filter(e=>e.hp>0);this.buildGrid();if((this.sepT=(this.sepT||0)+1)%2===0)this.separate();
   this.updProj(dt);
   if(this.pend.length){for(const [t,x,y,hp] of this.pend){this.spawnEnemy(t,false,x,y);const m=this.en[this.en.length-1];if(hp){m.hp=m.max=hp}}this.pend.length=0}

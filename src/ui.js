@@ -184,7 +184,7 @@ $('#fleet').addEventListener('click',e=>{const b=e.target.closest('button');if(!
 $('#bFleet').onclick=()=>{show('fleet');renderFleet()};
 
 /* ---------- Enzyklopädie: was man besiegt hat, getrennt nach Gegnern und Bossen ---------- */
-const CODEX_TYPES=['swarm','brute','shooter','sprinter','healer','queen','shield','bomber','ram','splitter','mite','cloaker','tank','siege','revenant','jammer','commander','giant','jumper','shade','phaser','hacker','brooder','egg'];
+const CODEX_TYPES=['swarm','brute','shooter','sprinter','healer','queen','shield','bomber','ram','splitter','mite','cloaker','tank','siege','revenant','jammer','commander','giant','jumper','shade','phaser','hacker','brooder','egg','thief','mortar','gas','sniper','mirror','pair'];
 function renderCodex(){const K=save.kills||{},n=t=>K[t]||0;let h='<h3 class="sect">Gegner</h3>';
   const card=(known,col,cv,name,sub,text,count,extra)=>`<article class="hcard ${known?'':'lock'}" style="--c:${known?col:'#5f5c8c'}"><div class="hc-top">${known?cv:'<div class="unk">?</div>'}<div><h3>${known?name:'Unbekannt'}</h3><small>${sub}</small>${extra||''}</div>${known?`<div class="lvl"><small>Besiegt</small><br>${fmtN(count)}</div>`:''}</div><p style="margin:0;color:var(--muted);font-size:13px">${known?text:'Noch nicht besiegt.'}</p></article>`;
   for(const t of CODEX_TYPES){const T=ETYPES[t],k=n(t),sh=n('shiny:'+t);
@@ -219,6 +219,16 @@ const ACH=[
  {id:'belagerer',name:'Belagerungsbrecher',text:'Besiegte Belagerer',val:achK('siege'),tiers:[10,500,10000]},
  {id:'heiler',name:'Heilerjäger',text:'Besiegte Heiler',val:achK('healer'),tiers:[25,1000,25000]},
  {id:'bomber',name:'Bombenentschärfer',text:'Bomber vor der Basis abgefangen',val:achK('bomber'),tiers:[25,1000,25000]},
+ {id:'abwurf',name:'Glücksgriff',text:'Abwürfe mit dem Impuls ausgelöst',val:s=>s.dropsUsed||0,tiers:[5,100,2000]},
+ {id:'koenigin',name:'Königsmörder',text:'Besiegte Schwarmköniginnen',val:achK('queen'),tiers:[10,500,10000]},
+ {id:'tarner',name:'Enttarner',text:'Besiegte Tarner',val:achK('cloaker'),tiers:[25,1000,25000]},
+ {id:'huene',name:'Riesentöter',text:'Besiegte Hünen',val:achK('giant'),tiers:[5,250,5000]},
+ {id:'ei',name:'Nesträuber',text:'Eier zerstört, bevor etwas schlüpft',val:achK('egg'),tiers:[10,500,10000]},
+ {id:'dieb',name:'Diebesfänger',text:'Diebe vor der Basis abgefangen',val:achK('thief'),tiers:[25,1000,25000]},
+ {id:'helden',name:'Heldenriege',text:'Freigeschaltete Helden',val:s=>HERO_IDS.filter(id=>s.heroes[id]&&s.heroes[id].u).length,tiers:[2,4,HERO_IDS.length]},
+ {id:'flotte',name:'Flottenadmiral',text:'Freigeschaltete Drohnenklassen',val:s=>DRONE_IDS.filter(id=>droneUnlocked(s,id)).length,tiers:[2,4,DRONE_IDS.length]},
+ {id:'tuerme',name:'Baumeister',text:'Freigeschaltete Türme im Neon-Sektor',val:s=>TOWER_IDS.filter(id=>s.towers[id]&&s.towers[id].u).length,tiers:[2,4,TOWER_IDS.length]},
+ {id:'baum',name:'Baumpfleger',text:'Knoten im Skilltree des Neon-Sektors mit mindestens einer Stufe',val:s=>Object.keys(s.nodes||{}).filter(k=>k!=='root'&&s.nodes[k]>0&&NODES[k]).length,tiers:[10,40,Object.keys(NODES).length-1]},
  {id:'runs',name:'Ausdauer',text:'Gespielte Runs',val:s=>s.runs||0,tiers:[25,500,5000]},
  {id:'nova',name:'Sternentod',text:'Gezündete Supernovas',val:s=>s.nova||0,tiers:[1,25,250]},
  {id:'gitter',name:'Weltenwanderer',text:'Höchste erreichte Welle in der Gitterfestung',val:s=>(s.w2&&s.w2.best)||0,tiers:[10,50,150]},
@@ -254,7 +264,7 @@ $('#bResume').onclick=()=>{paused=false;$('#pause').hidden=true};
 $('#bQuit').onclick=()=>{paused=false;$('#pause').hidden=true;if(run&&!run.over){run.quit=true;run.end()}};
 $('#bSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:speed===4?8:1;save.speed=speed;persist();$('#bSpeed').textContent=speed+'×'};
 $('#bBack').onclick=goHub;
-function showEnd(){endShown=true;if(W.id===1){const K=save.kills||(save.kills={});for(const t in run.killsBy)K[t]=(K[t]||0)+run.killsBy[t]}setTimeout(achCheck,1200);$('#eTitle').textContent=run.quit?'Run beendet':'Basis zerstört';const g=run.gain,ws=W.s(),prev=ws.best||0;for(const c of W.curIds)ws.cur[c]+=Math.floor(g[c]||0);
+function showEnd(){endShown=true;if(W.id===1){save.dropsUsed=(save.dropsUsed||0)+(run.dropN||0);const K=save.kills||(save.kills={});for(const t in run.killsBy)K[t]=(K[t]||0)+run.killsBy[t]}setTimeout(achCheck,1200);$('#eTitle').textContent=run.quit?'Run beendet':'Basis zerstört';const g=run.gain,ws=W.s(),prev=ws.best||0;for(const c of W.curIds)ws.cur[c]+=Math.floor(g[c]||0);
   ws.best=Math.max(prev,run.w);ws.cycleBest=Math.max(ws.cycleBest||0,run.w);save.pending=null;persist();
   if(W.id===1&&prev<100&&run.w>=100)setTimeout(()=>toast('Neue Welt freigeschaltet: Gitterfestung'),800);
   $('#eWave').innerHTML=`<p style="margin:0;font-size:18px">Welle <b>${run.w}</b> erreicht</p>`+(run.w>prev&&prev>0?'<p class="rec" style="margin:4px 0 0">Neuer Rekord</p>':'')+`<p style="margin:4px 0 0;color:var(--muted);font-size:13px">${fmtN(run.kills)} Gegner besiegt</p>`;
