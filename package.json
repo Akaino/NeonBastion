@@ -3,8 +3,8 @@
   "private": true,
   "description": "Neon Bastion – Werkzeuge zum Entwickeln. Das Spiel selbst hat keine Abhängigkeiten.",
   "scripts": {
-    "format": "prettier --write \"src/**/*.{js,css}\" \"sim/**/*.js\" \"tools/**/*.js\"",
-    "format:check": "prettier --check \"src/**/*.{js,css}\" \"sim/**/*.js\" \"tools/**/*.js\"",
+    "format": "prettier --write \"src/**/*.{js,css}\" \"sim/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.{js,css}\" \"sim/**/*.js\"",
     "lint": "eslint src sim"
   },
   "devDependencies": {
