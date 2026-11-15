@@ -124,6 +124,20 @@ frame(run,dt){this.t+=dt;
     this.draw(this.heroSprite(h.id,h.col,h.flash>0),hx,hy,h.spin>0?h.face+(1-h.spin/.45)*TAU*2:h.face,1.2);
     const f=Math.max(0,h.hp/h.max);c.fillStyle='rgba(5,5,26,.8)';c.fillRect(h.x-12,h.y+16,24,4);c.fillStyle=h.col;c.fillRect(h.x-11.5,h.y+16.5,23*f,3);
     const cf=1-Math.max(0,h.abT)/h.cd;c.strokeStyle=cf>=1?'#ffffff':h.col;c.globalAlpha=cf>=1?.9:.45;c.lineWidth=1.6;c.beginPath();c.arc(h.x,h.y,17,-PI/2,-PI/2+TAU*Math.min(1,cf));c.stroke();c.globalAlpha=1}
+  // Abwürfe: Sechseck mit Zeichen, fünf Punkte für die Treffer, Bogen für die verbleibende Frist. Aktive Boni als Bögen um die Basis.
+  if(run.drops&&!run.over){for(const d of run.drops){const p=1+.08*Math.sin(d.t*7),R0=13*p;c.save();c.translate(d.x,d.y);
+      c.globalAlpha=.9;this.draw(this.dot(d.col),0,0,0,2.6);c.globalAlpha=1;
+      c.fillStyle=d.flash>0?'#ffffff':'rgba(5,5,26,.85)';c.strokeStyle=d.col;c.lineWidth=2.5;c.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6+PI/6;c.lineTo(Math.cos(a)*R0,Math.sin(a)*R0)}c.closePath();c.fill();c.stroke();
+      c.strokeStyle=c.fillStyle=d.flash>0?'#05051a':d.col;c.lineWidth=2.2;c.lineCap='round';c.beginPath();
+      if(d.kind==='bomb'){c.arc(0,1.5,4.5,0,TAU);c.fill();c.beginPath();c.moveTo(2.5,-3);c.lineTo(5.5,-6.5)}
+      else if(d.kind==='dmg'){c.moveTo(-5,-5);c.lineTo(5,5);c.moveTo(5,-5);c.lineTo(-5,5)}
+      else if(d.kind==='haste'){c.moveTo(2,-6.5);c.lineTo(-3.5,1);c.lineTo(3.5,-1);c.lineTo(-2,6.5)}
+      else if(d.kind==='repair'){c.moveTo(-5.5,0);c.lineTo(5.5,0);c.moveTo(0,-5.5);c.lineTo(0,5.5)}
+      else{c.moveTo(0,-6);c.lineTo(5,0);c.lineTo(0,6);c.lineTo(-5,0);c.closePath()}
+      c.stroke();c.lineCap='butt';
+      for(let i=0;i<DROP_HITS;i++){const a=-PI/2+(i-(DROP_HITS-1)/2)*.42;c.globalAlpha=i<d.hits?1:.28;c.fillStyle=i<d.hits?'#ffffff':d.col;c.beginPath();c.arc(Math.cos(a)*23,Math.sin(a)*23,i<d.hits?3:2.2,0,TAU);c.fill()}
+      c.globalAlpha=.9;c.strokeStyle=d.life<1?'#ff4f6d':d.col;c.lineWidth=2;c.beginPath();c.arc(0,0,19,PI/2-PI*.62*d.life/DROP_LIFE,PI/2+PI*.62*d.life/DROP_LIFE);c.stroke();c.restore()}
+    let bi=0;for(const k in run.buff)if(run.buff[k]>0){const rr=run.base.r+16+bi*6;c.globalAlpha=.9;c.strokeStyle=DROPS[k].col;c.lineWidth=3.5;c.lineCap='round';c.beginPath();c.arc(0,0,rr,-PI/2,-PI/2+TAU*run.buff[k]/DROP_DUR);c.stroke();c.lineCap='butt';bi++}c.globalAlpha=1}
   // Impuls-Ring am Zeiger: füllt sich im Uhrzeigersinn bis zum nächsten Impuls, Farbe kündigt Sondertreffer an
   if(run.S.impInt>0&&!run.over){const S=run.S,r=S.tapR,f=clamp(1-run.impT/S.impInt,0,1),nx=run.imps+1;
     const col=S.megaTap&&nx%S.megaTap===0?'#ffe14f':S.overload&&nx%10===0?'#ff8a3d':S.beat&&nx%BEAT_N===0?'#ff4fd8':'#3df5ff';

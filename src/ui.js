@@ -113,6 +113,7 @@ function renderDev(){const ws=W.s(),w1=W.id===1,S=w1?stats(save):null,ids=W.curI
     if(w1)h+=`<div class="drow"><span>Startwelle</span><b>${save.devStart||'normal ('+S.startWave+')'}</b><span class="dbtn">${[-10,-1,1,10].map(d=>btn(`data-ds="${d}"`,(d>0?'+':'−')+Math.abs(d))).join('')}${btn('data-ds="0"','normal')}</span></div>`}
   else h+='<p>Ressourcen, Rekord und Startwelle lassen sich nur außerhalb eines Runs ändern.</p>';
   h+=`<h3>Im Run</h3>`+(w1?`<button type="button" class="dwide${save.devShiny?' on':''}" data-dt="devShiny">Schillernder Gegner in jeder Welle: ${save.devShiny?'an':'aus'}</button>`:'')+
+    (w1?`<button type="button" class="dwide${save.devDrop?' on':''}" data-dt="devDrop">Abwurf in jeder Welle: ${save.devDrop?'an':'aus'}</button>`:'')+
     `<button type="button" class="dwide${save.devPerf?' on':''}" data-dt="devPerf">Leistungsmessung: ${save.devPerf?'an':'aus'}</button>`+
     (save.devPerf?`<button type="button" class="dwide" data-dp="copy">Messung kopieren (${Perf.hit.length} Ruckler)</button><button type="button" class="dwide" data-dp="clear">Messung neu beginnen</button>`:'')+
     `<button type="button" class="dwide" data-dp="scan">Ursachensuche starten (etwa 1 Minute)</button>`+(Perf.scanRes&&Perf.scanRes.length&&!Perf.scanT?`<button type="button" class="dwide" data-dp="copy">Ergebnis kopieren</button><p style="white-space:pre;font:11px/1.4 ui-monospace,Menlo,monospace;overflow-x:auto">${Perf.scanText()}</p>`:'')+

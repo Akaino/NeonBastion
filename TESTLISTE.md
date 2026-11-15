@@ -1,10 +1,23 @@
-# Testliste für die Beta 0.21.0
+# Testliste für die Beta 0.22.0
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
 
 Zum schnellen Einstieg: In der Beta unter „Einstellungen“ den Knopf „Live-Spielstand übernehmen“ nutzen. Für späte Gegner im Hub die Startwelle hochstellen.
 
-Alles hier ist automatisch getestet (22 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+Zum Testen später Inhalte: Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle).
+
+Alles hier ist automatisch getestet (26 Testläufe) und mit der Simulation gemessen. Offen ist jeweils, wie es sich anfühlt und aussieht – das kann nur ein Mensch beurteilen.
+
+## 0. Abwürfe (neu in 0.22.0)
+
+- [ ] Mit der Testhilfe „Abwurf in jeder Welle“ fällt in jeder Welle ein Sechseck aus einem besiegten Gegner. Ist es gut zu sehen?
+- [ ] Fünf Impulse hintereinander zerstören den Abwurf, die fünf Punkte darüber zählen mit. Ein Impuls daneben setzt sie zurück. Ist das verständlich?
+- [ ] Der Bogen unter dem Abwurf zeigt die Frist von 3 Sekunden und wird am Ende rot. Passt die Frist, auch ohne „Taktgeber“ (Impuls alle 2 Sekunden)?
+- [ ] Aufheben: mit einzelnen Treffern am Leben halten und später auslösen. Fühlt sich das gut an?
+- [ ] Bombe: nimmt Gegnern im Umkreis 40 % ihres Lebens (Bossen 8 %). Stark genug?
+- [ ] Doppelter Schaden, schneller Impuls, Reparatur, Splitterregen wirken je 5 Sekunden. Der Bogen um die Basis zeigt die Restzeit. Merkt man die Wirkung?
+- [ ] Sind die fünf Zeichen (Bombe, Kreuz, Blitz, Plus, Raute) auseinanderzuhalten?
+- [ ] Ohne Testhilfe: 10 % je Welle, also etwa drei Abwürfe bis Welle 30. Zu selten, zu oft?
 
 ## 1. Flotte (neu)
 

@@ -16,7 +16,8 @@ const WEIGHT={s:1,k:40,p:400,d:4000,q:1};
 
 // Zielender Zeiger: wie ein aufmerksamer Spieler alle 0,25 s auf die Stelle ziehen, an der der Impuls die meisten Gegner trifft.
 // Bei Gleichstand gewinnt die Gruppe, die der Basis am nächsten ist. Ohne Gegner bleibt der Zeiger liegen.
-function aimPointer(r){const en=r.en,n=en.length;if(!n)return;const R=r.S.tapR,step=Math.max(1,Math.floor(n/40));let best=null,bn=0,bd=Infinity;
+function aimPointer(r){if(r.drops&&r.drops.length){r.cx=r.drops[0].x;r.cy=r.drops[0].y;return}   // Abwürfe gehen vor: fünf Impulse hintereinander
+  const en=r.en,n=en.length;if(!n)return;const R=r.S.tapR,step=Math.max(1,Math.floor(n/40));let best=null,bn=0,bd=Infinity;
   for(let i=0;i<n;i+=step){const e=en[i];if(e.hp<=0)continue;const d=Math.sqrt(e.x*e.x+e.y*e.y);if(d>420)continue;let c=0;
     r.query(e.x,e.y,R+40,o=>{const dx=o.x-e.x,dy=o.y-e.y;if(Math.sqrt(dx*dx+dy*dy)<R+o.r)c++});
     if(c>bn||(c===bn&&d<bd)){bn=c;bd=d;best=e}}
