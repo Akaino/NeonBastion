@@ -1,4 +1,4 @@
-const VERSION='0.25.1';
+const VERSION='0.26.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -144,7 +144,13 @@ const HEROES={
     text:'Seine Blitze springen von Gegner zu Gegner.'},
   waechterin:{name:'Wächterin',role:'Unterstützung',col:'#ffe14f',hp:100,dmg:5,rate:1.2,range:150,speed:130,
     abil:'Bastion',abilText:'Legt einen Überschild auf die Basis und heilt alle Verbündeten vollständig.',cd:15,unlock:['p',4],
-    text:'Heilt Basis, Drohnen und Helden in ihrer Nähe.'}
+    text:'Heilt Basis, Drohnen und Helden in ihrer Nähe.'},
+  kopfjaeger:{name:'Kopfjäger',role:'Großwild',col:'#ff8a3d',hp:80,dmg:16,rate:.8,range:260,speed:125,
+    abil:'Fangschuss',abilText:'Ein einzelner Schuss mit zwölffachem Schaden auf das zäheste Ziel in Reichweite.',cd:12,unlock:['p',8],
+    text:'Sucht sich Elite-Gegner, Hünen und Bosse und trifft sie mit dreifachem Schaden.'},
+  ingenieurin:{name:'Ingenieurin',role:'Türme',col:'#3dffd0',hp:90,dmg:6,rate:1.5,range:170,speed:130,
+    abil:'Verstärker',abilText:'Sechs Sekunden lang nehmen Gegner im Radius eines Turms 30 % mehr Schaden.',cd:14,unlock:['k',40],
+    text:'Solange sie lebt, bringen besiegte Gegner 25 % mehr Energie für Türme.'}
 };
 const HERO_IDS=Object.keys(HEROES);
 const HERO_MAX=60,ASC_MAX=5;
@@ -184,7 +190,7 @@ const droneUnlocked=(save,id)=>{const D=DRONES[id],st=save.fleet&&save.fleet[id]
 const freshFleet=()=>({jaeger:{u:1,l:1,p:100},abfang:{u:0,l:1,p:0},schwarm:{u:0,l:1,p:0},repair:{u:0,l:1,p:0},kreuzer:{u:0,l:1,p:0}});
 
 function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,cur:{s:0,k:0,p:0,d:0},nodes:{root:1},
-  heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
+  heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0},kopfjaeger:{u:0,l:1,a:0},ingenieurin:{u:0,l:1,a:0}},
   team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,devStart:0,devShiny:false,devDrop:false,devPerf:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1},mute:{u:0,l:1},mark:{u:0,l:1}},tslots:0,fleet:freshFleet(),kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
 
 // Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).

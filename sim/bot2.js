@@ -34,6 +34,7 @@ function playRun(X,save,opt){const r=new X.Run(save,{});r.headless=opt.headless!
 // Liste aller Kaufoptionen (id, Währung, Kosten, Anwenden)
 // opt.aeste: erlaubte Äste als Buchstabenfolge (b Basis, u Einheiten, h Helden, f Fokus, e Ertrag); fehlt die Angabe, ist alles erlaubt.
 // Helden (Freischalten, Stufen, Aufstieg) gehören zum Helden-Ast. opt.tuerme==='aus' sperrt Turm-Käufe.
+const BOT_NO_HERO=['kopfjaeger','ingenieurin'];
 const botTowers=(X,opt)=>X.TOWER_IDS.filter(id=>id!=='mute'&&(id!=='mark'||(opt&&opt.zeiger==='zielt')));
 const allowBr=(opt,br)=>!opt||opt.aeste==null||opt.aeste.includes(br);
 function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),towers=!opt||opt.tuerme!=='aus';
@@ -48,7 +49,7 @@ function options(X,save,opt){const S=X.stats(save),o=[],heroes=allowBr(opt,'h'),
   if(towers&&(save.tslots||0)<X.SLOT_EXTRA){const [cu,a]=X.slotCost(save.tslots||0);o.push({id:'bauplatz',name:'Bauplatz',cur:cu,cost:a,apply:()=>save.tslots=(save.tslots||0)+1,undo:()=>save.tslots--,fix:.05})}
   return o}
 function unlocks(X,save,spend,opt){
-  if(allowBr(opt,'h'))for(const id in X.HEROES){const h=save.heroes[id];if(!h.u){const [cu,a]=X.HEROES[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;h.u=1;track(spend,'frei:'+id,'Held '+X.HEROES[id].name,cu,a)}}}
+  if(allowBr(opt,'h'))for(const id in X.HEROES){if(BOT_NO_HERO.includes(id)&&!(opt&&String(opt.held||'').split(',').includes(id)))continue;const h=save.heroes[id];if(!h.u){const [cu,a]=X.HEROES[id].unlock;if(save.cur[cu]>=a){save.cur[cu]-=a;h.u=1;track(spend,'frei:'+id,'Held '+X.HEROES[id].name,cu,a)}}}
   // Drohnenklassen freischalten und gleichmäßig einsetzen (Reparaturdrohnen mit halbem Anteil)
   if(save.fleet&&allowBr(opt,'u')){for(const id of X.DRONE_IDS){const D=X.DRONES[id],f=save.fleet[id];if(!f.u&&Array.isArray(D.unlock)&&save.cur[D.unlock[0]]>=D.unlock[1]){save.cur[D.unlock[0]]-=D.unlock[1];f.u=1;track(spend,'frei:'+id,'Klasse '+D.name,D.unlock[0],D.unlock[1])}}
     for(const id of X.DRONE_IDS)save.fleet[id].p=X.droneUnlocked(save,id)?(id==='repair'?10:20):0}
@@ -124,7 +125,10 @@ function candidates(save,N){const X=loadGame(1),out=[];
 function probe(job){const X=loadGame(job.seed,job.src),save=Object.assign(X.freshSave(),clone(job.save));
   save.towers=Object.assign(X.freshSave().towers,save.towers);   // ältere Spielstände kennen neuere Türme nicht
   if(job.opt.frei)for(const id of String(job.opt.frei).split(','))if(save.towers[id]){save.towers[id].u=1;save.towers[id].l=Math.max(save.towers[id].l,+job.opt.freiStufe||1)}   // --frei mark: Turm für die Probe freischalten
+  save.heroes=Object.assign(X.freshSave().heroes,save.heroes);
   const S=X.stats(save);save.team=Object.keys(X.HEROES).filter(id=>save.heroes[id].u).slice(0,S.slots);
+  // --held kopfjaeger: ersetzt den letzten Helden im Team, mit dessen Stufe und Aufstieg
+  if(job.opt.held&&save.team.length)for(const id of String(job.opt.held).split(','))if(save.heroes[id]&&!save.team.includes(id)){const o=save.heroes[save.team[save.team.length-1]];save.heroes[id]={u:1,l:o.l,a:o.a};save.team[save.team.length-1]=id}
   const pick=Math.max(1,Math.min(S.startMax,(save.best||0)-10));save.startPick=pick>=S.startMax?0:pick;
   const r=playRun(X,save,job.opt);return{wave:r.w,sec:r.t,start:pick}}
 module.exports={simulate,benchmark,probe,candidates,WEIGHT};

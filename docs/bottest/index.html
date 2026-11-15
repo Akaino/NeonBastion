@@ -355,7 +355,7 @@ html.noanim *,html.noanim *::before,html.noanim *::after{animation:none!importan
 <div id="toast" role="status"></div>
 </div>
 <script>
-const VERSION='0.25.1';
+const VERSION='0.26.0';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -501,7 +501,13 @@ const HEROES={
     text:'Seine Blitze springen von Gegner zu Gegner.'},
   waechterin:{name:'Wächterin',role:'Unterstützung',col:'#ffe14f',hp:100,dmg:5,rate:1.2,range:150,speed:130,
     abil:'Bastion',abilText:'Legt einen Überschild auf die Basis und heilt alle Verbündeten vollständig.',cd:15,unlock:['p',4],
-    text:'Heilt Basis, Drohnen und Helden in ihrer Nähe.'}
+    text:'Heilt Basis, Drohnen und Helden in ihrer Nähe.'},
+  kopfjaeger:{name:'Kopfjäger',role:'Großwild',col:'#ff8a3d',hp:80,dmg:16,rate:.8,range:260,speed:125,
+    abil:'Fangschuss',abilText:'Ein einzelner Schuss mit zwölffachem Schaden auf das zäheste Ziel in Reichweite.',cd:12,unlock:['p',8],
+    text:'Sucht sich Elite-Gegner, Hünen und Bosse und trifft sie mit dreifachem Schaden.'},
+  ingenieurin:{name:'Ingenieurin',role:'Türme',col:'#3dffd0',hp:90,dmg:6,rate:1.5,range:170,speed:130,
+    abil:'Verstärker',abilText:'Sechs Sekunden lang nehmen Gegner im Radius eines Turms 30 % mehr Schaden.',cd:14,unlock:['k',40],
+    text:'Solange sie lebt, bringen besiegte Gegner 25 % mehr Energie für Türme.'}
 };
 const HERO_IDS=Object.keys(HEROES);
 const HERO_MAX=60,ASC_MAX=5;
@@ -541,7 +547,7 @@ const droneUnlocked=(save,id)=>{const D=DRONES[id],st=save.fleet&&save.fleet[id]
 const freshFleet=()=>({jaeger:{u:1,l:1,p:100},abfang:{u:0,l:1,p:0},schwarm:{u:0,l:1,p:0},repair:{u:0,l:1,p:0},kreuzer:{u:0,l:1,p:0}});
 
 function freshSave(){return{w2:typeof freshW2!=='undefined'?freshW2():null,v:2,cur:{s:0,k:0,p:0,d:0},nodes:{root:1},
-  heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0}},
+  heroes:{klinge:{u:0,l:1,a:0},schuetzin:{u:0,l:1,a:0},arkanist:{u:0,l:1,a:0},waechterin:{u:0,l:1,a:0},kopfjaeger:{u:0,l:1,a:0},ingenieurin:{u:0,l:1,a:0}},
   team:[],best:0,runs:0,pending:null,snd:1,mus:1,volMus:70,volSfx:80,speed:1,world:1,w2test:false,dev:false,devStart:0,devShiny:false,devDrop:false,devPerf:false,towers:{frost:{u:1,l:1},weak:{u:0,l:1},cryo:{u:0,l:1},mute:{u:0,l:1},mark:{u:0,l:1}},tslots:0,fleet:freshFleet(),kills:{},ach:null,q:0,pr:{},nova:0,cycleBest:0}}
 
 // Vorschau-Stufen, erkannt am Pfad: /beta/ (zum Testen freigegeben) und /bottest/ (Arbeitsstand, kann unfertig sein).
@@ -739,6 +745,7 @@ const DROPS={bomb:{name:'Bombe',text:'Sprengt alles im Umkreis',col:'#ff8a3d'},d
   haste:{name:'Schneller Impuls',text:'5 Sekunden doppeltes Tempo',col:'#3df5ff'},repair:{name:'Reparatur',text:'Die Basis wird 5 Sekunden lang repariert',col:'#5dffb0'},
   gain:{name:'Splitterregen',text:'5 Sekunden doppelte Splitter',col:'#ffe14f'}},DROP_IDS=Object.keys(DROPS);
 const SHINY_P=1/5000,SHINY_HP=3.5;
+const HUNT_MUL=3,HUNT_SHOT=12,ENGI_AMP=1.3,ENGI_DUR=6,ENGI_ENERGY=1.25;   // Kopfjäger und Ingenieurin
 const BOOM_T=.35;   // Sekunden vom Fall der Basis bis zur Explosion
 const WAVE_MIX=['brute','shooter','sprinter','shield','splitter','siege','healer','bomber','cloaker','jammer','giant','queen','ram','tank','revenant','commander','jumper','shade','phaser','hacker','brooder'];
 const waveShare=(t,w)=>{const T=ETYPES[t];return w>=T.from?Math.min(T.max,T.step*(w-T.from+1)):0};
@@ -771,7 +778,7 @@ constructor(save,hooks){
   for(let i=0;i<S.turrets;i++)this.base.turrets.push({a:i/S.turrets*TAU+PI/4,t:Math.random(),aim:i/S.turrets*TAU+PI/4});
   this.en=[];this.heroes=[];this.drones=[];this.pr=[];this.ep=[];
   this.parts=[];this.nums=[];this.rings=[];this.bolts=[];this.slashes=[];this.ghosts=[];this.towers=[];this.energy=30;this.tsave=save.towers;this.world=1;
-  this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;this.drops=[];this.dropN=0;this.buff={dmg:0,haste:0,repair:0,gain:0};
+  this.gain={s:0,k:0,p:0,d:0};this.kills=0;this.bossKills=0;this.drops=[];this.dropN=0;this.engiAt=-9;this.ampT=0;this.buff={dmg:0,haste:0,repair:0,gain:0};
   this.queue=[];this.spawnT=0;this.spawnI=1;this.waveGap=1.5;this.waveEndT=0;
   this.droneT=.4;this.droneIdx=0;this.taps=0;this.imps=0;this.killsBy={};this.pend=[];this.rushT=0;this.dcount={};this.cx=0;this.cy=-90;this.impT=S.impInt;this.shake=0;this.over=false;this.overT=0;
   this.hw=400;this.hh=400;this.grid=new Map();this.record=false;
@@ -855,6 +862,7 @@ updTowers(dt){
     if(z&&k){cm|=16;e.shat=true}
     if(k>=2){cm|=32;e.nullp=true}
     e.combo=cm}
+  if(this.ampT>0){this.ampT-=dt;for(const e of this.en)if(e.tw.length||e.mute||e.mark>1)e.vuln*=ENGI_AMP}   // Verstärker der Ingenieurin
   // 3) Kryo-Türme frieren ein (mit Kombinations-Boni)
   for(const T of this.towers){if(T.type!=='cryo'||T.jam)continue;T.cd-=dt;if(T.cd>0)continue;const r2=T.r*T.r;let any=false;const fm=this.S.freezeMul||1;
     for(const e of this.en){if(e.hp<=0||e.frzImm>0)continue;const d=sq(e.x-T.x)+sq(e.y-T.y);if(d>=r2+e.r*e.r)continue;any=true;const dur=T.fx.dur*(e.perma?1.5:1)*fm;
@@ -872,7 +880,7 @@ hitE(e,dmg,o={}){if(e.hp<=0||e.cloak)return;
 kill(e){
   // Wiedergänger: beim ersten Tod bleibt er kurz liegen (unangreifbar) und steht mit halbem Leben wieder auf
   if(e.type==='revenant'&&!e.rev){e.rev=true;e.hp=e.max*.5;e.down=REV_DOWN;e.cloak=true;this.burst(e.x,e.y,8,e.col,160,.4,2);return}
-  this.kills++;this.energy+=e.val*this.energyMul(e);
+  this.kills++;this.energy+=e.val*this.energyMul(e)*(this.t-this.engiAt<.2?ENGI_ENERGY:1);
   const kb=this.killsBy;kb[e.type]=(kb[e.type]||0)+1;if(e.elite)kb.elite=(kb.elite||0)+1;if(e.boss){kb['boss:'+e.name]=(kb['boss:'+e.name]||0)+1;if(this.twin&&++this.twinDown===2)kb.twin=(kb.twin||0)+1}
   if(e.shiny){kb['shiny:'+e.type]=(kb['shiny:'+e.type]||0)+1;this.ring(e.x,e.y,e.r,e.r*5,'#ffffff',.7,8);this.h.banner&&this.h.banner('Schillernd!',ETYPES[e.type].name+' besiegt');this.h.sfx&&this.h.sfx('abil')}
   if(e.type==='brooder')this.pend.push(['egg',e.x,e.y,e.max*EGG_HP]);
@@ -979,6 +987,19 @@ ai_klinge(h,dt){h.lunge=Math.max(0,h.lunge-dt);h.spin=Math.max(0,h.spin-dt);
       const ix=tg.x-fx*tg.r,iy=tg.y-fy*tg.r;this.burst(ix,iy,heavy?12:6,'#ffffff',280,.22,2);this.burst(ix,iy,heavy?10:5,h.col,220,.35,2.6);
       if(heavy)this.shake=Math.max(this.shake,3.5);this.h.sfx&&this.h.sfx(heavy?'heavy':'slash')}}
   else this.idle(h,dt);this.leash(h,320)}
+// Kopfjäger: nimmt das zäheste große Ziel (Elite, Hüne, Boss) in Reichweite, sonst das übliche Ziel
+bigGame(h,R){let b=null,bh=0;for(const e of this.en){if(e.hp<=0||e.cloak||!(e.elite||e.boss||e.heavy)||e.max<=bh)continue;if(hyp(e.x-h.x,e.y-h.y)<R){bh=e.max;b=e}}return b}
+ai_kopfjaeger(h,dt){const tg=this.bigGame(h,420)||this.aim(h,380);
+  if(tg){const dd=this.kite(h,tg,dt),big=tg.elite||tg.boss||tg.heavy?HUNT_MUL:1,mx=h.x+Math.cos(h.face)*14,my=h.y+Math.sin(h.face)*14;
+    if(h.abT<=0&&dd<=h.range*1.2){h.abT=h.cd;h.atkT=1/h.rate;h.lunge=.2;this.headless||this.bolts.push({pts:[[mx,my],[tg.x,tg.y]],l:0,m:.25,col:h.col,w:5});this.ring(tg.x,tg.y,4,46,h.col,.35,6);this.burst(tg.x,tg.y,14,h.col,260,.4,3);
+      this.hitE(tg,h.dmg*HUNT_SHOT*h.pow*big,{col:h.col,big:true});this.shake=Math.max(this.shake,4);this.h.sfx&&this.h.sfx('abil')}
+    else if(dd<=h.range&&h.atkT<=0){h.atkT=1/h.rate;h.lunge=.1;const hc=Math.random()<this.S.heroCrit;this.shootAt(mx,my,tg,760,h.dmg*(hc?2.5:1)*big,h.col,{size:4,num:true});this.h.sfx&&this.h.sfx('shoot');this.ring(mx,my,2,11,h.col,.14,2)}}
+  else this.idle(h,dt);this.leash(h,250)}
+// Ingenieurin: mehr Energie, solange sie lebt (engiAt); Verstärker lässt Gegner im Turmradius mehr Schaden nehmen (ampT, wirkt in updTowers)
+ai_ingenieurin(h,dt){this.engiAt=this.t;const tg=this.aim(h,320);
+  if(h.abT<=0&&this.towers.length&&this.en.length){h.abT=h.cd;this.ampT=ENGI_DUR;for(const T of this.towers)this.ring(T.x,T.y,8,T.r,h.col,.5,5);this.ring(h.x,h.y,4,40,h.col,.4,5);this.h.sfx&&this.h.sfx('abil')}
+  if(tg){const dd=this.kite(h,tg,dt);if(dd<=h.range&&h.atkT<=0){h.atkT=1/h.rate;h.lunge=.1;const mx=h.x+Math.cos(h.face)*12,my=h.y+Math.sin(h.face)*12,hc=Math.random()<this.S.heroCrit;this.shootAt(mx,my,tg,620,h.dmg*(hc?2.5:1),h.col,{size:3,num:true});this.h.sfx&&this.h.sfx('shoot')}}
+  else this.idle(h,dt);this.leash(h,250)}
 ai_schuetzin(h,dt){const tg=this.aim(h,360);
   if(h.abT<=0&&tg){const a0=Math.atan2(tg.y-h.y,tg.x-h.x);for(let i=0;i<12;i++)this.shoot(h.x,h.y,a0+(i-5.5)*.09,640,h.dmg*1.5*h.pow,h.col,{pierce:3,size:4,num:true});
     h.abT=h.cd;this.h.sfx&&this.h.sfx('abil');this.h.sfx&&this.h.sfx('turret')}
@@ -1259,6 +1280,8 @@ heroSprite(id,col,white){return this.sprite('h'+id+(white?'w':''),26,(c,K)=>{con
   if(id==='klinge'){this.neon(c,K,c=>{c.beginPath();c.moveTo(16,0);c.lineTo(0,-7);c.lineTo(-11,0);c.lineTo(0,7);c.closePath()},C,2.4,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(-3,-11);c.lineTo(-3,11);c.moveTo(-11,0);c.lineTo(-16,0)},C,2,8)}
   else if(id==='schuetzin'){this.neon(c,K,c=>{c.beginPath();c.arc(-2,0,9,0,TAU)},C,2.2,12,F);this.neon(c,K,c=>{c.beginPath();c.arc(-4,0,15,-1.1,1.1);c.moveTo(-6,0);c.lineTo(16,0);c.moveTo(12,-4);c.lineTo(16,0);c.lineTo(12,4)},C,1.8,8)}
   else if(id==='arkanist'){this.neon(c,K,c=>{c.beginPath();for(const o of[0,PI]){for(let i=0;i<3;i++){const a=o-PI/2+i*TAU/3;i?c.lineTo(Math.cos(a)*13,Math.sin(a)*13):c.moveTo(Math.cos(a)*13,Math.sin(a)*13)}c.closePath()}},C,2.2,14,F);c.fillStyle=C;c.beginPath();c.arc(0,0,3,0,TAU);c.fill()}
+  else if(id==='kopfjaeger'){this.neon(c,K,c=>{c.beginPath();c.moveTo(-12,-8);c.lineTo(4,-8);c.lineTo(10,0);c.lineTo(4,8);c.lineTo(-12,8);c.closePath()},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(6,0);c.lineTo(19,0);c.moveTo(-3,0);c.arc(-6,0,3,0,TAU)},C,1.8,8)}
+  else if(id==='ingenieurin'){this.neon(c,K,c=>{c.beginPath();for(let i=0;i<16;i++){const a=i*TAU/16+PI/16,rr=i%2?13:9.5;c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}c.closePath()},C,2,14,F);this.neon(c,K,c=>{c.beginPath();c.arc(0,0,4,0,TAU);c.moveTo(4,0);c.lineTo(15,0)},C,1.8,8)}
   else{this.neon(c,K,c=>{c.beginPath();c.moveTo(-10,-11);c.lineTo(10,-11);c.lineTo(10,0);c.quadraticCurveTo(10,9,0,14);c.quadraticCurveTo(-10,9,-10,0);c.closePath()},C,2.2,14,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(0,-6);c.lineTo(0,6);c.moveTo(-5,0);c.lineTo(5,0)},C,1.8,6)}})}
 droneSprite(cls,white){const D=DRONES[cls]||DRONES.jaeger,big=cls==='kreuzer';return this.sprite('d'+cls+(white?'w':''),big?20:13,(c,K)=>{const C=white?'#fff':D.col,r=D.r,F='rgba(4,20,30,.9)';
   if(big){this.neon(c,K,c=>this.poly(c,6,r,0),C,2,12,F);this.neon(c,K,c=>{c.beginPath();c.moveTo(r*.8,0);c.lineTo(-r*.4,-r*.5);c.lineTo(-r*.4,r*.5);c.closePath()},C,1.4,4)}
