@@ -27,8 +27,8 @@ import {
    Nahkämpfer (Helden wie Gegner) treffen nur, was nah genug steht; deshalb zählt die Aufstellung.
    Der Lauf schreibt Beute und Fortschritt direkt in den Spielstand der Welt (save.w5) – es gibt kein Ende mit Abrechnung.
    Phasen: walk (Gruppe läuft zur nächsten Welle) → fight → won (kurze Pause) bzw. wipe (Gruppe gefallen, eine Welle zurück). */
-export const GAP5 = 46, // Abstand zwischen zwei Plätzen
-  MELEE5 = 96, // so weit reicht ein Nahkämpfer nach vorn: von Platz 0 und 1 aus trifft er, von weiter hinten nicht
+export const GAP5 = 56, // Abstand zwischen zwei Reihen
+  MELEE5 = 112, // so weit reicht ein Nahkämpfer nach vorn: aus der vordersten besetzten Reihe und der dahinter trifft er, aus der dritten nicht
   RANGE5 = 440,
   WALK_T5 = 0.5,
   ADV5 = 90, // Lauftempo der Gruppe
@@ -56,6 +56,7 @@ export class Run5 {
     this.invul = 0; // Aegis: kein Schaden
     this.haste = 0; // Ansporn, Zeitkrümmung
     this.hasteAtk = 0; // Angriffsbonus während des Ansporns (Fanal)
+    this.mark = 0; // Zielmarke (Signal): Gegner nehmen mehr Schaden
     this.am = 1; // Faktor auf den Angriff der Gruppe
     this.auraDr = 0; // Anteil, um den die Gruppe weniger Schaden nimmt (Orakel)
     this.begin(true);
@@ -74,7 +75,9 @@ export class Run5 {
         cls: H.cls,
         champ: H.rar === 'champ',
         slot,
-        x: -slot * GAP5,
+        row: Math.floor(slot / 3), // 0 = vorn
+        lane: (slot % 3) - 1, // Spur im Raster, nur für die Anzeige
+        x: -Math.floor(slot / 3) * GAP5,
         hp: v.hp,
         max: v.hp,
         atk: v.atk,
@@ -88,6 +91,7 @@ export class Run5 {
         cast: 0,
         tr: H.trait, // Eigenheit des Helden
         hits: 0,
+        spk: 0, // Stachelpanzer (Poller) läuft noch so lange
         out: false, // Nahkämpfer, der gerade keinen Gegner erreicht (steht zu weit hinten) – nur für die Anzeige
         at: 0, // läuft ab, solange die Angriffsbewegung gezeigt wird
       });
@@ -113,6 +117,7 @@ export class Run5 {
     this.en = [];
     this.guard = this.invul = this.haste = 0;
     this.hasteAtk = 0;
+    this.mark = 0;
     this.angel = true; // Schutzengel: einmal je Welle
     this.phase = 'walk';
     this.pt = WALK_T5;
@@ -167,7 +172,7 @@ export class Run5 {
   /* ---------- Hilfen ---------- */
   front() {
     let f = null;
-    for (const h of this.heroes) if (!h.dead && (!f || h.slot < f.slot)) f = h;
+    for (const h of this.heroes) if (!h.dead && (!f || h.row < f.row)) f = h;
     return f;
   }
   note(x, lane, text, col) {
@@ -204,7 +209,7 @@ export class Run5 {
     if (h.dead || this.invul > 0) return;
     if (this.guard > 0) d *= 0.75;
     d *= (1 - (h.tr.dr || 0)) * (1 - this.auraDr);
-    if (from && !from.ranged && h.tr.thorns) this.hit(from, d * h.tr.thorns, null);
+    if (from && !from.ranged && (h.tr.thorns || h.spk > 0)) this.hit(from, d * (h.spk > 0 ? 1 : h.tr.thorns), null);
     if (h.sh > 0) {
       const a = Math.min(h.sh, d);
       h.sh -= a;
@@ -235,6 +240,7 @@ export class Run5 {
   }
   hit(e, d, col) {
     if (e.hp <= 0) return;
+    if (this.mark > 0) d *= 1.25;
     e.hp -= d;
     e.flash = 0.1;
     if (e.hp <= 0) {
@@ -255,6 +261,11 @@ export class Run5 {
     if (h.id === 'aegis') return alive.some(a => a.hp < a.max * 0.7) && this.invul <= 0;
     if (h.id === 'phoenix') return this.heroes.some(a => a.dead) || miss >= h.atk * 8 || low;
     if (h.id === 'chronos') return this.haste <= 0.5;
+    const ak = HEROES5[h.id].ak;
+    if (ak === 'spikes') return foes.some(e => !e.ranged && e.x - h.x <= MELEE5 + e.r) && h.spk <= 0;
+    if (ak === 'firstaid') return alive.some(a => a.hp < a.max * 0.6);
+    if (ak === 'mark') return this.mark <= 0.5;
+    if (ak === 'fireball') return true;
     if (h.cls === 'tank') return (h.hp < h.max * 0.85 || foes.length >= 3 || boss) && this.guard <= 0;
     if (h.cls === 'striker') return foes.some(e => e.x - h.x <= MELEE5 + e.r);
     if (h.cls === 'mage') return foes.length >= 2 || boss;
@@ -268,7 +279,8 @@ export class Run5 {
       A = h.atk * this.am, // Angriff mit den Boni der Gruppe
       col = C.col,
       near = foes.filter(e => e.x - h.x <= MELEE5 + e.r).sort((a, b) => a.x - b.x);
-    this.say(h, HEROES5[h.id].abil || C.abil);
+    const H5 = HEROES5[h.id];
+    this.say(h, H5.abil || C.abil);
     this.h.sfx && this.h.sfx('pulse');
     if (h.id === 'aegis') {
       this.invul = 3;
@@ -299,6 +311,34 @@ export class Run5 {
       this.haste = 6;
       this.hasteAtk = 0;
       this.ring(h.x, col, 170);
+    } else if (H5.ak === 'spikes') {
+      h.spk = 5;
+      h.sh = h.max * 0.2;
+      this.ring(h.x, col, 90);
+    } else if (H5.ak === 'whirl' || H5.ak === 'scythe') {
+      if (!near[0]) return false;
+      for (const e of near) this.hit(e, A * (H5.ak === 'whirl' ? 1.6 : 2.2) * (T.abil || 1), col);
+      this.ring(h.x + 40, col, 100);
+    } else if (H5.ak === 'bleed') {
+      if (!near[0]) return false;
+      this.bolt(h, near[0], col, true);
+      this.hit(near[0], A * 3, col);
+      this.heal(h, A * 1.5);
+    } else if (H5.ak === 'fireball') {
+      const e = foes.slice().sort((a, b) => a.x - b.x)[0];
+      this.bolt(h, e, col, true);
+      this.hit(e, A * 4 * (T.abil || 1), col);
+      for (const o of foes) if (o !== e && Math.abs(o.x - e.x) < 80) this.hit(o, A * 1.5 * (T.abil || 1), col);
+      this.ring(e.x, col, 90);
+    } else if (H5.ak === 'firstaid') {
+      let t = null;
+      for (const a of this.heroes) if (!a.dead && (!t || a.hp / a.max < t.hp / t.max)) t = a;
+      this.heal(t, A * 9 * (T.healMul || 1));
+      t.sh = Math.max(t.sh, t.max * 0.15);
+      this.bolt(h, t, col, true);
+    } else if (H5.ak === 'mark') {
+      this.mark = 6;
+      this.ring(foes[0].x, col, 200);
     } else if (h.cls === 'tank') {
       h.sh = h.max * 0.35 * (T.shieldMul || 1);
       this.guard = T.guardT || 4;
@@ -382,6 +422,7 @@ export class Run5 {
       if (h.flash > 0) h.flash -= dt;
       if (h.cast > 0) h.cast -= dt;
       if (h.at > 0) h.at -= dt;
+      if (h.spk > 0) h.spk -= dt;
       if (h.dead) continue;
       const foes = this.en.filter(e => e.hp > 0);
       h.en = Math.min(100, h.en + h.reg * fast * dt);
@@ -408,7 +449,8 @@ export class Run5 {
   updEnemies(dt) {
     const f = this.front();
     if (!f) return;
-    const alive = this.heroes.filter(h => !h.dead);
+    const alive = this.heroes.filter(h => !h.dead),
+      frontRow = alive.filter(h => h.row === f.row);
     // Schützen halten nur Abstand, solange Nahkämpfer vor ihnen stehen; danach rücken sie selbst vor (sonst käme eine reine
     // Nahkampf-Gruppe nie an sie heran)
     const cover = this.en.some(e => e.hp > 0 && !e.ranged);
@@ -440,7 +482,8 @@ export class Run5 {
       e.cd -= dt;
       if (e.cd > 0 || !ready) continue;
       e.cd = e.cd0;
-      const t = e.ranged ? alive[e.shots++ % alive.length] : f;
+      // Fernkämpfer treffen reihum alle, Nahkämpfer verteilen sich auf die vorderste Reihe
+      const t = far ? alive[e.shots++ % alive.length] : frontRow[k % frontRow.length];
       if (!t || t.dead) continue;
       e.at = SWING5;
       this.bolt(e, t, e.col);
@@ -511,6 +554,7 @@ export class Run5 {
     if (this.guard > 0) this.guard -= dt;
     if (this.invul > 0) this.invul -= dt;
     if (this.haste > 0) this.haste -= dt;
+    if (this.mark > 0) this.mark -= dt;
     this.moving = this.phase === 'walk' || this.phase === 'won';
     if (this.phase === 'walk') {
       this.dist += ADV5 * dt;

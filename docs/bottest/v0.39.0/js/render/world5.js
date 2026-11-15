@@ -529,7 +529,7 @@ export function drawRun5(c, w, h, run, hue) {
   if (run.invul > 0 || run.guard > 0 || run.haste > 0) {
     c.fillStyle =
       run.invul > 0 ? 'rgba(255,255,255,.10)' : run.guard > 0 ? 'rgba(90,184,255,.09)' : 'rgba(255,225,79,.07)';
-    c.fillRect(X(-4.6 * 46), yb - 40, 5.4 * 46 * sc, 80);
+    c.fillRect(X(-2.5 * 56), yb - 44, 3.2 * 56 * sc, 96);
   }
   const bar = (x, y, bw, f, col) => {
     c.fillStyle = 'rgba(0,0,0,.55)';
@@ -537,11 +537,12 @@ export function drawRun5(c, w, h, run, hue) {
     c.fillStyle = col;
     c.fillRect(x - bw / 2, y, bw * Math.max(0, Math.min(1, f)), 3);
   };
-  // Helden: zwei Reihen (ungerade Plätze stehen etwas weiter hinten), hintere Reihe zuerst
-  const order = run.heroes.slice().sort((a, b) => (b.slot % 2) - (a.slot % 2) || b.slot - a.slot);
+  // Helden im 3×3-Raster: drei Reihen hintereinander, je drei Spuren in die Tiefe. Die obere Spur steht weiter hinten im Bild
+  // und wird zuerst gezeichnet; jede Spur ist ein Stück versetzt, damit sich Figuren einer Reihe nicht verdecken.
+  const order = run.heroes.slice().sort((a, b) => a.lane - b.lane || b.row - a.row);
   for (const hr of order) {
-    const lane = hr.slot % 2 ? -1 : 1,
-      x = X(hr.x),
+    const lane = hr.lane * 1.9,
+      x = X(hr.x) - hr.lane * 11,
       y = FEET(lane),
       H = HEROES5[hr.id];
     if (H.rar === 'champ' && !hr.dead) c.drawImage(aura(H.hue), x - 34, y - 56, 68, 68);

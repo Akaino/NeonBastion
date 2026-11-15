@@ -1,10 +1,19 @@
-# Testliste (Beta 0.38.3)
+# Testliste (Beta 0.39.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
 Alles hier ist automatisch getestet (39 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 000000. Neu in 0.39.0: Welt 5 – Raster, Fähigkeiten, UP
+
+- [ ] Aufstellung ist ein 3×3-Raster: Hinten, Mitte, Vorn mit je drei Feldern, höchstens fünf Helden. Ziehen und Antippen funktionieren beide?
+- [ ] Angreifer und Verteidiger treffen aus der vorderen und der mittleren Reihe; nur ganz hinten ist das Feld rot.
+- [ ] Im Lauf stehen die Helden in drei Reihen, je Reihe leicht in die Tiefe versetzt. Gut lesbar oder zu dicht?
+- [ ] Funke/Kerbe und die anderen Paare haben jetzt verschiedene Fähigkeiten (z. B. Wuchtschlag und Wirbel). Stehen auf der Karte.
+- [ ] Jede Karte zeigt die Wertung „UP“, die Heldenübersicht ist danach sortiert, die Aufstellung nennt die Summe der Gruppe.
+- [ ] Nicht bezahlbare Aufwertungen sind grau.
 
 ## 00000. Neu in 0.38.0: Welt 5 nach deiner Rückmeldung
 

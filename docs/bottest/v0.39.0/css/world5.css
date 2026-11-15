@@ -357,3 +357,67 @@
   color: #ff8fa3;
   text-align: center;
 }
+
+/* Aufstellung als 3×3-Raster: Spalten hinten, Mitte, vorn */
+.w5grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.w5row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.w5row > small {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.w5row:last-child > small {
+  color: #6dffb0;
+}
+.w5grid .w5slot {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 58px;
+  padding: 3px 6px 3px 2px;
+  flex-wrap: wrap;
+}
+.w5grid .w5slot.empty {
+  justify-content: center;
+  opacity: 0.6;
+}
+.w5grid .w5slot .w5p {
+  width: 44px;
+  height: 44px;
+}
+.w5grid .w5slot b {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 12px;
+}
+.w5grid .w5slot em {
+  flex-basis: 100%;
+}
+/* Nicht bezahlbare Aufwertung: klar grau (Wunsch des Nutzers), auch die Währungszeichen darin */
+#w5panel .btn.poor {
+  border-color: #5f5c8c; /* die Knopffarbe steht direkt am Element, deshalb hier ausdrücklich */
+  color: #8a86c0;
+  box-shadow: none;
+  background: rgba(20, 18, 48, 0.6);
+}
+#w5panel .btn.poor .c5,
+#w5panel .btn.poor .c5 b {
+  color: #8a86c0 !important;
+}
+
+/* Wertung eines Helden */
+.tag.up {
+  --c: #ffe14f;
+  font-variant-numeric: tabular-nums;
+}

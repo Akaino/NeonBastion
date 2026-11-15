@@ -14,11 +14,13 @@ import {
   RARITY_IDS5,
   START_HERO5,
   START_KRYON5,
+  TEAM_CELLS5,
   TEAM_MAX5,
   TEAM_SIZE5,
   breakCost5,
   lvlCost5,
   rankCost5,
+  rowOf5,
   teamKey5,
   waveLoot5,
   zone5,
@@ -27,7 +29,7 @@ import {
 
 /* ================= WELT 5: Spielstand und alles, was ihn verändert (ohne Oberfläche) =================
    Liegt in save.w5. heroes[id] = { l: Stufe, r: Rang, s: Kerne } – nur gefundene Helden haben einen Eintrag.
-   team = fünf Plätze von vorn (0) nach hinten (4), je Helden-Kennung oder null.
+   team = 3×3-Raster (Feld i: Reihe floor(i/3), 0 = vorn; Spur i % 3), je Helden-Kennung oder null, höchstens fünf Helden.
    pos = Stufe, auf der die Gruppe gerade läuft · hold = diese Welle wiederholen · block = Boss-Stufe, an der die Gruppe gescheitert ist
    (bis „Boss herausfordern“ läuft die Welle davor) · cleared = höchste gewonnene Stufe · last = Zeitpunkt der letzten Abrechnung (ms). */
 export function freshW5() {
@@ -35,7 +37,7 @@ export function freshW5() {
     cur: { l: 0, k: START_KRYON5, d: 0 },
     ess: Object.fromEntries(CLASS_IDS5.map(c => [c, 0])),
     heroes: { [START_HERO5]: { l: 1, r: 0, s: 0 } },
-    team: [START_HERO5, null, null, null, null],
+    team: [null, START_HERO5, null, null, null, null, null, null, null], // 3×3-Raster, der Startheld steht vorn in der Mitte
     pos: 1,
     hold: false,
     block: 0,
@@ -55,8 +57,19 @@ export function loadW5(s) {
   o.heroes = {};
   for (const id in s.heroes || {}) if (HEROES5[id]) o.heroes[id] = Object.assign({ l: 1, r: 0, s: 0 }, s.heroes[id]);
   if (!Object.keys(o.heroes).length) o.heroes[START_HERO5] = { l: 1, r: 0, s: 0 };
-  o.team = Array.from({ length: TEAM_SIZE5 }, (_, i) => ((s.team || [])[i] && o.heroes[s.team[i]] ? s.team[i] : null));
-  if (!o.team.some(Boolean)) o.team[0] = Object.keys(o.heroes)[0];
+  // Aufstellung: bis 0.38.3 fünf Plätze hintereinander, seitdem ein 3×3-Raster. Alte Plätze 1 und 2 kommen nach vorn,
+  // 3 und 4 in die Mitte, 5 nach hinten. Unbekannte und doppelte Einträge fallen weg, mehr als fünf Helden auch.
+  const old = Array.isArray(s.team) ? s.team : [],
+    map = old.length === 5 ? [1, 0, 4, 3, 7] : null,
+    seen = new Set();
+  o.team = Array(TEAM_CELLS5).fill(null);
+  old.forEach((id, i) => {
+    const cell = map ? map[i] : i;
+    if (!id || !o.heroes[id] || seen.has(id) || cell >= TEAM_CELLS5 || seen.size >= TEAM_SIZE5) return;
+    seen.add(id);
+    o.team[cell] = id;
+  });
+  if (!o.team.some(Boolean)) o.team[1] = Object.keys(o.heroes)[0];
   o.frac = Object.assign({}, s.frac || {});
   return o;
 }
@@ -144,6 +157,9 @@ export function pull5(w5, cid, rnd = Math.random) {
 // Warum ein Held nicht auf einen Platz darf: '' (darf), sonst der Grund als Text
 export function slotBlock5(w5, slot, id) {
   if (!w5.heroes[id]) return 'Noch nicht gefunden';
+  // ein neuer Held auf ein leeres Feld: nur, solange weniger als fünf im Raster stehen
+  if (!w5.team[slot] && !w5.team.includes(id) && w5.team.filter(Boolean).length >= TEAM_SIZE5)
+    return 'Die Gruppe ist voll (fünf Helden)';
   const key = teamKey5(HEROES5[id].rar),
     n = w5.team.filter((t, i) => t && i !== slot && t !== id && teamKey5(HEROES5[t].rar) === key).length;
   if (n >= TEAM_MAX5[key])
@@ -168,12 +184,12 @@ export function setSlot5(w5, slot, id) {
   return true;
 }
 
-// Steht der Held auf diesem Platz zu weit hinten, um im Nahkampf zu treffen? Nahkämpfer erreichen Gegner nur vom vordersten
-// besetzten Platz und dem direkt dahinter; weiter hinten greifen sie erst ein, wenn die Helden vor ihnen gefallen sind.
+// Steht der Held auf diesem Feld zu weit hinten, um im Nahkampf zu treffen? Nahkämpfer erreichen Gegner aus der vordersten
+// besetzten Reihe und der direkt dahinter; noch weiter hinten greifen sie erst ein, wenn die Reihen vor ihnen gefallen sind.
 export function tooFar5(w5, slot) {
   const id = w5.team[slot];
   if (!id || !CLASSES5[HEROES5[id].cls].melee) return false;
-  return slot - w5.team.findIndex(Boolean) >= 2;
+  return rowOf5(slot) - rowOf5(w5.team.findIndex(Boolean)) >= 2;
 }
 // Zwei Plätze tauschen (auch mit einem leeren Platz). Die Gruppe bleibt dieselbe, deshalb gibt es hier nichts zu prüfen.
 export function swapSlots5(w5, a, b) {

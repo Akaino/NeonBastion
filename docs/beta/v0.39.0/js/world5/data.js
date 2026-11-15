@@ -82,6 +82,13 @@ export const RARITY5 = {
 export const RARITY_IDS5 = Object.keys(RARITY5);
 // Vorgabe des Nutzers: in der Gruppe 1 Champion, 2 Legendäre, 2 Basis/Elite. Umgesetzt als Obergrenze für Champions und Legendäre;
 // Basis- und Elite-Helden füllen die übrigen Plätze (sonst bestünde die Gruppe am Anfang aus höchstens zwei Helden).
+/* Aufstellung (seit 0.39.0, Vorgabe des Nutzers): drei Reihen – vorn, Mitte, hinten – mit je drei Feldern, also ein 3×3-Raster.
+   Feld i liegt in Reihe floor(i / 3) (0 = vorn) und Spur i % 3 (0 = oben). Höchstens TEAM_SIZE5 Helden stehen im Raster.
+   Nahkämpfer treffen aus der vordersten besetzten Reihe und der direkt dahinter. */
+export const TEAM_CELLS5 = 9,
+  ROW_NAMES5 = ['Vorn', 'Mitte', 'Hinten'];
+export const rowOf5 = i => Math.floor(i / 3),
+  colOf5 = i => i % 3;
 export const TEAM_SIZE5 = 5,
   TEAM_MAX5 = { champ: 1, legend: 2, low: 5 };
 export const teamKey5 = rar => (rar === 'champ' || rar === 'legend' ? rar : 'low');
@@ -200,7 +207,7 @@ const TRAITS5 = {
   sichel: { name: 'Blutdurst', text: 'Heilt sich um 15 % des Schadens, den sie austeilt.', leech: 0.15 },
   vesper: { name: 'Todesstoß', text: 'Dreifacher Schaden gegen Gegner mit weniger als 30 % Leben.', exec: [0.3, 3] },
   glimmer: { name: 'Streulicht', text: 'Treffer streuen mit 80 % statt 50 % auf Gegner daneben.', splash: 0.8 },
-  zunder: { name: 'Feuerkopf', text: '„Entladung“ trifft 40 % härter.', abil: 1.4 },
+  zunder: { name: 'Feuerkopf', text: 'Seine Fähigkeit trifft 40 % härter.', abil: 1.4 },
   lohe: { name: 'Doppelschlag', text: 'Der Grundangriff trifft zwei Ziele voll.', chain: true },
   aurora: { name: 'Polarlicht', text: '„Entladung“ betäubt alle Gegner eine Sekunde lang.', stunAbil: 1 },
   flick: { name: 'Schnelle Hand', text: 'Handelt 20 % schneller.', cd: 0.8 },
@@ -230,6 +237,42 @@ const TRAITS5 = {
   },
 };
 for (const id of HERO_IDS5) HEROES5[id].trait = TRAITS5[id] || {};
+
+/* Eigene Fähigkeit statt der der Klasse (Rückmeldung des Nutzers: „Kein Held innerhalb einer Seltenheit sollte die gleiche Fähigkeit
+   haben wie ein anderer“). Betrifft die Klassen, die in einer Seltenheit doppelt vorkommen: je der zweite Basisheld und beide
+   Elite-Angreifer. ak = Schlüssel, den Run5.ability und Run5.useful auswerten. */
+const ABIL5 = {
+  poller: {
+    ak: 'spikes',
+    abil: 'Stachelpanzer',
+    text: 'Fünf Sekunden lang wirft er den ganzen Schaden aus dem Nahkampf zurück und bekommt einen kleinen Schild.',
+  },
+  kerbe: { ak: 'whirl', abil: 'Wirbel', text: 'Trifft alle Gegner in Reichweite mit 1,6-fachem Schaden.' },
+  zunder: {
+    ak: 'fireball',
+    abil: 'Feuerball',
+    text: 'Trifft den vordersten Gegner mit vierfachem Schaden und alle daneben mit 1,5-fachem.',
+  },
+  tupfer: {
+    ak: 'firstaid',
+    abil: 'Notverband',
+    text: 'Heilt den am schwersten Verletzten sehr stark und gibt ihm einen Schild.',
+  },
+  signal: { ak: 'mark', abil: 'Zielmarke', text: 'Sechs Sekunden lang nehmen alle Gegner 25 % mehr Schaden.' },
+  schnitter: {
+    ak: 'scythe',
+    abil: 'Sense',
+    text: 'Ein weiter Hieb: alle Gegner in Reichweite nehmen 2,2-fachen Schaden.',
+  },
+  sichel: {
+    ak: 'bleed',
+    abil: 'Aderlass',
+    text: 'Trifft den vordersten Gegner mit dreifachem Schaden und heilt sich um die Hälfte davon.',
+  },
+};
+for (const id in ABIL5) Object.assign(HEROES5[id], ABIL5[id]);
+// Name der Fähigkeit eines Helden (eigene oder die seiner Klasse)
+export const abilName5 = id => HEROES5[id].abil || CLASSES5[HEROES5[id].cls].abil;
 export const START_HERO5 = 'funke'; // der Basisheld, mit dem man beginnt
 
 // Aufwerten. Stufe: Leben und Angriff ×LVL_MUL5 je Stufe, Kosten in Lumen; alle 10 Stufen ein Durchbruch, der Material der Klasse kostet.
@@ -254,10 +297,12 @@ export function heroStats5(id, l, r) {
     en: C.en + h.en,
   };
 }
-// Grobe Kampfkraft, nur für Anzeige und Bot
+/* Wertung „UP“ (Wunsch des Nutzers: eine Zahl, die sagt, wie stark ein Held insgesamt ist; danach wird die Heldenübersicht sortiert).
+   Leben und Schaden je Sekunde, Stufe, Rang und Seltenheit stecken über heroStats5 darin; dazu ein Zuschlag für Energie (häufigere
+   Fähigkeit). Ausrüstung kommt dazu, sobald es sie gibt. Die Zahl ist ein Richtwert, kein Kampfergebnis. */
 export const heroPower5 = (id, l, r) => {
   const s = heroStats5(id, l, r);
-  return Math.round(s.hp / 4 + (s.atk / s.cd) * 6);
+  return Math.round((s.hp / 4 + (s.atk / s.cd) * 6) * (1 + (s.en - 7) * 0.015));
 };
 
 // Kryo-Kristalle: Zufallspakete mit je einem Helden. p = Chancen in Prozent für Basis, Elite, Legendär, Champion.

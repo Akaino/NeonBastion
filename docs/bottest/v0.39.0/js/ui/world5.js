@@ -12,7 +12,9 @@ import {
   HERO_IDS5,
   RARITY5,
   RARITY_IDS5,
+  ROW_NAMES5,
   TEAM_SIZE5,
+  rowOf5,
   ZONES5,
   ZONE_LEN5,
   essZone5,
@@ -54,7 +56,7 @@ export let run5 = null,
   w5On = false,
   w5Tab = 'helden',
   w5Speed = 1,
-  w5Slot = 0;
+  w5Slot = 1;
 export function setRun5(v) {
   return (run5 = v);
 }
@@ -198,11 +200,13 @@ export function updW5Hud() {
 }
 
 /* ---------- Reiter ---------- */
+// Wertung eines gefundenen Helden und der ganzen Gruppe
+const up5 = id => heroPower5(id, W().heroes[id].l, W().heroes[id].r);
+const upTag = id => `<span class="tag up">UP ${fmtN(up5(id))}</span>`;
+// Heldenübersicht: der stärkste zuerst (Vorgabe des Nutzers), bei Gleichstand die höhere Seltenheit
 const ownedSorted = () =>
   HERO_IDS5.filter(id => W().heroes[id]).sort(
-    (a, b) =>
-      RARITY_IDS5.indexOf(HEROES5[b].rar) - RARITY_IDS5.indexOf(HEROES5[a].rar) ||
-      heroPower5(b, W().heroes[b].l, W().heroes[b].r) - heroPower5(a, W().heroes[a].l, W().heroes[a].r),
+    (a, b) => up5(b) - up5(a) || RARITY_IDS5.indexOf(HEROES5[b].rar) - RARITY_IDS5.indexOf(HEROES5[a].rar),
   );
 // Betrag mit dem Zeichen seiner Währung (dieselben Zeichen wie oben in der Kopfzeile): l Lumen, k Kryon, d Synchron-Staub
 const SYM = { l: '◆', k: '❖', d: '✦' };
@@ -236,7 +240,7 @@ function heroCard(id) {
     R = RARITY5[H.rar],
     inTeam = w.team.includes(id);
   let h = `<div class="w5card${H.rar === 'champ' ? ' champ' : ''}" style="--c:${R.col}">${portrait(id, 22)}<div class="w5body">
-    <h3>${H.name} ${tag(H.rar)}${inTeam ? '<span class="tag" style="--c:#6dffb0">In der Gruppe</span>' : ''}</h3>
+    <h3>${H.name} ${tag(H.rar)}${upTag(id)}${inTeam ? '<span class="tag" style="--c:#6dffb0">In der Gruppe</span>' : ''}</h3>
     <p><b style="color:${C.col}">${C.name}</b> · Stufe ${st.l} · Rang ${st.r}/${R.maxRank}</p>
     <p class="w5abil">${H.abil ? `<b>${H.abil}:</b> ${H.text}` : C.text}</p>
     ${H.trait.name ? `<p class="w5abil"><b>Eigenheit „${H.trait.name}“:</b> ${H.trait.text}</p>` : ''}
@@ -264,7 +268,7 @@ function panelHelden() {
       (a, b) => RARITY_IDS5.indexOf(HEROES5[a].rar) - RARITY_IDS5.indexOf(HEROES5[b].rar),
     );
   return (
-    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}<br>${cur5('d', 'Synchron-Staub')} ersetzt fehlende Kerne beim Rang. Du bekommst ihn, indem du Kerne von Basishelden synchronisierst (Knopf auf ihrer Karte), und selten als Beute: 1 % je gewonnener Welle, 25 % je besiegtem Boss.</p>` +
+    `<p class="w5hint">${own.length} von ${HERO_IDS5.length} Helden gefunden, der stärkste zuerst. <b>UP</b> ist die Wertung eines Helden aus Leben, Schaden, Stufe, Rang und Seltenheit. Material für den Durchbruch alle 10 Stufen gibt es in den Zonen (Reiter „Zonen“ zeigt, welche Zone was gibt): ${essLine()}<br>${cur5('d', 'Synchron-Staub')} ersetzt fehlende Kerne beim Rang. Du bekommst ihn, indem du Kerne von Basishelden synchronisierst (Knopf auf ihrer Karte), und selten als Beute: 1 % je gewonnener Welle, 25 % je besiegtem Boss.</p>` +
     own.map(heroCard).join('') +
     rest.map(heroCard).join('')
   );
@@ -273,23 +277,32 @@ function panelHelden() {
 function warnFar(slot) {
   if (!tooFar5(W(), slot)) return false;
   const H = HEROES5[W().team[slot]];
-  toast(`${H.name} kämpft im Nahkampf und trifft von Platz ${slot + 1} aus nicht`);
+  toast(`${H.name} kämpft im Nahkampf und trifft aus der Reihe „${ROW_NAMES5[rowOf5(slot)]}“ nicht`);
   return true;
 }
+// Aufstellung als 3×3-Raster, gesehen wie im Lauf: links hinten, rechts vorn (dort kommen die Gegner)
 function panelTeam() {
-  const w = W();
-  let h = `<p class="w5hint">Platz 1 steht vorn und fängt die Gegner ab, Platz 5 ganz hinten. <b>Verteidiger und Angreifer kämpfen im Nahkampf: Sie treffen nur vom vordersten besetzten Platz und dem direkt dahinter.</b> Weiter hinten greifen sie erst ein, wenn die Helden vor ihnen gefallen sind – solche Plätze sind rot markiert. In der Gruppe sind höchstens ein Champion und zwei Legendäre erlaubt. Zieh einen Helden auf einen anderen Platz, um zu tauschen – oder tippe erst den Platz, dann den Helden an. Eine Änderung beginnt die Welle neu.</p><div class="w5slots">`;
-  for (let i = 0; i < TEAM_SIZE5; i++) {
-    const id = w.team[i];
-    const far = tooFar5(w, i);
-    h += `<button class="w5slot${i === w5Slot ? ' sel' : ''}${far ? ' far' : ''}" data-slot="${i}"><small>Platz ${i + 1}${i === 0 ? ' · vorn' : i === TEAM_SIZE5 - 1 ? ' · hinten' : ''}</small>${id ? portrait(id, 18) + `<b>${HEROES5[id].name}</b>` : '<span class="w5q sm">–</span><b>leer</b>'}${far ? '<em>trifft von hier nicht</em>' : ''}</button>`;
+  const w = W(),
+    n = w.team.filter(Boolean).length;
+  let h = `<p class="w5hint">Drei Reihen mit je drei Feldern, rechts ist vorn. <b>Verteidiger und Angreifer kämpfen im Nahkampf und treffen aus der vordersten besetzten Reihe und der direkt dahinter</b> – steht einer zu weit hinten, ist sein Feld rot. Gegner im Nahkampf greifen die vorderste Reihe an, Schützen treffen alle. Höchstens ${TEAM_SIZE5} Helden, darunter ein Champion und zwei Legendäre. Zieh einen Helden auf ein anderes Feld – oder tippe erst das Feld, dann den Helden an. Eine Änderung beginnt die Welle neu.</p>
+    <div class="w5grid">`;
+  for (const row of [2, 1, 0]) {
+    h += `<div class="w5row"><small>${ROW_NAMES5[row]}</small>`;
+    for (let col = 0; col < 3; col++) {
+      const i = row * 3 + col,
+        id = w.team[i],
+        far = tooFar5(w, i);
+      h += `<button class="w5slot${i === w5Slot ? ' sel' : ''}${far ? ' far' : ''}${id ? '' : ' empty'}" data-slot="${i}">${id ? portrait(id, 16) + `<b>${HEROES5[id].name}</b>` : '<span class="w5q sm">+</span>'}${far ? '<em>trifft von hier nicht</em>' : ''}</button>`;
+    }
+    h += `</div>`;
   }
-  h += `</div><div class="w5acts"><button class="btn" data-act="clear" style="--c:#ff6b84"${w.team[w5Slot] && w.team.filter(Boolean).length > 1 ? '' : ' disabled'}>Platz ${w5Slot + 1} leeren</button></div><div class="w5chips">`;
+  h += `</div><div class="w5acts"><button class="btn" data-act="clear" style="--c:#ff6b84"${w.team[w5Slot] && n > 1 ? '' : ' disabled'}>${w.team[w5Slot] ? HEROES5[w.team[w5Slot]].name + ' aus der Gruppe nehmen' : 'Feld ist leer'}</button></div>
+    <p class="w5hint">${n} von ${TEAM_SIZE5} Helden aufgestellt · Wertung der Gruppe: <b>UP ${fmtN(w.team.filter(Boolean).reduce((a, id) => a + up5(id), 0))}</b></p><div class="w5chips">`;
   for (const id of ownedSorted()) {
     const H = HEROES5[id],
       at = w.team.indexOf(id),
       blk = slotBlock5(w, w5Slot, id);
-    h += `<button class="w5chip${blk ? ' poor' : ''}${at === w5Slot ? ' sel' : ''}" data-pick="${id}" style="--c:${RARITY5[H.rar].col}">${portrait(id, 15)}<span><b>${H.name}</b><small style="color:${CLASSES5[H.cls].col}">${CLASSES5[H.cls].name}${at >= 0 ? ' · Platz ' + (at + 1) : ''}</small></span></button>`;
+    h += `<button class="w5chip${blk ? ' poor' : ''}${at === w5Slot ? ' sel' : ''}" data-pick="${id}" style="--c:${RARITY5[H.rar].col}">${portrait(id, 15)}<span><b>${H.name}</b><small style="color:${CLASSES5[H.cls].col}">${CLASSES5[H.cls].name} · UP ${fmtN(up5(id))}${at >= 0 ? ' · ' + ROW_NAMES5[rowOf5(at)] : ''}</small></span></button>`;
   }
   return h + '</div>';
 }

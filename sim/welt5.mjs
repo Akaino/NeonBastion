@@ -36,9 +36,23 @@ function team() {
       pick.push(id);
     }
   }
-  const ord = { tank: 0, striker: 1, support: 2, mage: 3, healer: 4 };
-  pick.sort((x, y) => ord[m.HEROES5[x].cls] - ord[m.HEROES5[y].cls]);
-  const nt = [0, 1, 2, 3, 4].map(i => pick[i] || null);
+  // 3×3-Raster: Verteidiger und Angreifer nach vorn (dann in die Mitte), Unterstützer und Magier in die Mitte, Heiler nach hinten
+  const nt = Array(9).fill(null),
+    put = (id, cells) => {
+      const c = cells.find(i => !nt[i]);
+      if (c != null) nt[c] = id;
+    };
+  for (const id of pick) {
+    const cls = m.HEROES5[id].cls;
+    put(
+      id,
+      cls === 'tank' || cls === 'striker'
+        ? [1, 0, 2, 4, 3, 5]
+        : cls === 'healer'
+          ? [7, 6, 8, 4, 3, 5]
+          : [4, 3, 5, 7, 6, 8],
+    );
+  }
   if (nt.join() !== w5.team.join()) {
     w5.team = nt;
     r.begin(true);
