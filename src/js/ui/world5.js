@@ -401,7 +401,7 @@ $('#w5panel').addEventListener('click', e => {
     } else if (a === 'clear') {
       if (setSlot5(w, w5Slot, null)) run5.begin(true);
     } else if (a === 'hold') {
-      run5.goto(w.pos, !w.hold);
+      w.hold = !w.hold; // die laufende Welle geht weiter, nur das Vorrücken danach ändert sich
     }
     return again();
   }
@@ -426,7 +426,7 @@ $('#w5panel').addEventListener('click', e => {
   }
   const wv = t.closest('[data-stage]');
   if (wv && !wv.disabled) {
-    run5.goto(+wv.dataset.stage, w.hold);
+    run5.goto(+wv.dataset.stage, true);
     Snd.play('buy');
     return again();
   }

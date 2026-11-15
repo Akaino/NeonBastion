@@ -1,4 +1,4 @@
-# Testliste (Beta 0.38.0)
+# Testliste (Beta 0.38.1)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
@@ -16,6 +16,7 @@ Alles hier ist automatisch getestet (39 Testläufe) und mit der Simulation gemes
 - [ ] Helden-Karte: Zeile „Kerne“ mit Bestand und Bedarf; am Durchbruch steht, aus welchen Zonen das Material kommt.
 - [ ] Kosten zeigen das Zeichen ihrer Währung; die Materialzahlen oben zählen laufend mit.
 - [ ] Tempo bis 8×.
+- [ ] Reiter „Zonen“: Eine Welle auswählen schaltet „Diese Welle wiederholen“ automatisch ein; die Gruppe bleibt dort, bis du es ausschaltest.
 
 ## 0000. Neu in 0.37.0: Welt 5 „Expedition“ (Prototyp)
 
