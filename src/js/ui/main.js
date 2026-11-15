@@ -1,7 +1,7 @@
 import { Music } from '../audio/music.js';
 import { STAGE, VERSION } from '../core/version.js';
 import { ACH, achTier } from './achievements.js';
-import { buildPaused, endBuild, updBuildBtn } from './build.js';
+import { buildPaused, endBuild, placing, updBuildBtn } from './build.js';
 import { toast } from './common.js';
 import { $, $$, UI } from './dom.js';
 import { goHub } from './hub.js';
@@ -107,7 +107,8 @@ export function loop(now) {
     $('#fleet').hidden &&
     !Perf.noDraw
   )
-    R.frame(run, paused ? 0 : run && buildPaused() ? dt * 0.15 : dt * (run ? speed : 1));
+    R.buildMode = !!run && run.world === 2 && !run.over && placing(); // nur Gitterfestung
+  R.frame(run, paused ? 0 : run && buildPaused() ? dt * 0.15 : dt * (run ? speed : 1));
   if (pf)
     Perf.frame(now, raw, {
       st: p1 - p0,

@@ -42,7 +42,7 @@ export function startRun() {
   show('hud');
   buildChips();
   $('#bSpeed').textContent = speed + '×';
-  if (save.runs === 1)
+  if (save.runs === 1 && W.id === 1)
     setTimeout(
       () =>
         toast(

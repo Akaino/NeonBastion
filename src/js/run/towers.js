@@ -2,7 +2,7 @@ import { fmtN } from '../core/format.js';
 import { hyp, sq } from '../core/util.js';
 import { ENGI_AMP } from '../data/balance.js';
 import { JAM_R } from '../data/enemies.js';
-import { SLOT_BASE, TOWERS, TOWER_MAX } from '../data/towers.js';
+import { BUILD_GAP_BASE, BUILD_GAP_TOWER, SLOT_BASE, TOWERS, TOWER_MAX } from '../data/towers.js';
 
 /* Methoden der Klasse Run (werden in Run.js an die Klasse gehängt). */
 export const runTowersMethods = {
@@ -19,10 +19,14 @@ export const runTowersMethods = {
   buildCost(type) {
     return Math.round(TOWERS[type].cost * Math.pow(1.4, this.towers.length));
   },
+  // Warum hier kein Turm stehen darf: 'base' (zu nah an der Basis), 'tower' (zu nah an einem Turm), 'edge' (außerhalb des Felds) oder '' (frei)
+  placeBlock(x, y, ign) {
+    if (hyp(x, y) < BUILD_GAP_BASE) return 'base';
+    for (const T of this.towers) if (T !== ign && hyp(T.x - x, T.y - y) < BUILD_GAP_TOWER) return 'tower';
+    return Math.abs(x) < this.hw - 10 && Math.abs(y) < this.hh - 10 ? '' : 'edge';
+  },
   canPlace(x, y, ign) {
-    if (hyp(x, y) < 58) return false;
-    for (const T of this.towers) if (T !== ign && hyp(T.x - x, T.y - y) < 34) return false;
-    return Math.abs(x) < this.hw - 10 && Math.abs(y) < this.hh - 10;
+    return !this.placeBlock(x, y, ign);
   },
   place(type, x, y) {
     const c = this.buildCost(type);

@@ -11,6 +11,7 @@ export class Run2 extends Run {
     super(save, hooks);
     const S = (this.S = stats2(save));
     this.world = 2;
+    this.noImpulse = true; // die Gitterfestung kennt keinen Impuls (Vorgabe des Nutzers): kein Zeiger, kein Flächenangriff
     this.tsave = save.w2.towers;
     this.heroes = [];
     this.drones = [];

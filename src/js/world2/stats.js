@@ -42,7 +42,6 @@ export function stats2(save) {
     startEnergy: 100 + 40 * L('l3'),
     gC: 1 + 0.15 * L('l4'),
     gM: 1 + 0.2 * L('l5'),
-    tapDmg: 6 * pd,
   });
   return S;
 }

@@ -1,10 +1,17 @@
-# Testliste für Welt 1 (Beta 0.34.0)
+# Testliste für Welt 1 (Beta 0.35.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
-Alles hier ist automatisch getestet (36 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+Alles hier ist automatisch getestet (37 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 000. Neu in 0.35.0: Gitterfestung
+
+- [ ] Gitterfestung, Turm bauen oder verschieben: Um die Basis liegt ein schraffierter Ring, in dem kein Turm stehen darf; er wird rot, wenn du hineinzielst. Deutlich genug?
+- [ ] Antippen im Sperrbereich meldet „Zu nah an der Basis“ bzw. „Zu nah an einem anderen Turm“.
+- [ ] In der Gitterfestung gibt es keinen Impuls mehr: kein Kreis am Zeiger, kein Schaden durch den Zeiger.
+- [ ] Im Neon-Sektor ist alles wie vorher (Impuls da, keine Ringe beim Bauen).
 
 ## 00. Neu in 0.34.0: Weltenkarte als Startseite
 

@@ -16,6 +16,7 @@ export class Renderer {
     this.t = 0;
     this.zoom = 1;
     this.ghost = null;
+    this.buildMode = false; // die Oberfläche meldet, ob gerade ein Turm gesetzt oder verschoben wird
     this.theme = 1;
     this.resize();
   }
@@ -719,7 +720,7 @@ export class Renderer {
       c.globalAlpha = 1;
     }
     // Impuls-Ring am Zeiger: füllt sich im Uhrzeigersinn bis zum nächsten Impuls, Farbe kündigt Sondertreffer an
-    if (run.S.impInt > 0 && !run.over) {
+    if (run.S.impInt > 0 && !run.over && !run.noImpulse) {
       const S = run.S,
         r = S.tapR * (run.shaded(run.cx, run.cy) ? S.shadeMul || SHADE_MUL : 1),
         f = clamp(1 - run.impT / S.impInt, 0, 1),

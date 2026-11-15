@@ -1,5 +1,5 @@
 import { PI, TAU, clamp, hyp } from '../core/util.js';
-import { TOWERS, comboOf } from '../data/towers.js';
+import { BUILD_GAP_BASE, BUILD_GAP_TOWER, TOWERS, comboOf } from '../data/towers.js';
 
 /* Methoden der Klasse Renderer (werden in Renderer.js an die Klasse gehängt). */
 export const rendererTowersMethods = {
@@ -125,6 +125,49 @@ export const rendererTowersMethods = {
       c.arc(sel.x, sel.y, 24, 0, TAU);
       c.stroke();
       c.setLineDash([]);
+    }
+    // Baumodus: zeigen, wo kein Turm stehen darf – schraffierter Ring um die Basis, feiner Ring um jeden Turm.
+    // Liegt die Vorschau im Sperrbereich, leuchtet der betroffene Ring rot auf.
+    if (this.buildMode) {
+      const gb = this.ghost && this.ghost.block,
+        hit = gb === 'base',
+        col = hit ? '#ff4f6d' : '#ffb14f';
+      c.save();
+      c.beginPath();
+      c.arc(0, 0, BUILD_GAP_BASE, 0, TAU);
+      c.fillStyle = col;
+      c.globalAlpha = hit ? 0.2 : 0.1;
+      c.fill();
+      c.clip();
+      c.globalAlpha = hit ? 0.5 : 0.28;
+      c.strokeStyle = col;
+      c.lineWidth = 1.5;
+      c.beginPath();
+      for (let d = -BUILD_GAP_BASE * 2; d <= BUILD_GAP_BASE * 2; d += 9) {
+        c.moveTo(d - BUILD_GAP_BASE, BUILD_GAP_BASE);
+        c.lineTo(d + BUILD_GAP_BASE, -BUILD_GAP_BASE);
+      }
+      c.stroke();
+      c.restore();
+      c.globalAlpha = hit ? 1 : 0.75;
+      c.strokeStyle = col;
+      c.lineWidth = hit ? 2.5 : 1.8;
+      c.setLineDash([7, 5]);
+      c.lineDashOffset = this.t * 10;
+      c.beginPath();
+      c.arc(0, 0, BUILD_GAP_BASE, 0, TAU);
+      c.stroke();
+      c.setLineDash([]);
+      for (const T of run.towers) {
+        const near = gb === 'tower' && this.ghost && hyp(T.x - this.ghost.x, T.y - this.ghost.y) < BUILD_GAP_TOWER;
+        c.globalAlpha = near ? 0.9 : 0.3;
+        c.strokeStyle = near ? '#ff4f6d' : '#ffb14f';
+        c.lineWidth = near ? 2 : 1;
+        c.beginPath();
+        c.arc(T.x, T.y, BUILD_GAP_TOWER / 2 + 4, 0, TAU);
+        c.stroke();
+      }
+      c.globalAlpha = 1;
     }
     const g = this.ghost;
     if (g) {

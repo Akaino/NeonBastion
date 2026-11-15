@@ -109,6 +109,10 @@ export const COMBOS = [
 export const comboOf = (a, b) =>
   COMBOS.find(c => (c.need[0] === a && c.need[1] === b) || (c.need[0] === b && c.need[1] === a));
 
+// Mindestabstände beim Bauen: Mitte des Turms zur Mitte der Basis bzw. zum nächsten Turm
+export const BUILD_GAP_BASE = 58,
+  BUILD_GAP_TOWER = 34;
+
 export const TOWER_IDS = Object.keys(TOWERS),
   TOWER_MAX = 25,
   SLOT_BASE = 2,

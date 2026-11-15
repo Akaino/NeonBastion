@@ -18,6 +18,8 @@ export let buildSel = null,
   towerSel = null;
 
 export const buildPaused = () => !!(trayOpen || buildSel || moveT || towerSel);
+// Ein Turm wird gerade gesetzt oder verschoben: Die Grafik zeigt dann, wo nicht gebaut werden darf
+export const placing = () => !!(buildSel || moveT);
 
 export const BOLT =
   '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
@@ -204,6 +206,7 @@ export function ghostAt(e) {
     y,
     r: run.towerStats(type, l).r,
     ok: run.canPlace(x, y, T),
+    block: run.placeBlock(x, y, T),
   };
 }
 /* Turm-Menü im Run */
@@ -311,7 +314,15 @@ $('#cv').addEventListener('pointerup', e => {
     endBuild();
   } else {
     Snd.play('no');
-    toast(run.canPlace(x, y) ? 'Nicht genug Energie' : 'Hier kann kein Turm stehen');
+    // Die genaueren Gründe nennt nur die Gitterfestung; der Neon-Sektor bleibt, wie er ist
+    const why = run.placeBlock(x, y);
+    toast(
+      !why
+        ? 'Nicht genug Energie'
+        : run.world === 2
+          ? { base: 'Zu nah an der Basis', tower: 'Zu nah an einem anderen Turm', edge: 'Außerhalb des Felds' }[why]
+          : 'Hier kann kein Turm stehen',
+    );
     if (e.pointerType !== 'mouse') R.ghost = null;
   }
 });
