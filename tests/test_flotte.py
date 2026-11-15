@@ -18,7 +18,7 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>!droneUnlocked({...freshSave()},'kreuzer')&&freshSave().fleet.jaeger.p===100"),'frischer Spielstand: nur Jäger, Kreuzer erst über den Skilltree')
     check(pg.is_visible('#bFleet') and pg.evaluate("()=>$('.hubfoot').getBoundingClientRect().bottom<=innerHeight"),'Hub zeigt den Knopf „Flotte“, alles passt auf den Bildschirm')
     pg.click('#bFleet');pg.wait_for_timeout(200)
-    c=pg.evaluate("()=>({karten:document.querySelectorAll('#flist .hcard').length,zu:document.querySelectorAll('#flist .hcard.lock').length,balken:document.querySelectorAll('#fbar .fdist i').length,text:$('#flist').innerText})")
+    c=pg.evaluate("()=>({karten:$$('#flist .hcard').length,zu:$$('#flist .hcard.lock').length,balken:$$('#fbar .fdist i').length,text:$('#flist').innerText})")
     check(c['karten']==5 and c['zu']==3 and c['balken']==2 and all(n in c['text'] for n in ['Jäger','Abfänger','Schwarm','Reparaturdrohne','Kreuzer']),'Flotten-Menü: fünf Karten, drei gesperrt, Verteilungsbalken mit zwei Anteilen')
     pg.screenshot(path='f1_flotte.png')
     # Freischalten kostet; die neue Klasse startet mit 0 %, nichts wird automatisch umverteilt

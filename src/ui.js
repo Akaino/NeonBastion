@@ -1,9 +1,11 @@
-/* Schattenbaum für alles, was sich im Run laufend ändert (Anzeige oben, Banner, Messanzeige).
+/* Schattenbaum für die gesamte Oberfläche (alles außer dem Spielfeld).
    Hintergrund (15.11.2026, beim Nutzer in Safari gemessen und mit Perf.aus('frz') bestätigt): Ein fremdes Skript im Browser beobachtet die Seite und arbeitet nach jeder Änderung
-   am Dokument einmal pro Sekunde 50 bis 150 ms lang – das waren die Ruckler im Sekundentakt. Änderungen innerhalb eines Schattenbaums sieht ein solcher Beobachter nicht.
-   Deshalb ziehen #hud, #banner und #perf beim Start in einen Schattenbaum um; die Stilregeln der Seite werden hineinkopiert. $ und $$ suchen in beiden Bäumen. */
-const UI=(()=>{const host=document.createElement('div');host.id='ui';const root=host.attachShadow({mode:'open'}),st=document.querySelector('style'),hud=document.querySelector('#hud');
-  if(st)root.appendChild(st.cloneNode(true));hud.parentNode.insertBefore(host,hud);for(const id of['hud','banner','perf','toast']){const e=document.getElementById(id);if(e)root.appendChild(e)}return root})();
+   am Dokument einmal pro Sekunde 50 bis 150 ms lang – das waren die Ruckler im Sekundentakt, im Run durch die laufende Anzeige, in den Menüs durch jeden Kauf.
+   Änderungen innerhalb eines Schattenbaums sieht ein solcher Beobachter nicht. Deshalb ziehen beim Start alle Bildschirme in einen Schattenbaum um; die Stilregeln der Seite
+   werden hineinkopiert (Regeln, die am <html>-Element hängen, werden auf den Träger #ui umgeschrieben). $ und $$ suchen in beiden Bäumen. */
+const UI=(()=>{const app=document.querySelector('#app'),host=document.createElement('div');host.id='ui';const root=host.attachShadow({mode:'open'}),st=document.querySelector('style');
+  if(st){const c=st.cloneNode(true);c.textContent=c.textContent.replace(/:root(\[data-wtheme="\d"\])/g,':host($1)').replace(/html\.onlycv body \*/g,':host(.onlycv) *').replace(/html\.(\w+) /g,':host(.$1) ');root.appendChild(c)}
+  const kids=[...app.children].filter(e=>e.id!=='cv');app.appendChild(host);for(const e of kids)root.appendChild(e);return root})();
 const $=s=>document.querySelector(s)||UI.querySelector(s),$$=s=>[...document.querySelectorAll(s),...UI.querySelectorAll(s)];
 let save=loadSave(),run=null,paused=false,speed=save.speed||1,endShown=false,selNode='root';
 const R=new Renderer($('#cv'));
@@ -32,7 +34,7 @@ const WORLDS={
   2:{id:2,name:'Gitterfestung',text:'Nur Türme. Jede Welle kommt aus einer angekündigten Richtung, dazwischen baust du um.',nodes:NODES2,br:BR2,curIds:CUR_IDS2,s:()=>save.w2,st:()=>stats2(save),
      with:o=>stats2({...save,w2:{...save.w2,...o}}),towerIds:TOWER_IDS2,ts:()=>save.w2.towers,unlock:id=>T2_UNLOCK[id],tlvl:towerLvlCost2,Run:Run2,col:'#ff8a3d'}};
 let W=WORLDS[save.world===2&&w2Unlocked(save)?2:1];
-function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);document.documentElement.dataset.wtheme=id;selNode='root'}
+function setWorld(id){save.world=id;W=WORLDS[id];persist();R.setTheme(id);document.documentElement.dataset.wtheme=id;UI.host.dataset.wtheme=id;selNode='root'}
 /* ---------- helpers ---------- */
 /*DEV{*//* Leistungsmessung (Testhilfe): hält jedes Bild fest, das länger als HITCH_MS dauert, und was in dieser Lücke gerechnet wurde.
    Die Lücke zwischen zwei Bildern enthält die Arbeit des vorigen Bildes, deshalb wird dessen Aufteilung notiert. „Rest“ ist Zeit außerhalb des Spiels (Browser, System). */
@@ -47,14 +49,14 @@ const Perf={on:false,fr:[],hit:[],t0:0,mus:0,sv:0,pw:null,lastUi:0,
   NAMEN:{frz:'Anzeigen eingefroren (kein Text ändert sich)',inp:'Eingabefelder entfernt',tim:'Zeitgeber aus (Musik, Aufräumen)',fnt:'Systemschrift statt Spielschrift',fx:'Leuchteffekte aus',ani:'Animationen aus',cvo:'nur das Spielfeld sichtbar',ton:'Ton angehalten',leer:'Seite leer, nichts wird gezeichnet'},
   sw(){if(this._P)return this._P;
     // Jeder Abschnitt schaltet genau eine Sache ab und danach wieder an. Gesucht ist, was die Spielseite hat und eine leere Seite nicht.
-    let ins=[],mt=0,tt=0;const H=document.documentElement,au=on=>{if(Snd.ctx)(on?Snd.ctx.resume():Snd.ctx.suspend()).catch(()=>{})};
+    let ins=[],mt=0,tt=0;const H=document.documentElement,cls=(n,on)=>{H.classList.toggle(n,!!on);UI.host.classList.toggle(n,!!on)},au=on=>{if(Snd.ctx)(on?Snd.ctx.resume():Snd.ctx.suspend()).catch(()=>{})};
     return this._P={frz:[()=>{this.freeze=true},()=>{this.freeze=false}],
-      inp:[()=>{ins=[...document.querySelectorAll('input,textarea,select')].map(e=>[e,e.parentNode,e.nextSibling]);for(const x of ins)x[0].remove()},()=>{for(const [e,pa,nx] of ins)pa.insertBefore(e,nx&&nx.parentNode===pa?nx:null);ins=[]}],
+      inp:[()=>{ins=[...$$('input,textarea,select')].map(e=>[e,e.parentNode,e.nextSibling]);for(const x of ins)x[0].remove()},()=>{for(const [e,pa,nx] of ins)pa.insertBefore(e,nx&&nx.parentNode===pa?nx:null);ins=[]}],
       tim:[()=>{mt=Music.timer;clearInterval(mt);Music.timer=null;tt=Track.timer;clearInterval(tt);Track.timer=null},()=>{if(mt){Music.timer=null;Music.start()}if(tt)Track.timer=setInterval(()=>Track.sweep(),500)}],
-      fnt:[()=>H.classList.add('nofont'),()=>H.classList.remove('nofont')],
-      fx:[()=>H.classList.add('nofx'),()=>H.classList.remove('nofx')],
-      ani:[()=>H.classList.add('noanim'),()=>H.classList.remove('noanim')],
-      cvo:[()=>H.classList.add('onlycv'),()=>H.classList.remove('onlycv')],
+      fnt:[()=>cls('nofont',1),()=>cls('nofont',0)],
+      fx:[()=>cls('nofx',1),()=>cls('nofx',0)],
+      ani:[()=>cls('noanim',1),()=>cls('noanim',0)],
+      cvo:[()=>cls('onlycv',1),()=>cls('onlycv',0)],
       ton:[()=>au(false),()=>au(true)],
       leer:[()=>{this.noDraw=true;H.classList.add('blank')},()=>{this.noDraw=false;H.classList.remove('blank')}]}},
 
@@ -602,7 +604,7 @@ function supernova(){const g=quantaFor(save.cycleBest,save);if(g<=0)return;save.
 /* ---------- boot + loop ---------- */
 if(save.pending&&save.pending.g){const ps=save.pending.world===2?save.w2:save;for(const c in save.pending.g)ps.cur[c]=(ps.cur[c]||0)+(save.pending.g[c]||0);ps.best=Math.max(ps.best||0,save.pending.w||0);ps.cycleBest=Math.max(ps.cycleBest||0,save.pending.w||0);save.pending=null;persist();
   setTimeout(()=>toast('Belohnungen aus deinem letzten Run wurden gutgeschrieben'),600)}
-R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;
+R.setTheme(W.id);document.documentElement.dataset.wtheme=W.id;UI.host.dataset.wtheme=W.id;
 $$('.ver').forEach(e=>e.textContent='Version '+VERSION+(STAGE?' '+STAGE:''));save.ver=VERSION;
 if(!save.ach){save.ach={};for(const a of ACH)save.ach[a.id]=achTier(a);persist()}
 goHub();

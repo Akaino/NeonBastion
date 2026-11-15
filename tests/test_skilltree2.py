@@ -32,6 +32,9 @@ with sync_playwright() as p:
     q=pg.evaluate("""()=>{const o=JSON.parse(JSON.stringify(save));const a=stats(o),r={};for(const l of [1,5]){Object.assign(o.nodes,{b5c:l,u5c:l,h5c:l});const b=stats(o);r[l]=[b.turretDmg/a.turretDmg,b.pulseDmg/a.pulseDmg,b.droneDmg/a.droneDmg,b.heroSelf,b.heroDmg/a.heroDmg]}return [r,a.heroDmg,a.heroSelf]}""")
     H=1+q[1];ok=all(abs(x-H**.2)<1e-6 for x in q[0]['1'][:3]) and all(abs(x-H)<1e-6 for x in q[0]['5'][:3]) and abs(q[0]['5'][3]-H**.35)<1e-6 and q[0]['5'][4]==1 and q[2]==1
     check(ok,'Feuerleitstand, Heldengeschwader, Kampfrausch: Stufe 1 gibt den fünften Teil der Wirkung als Faktor, Stufe 5 die volle; der Heldenschaden-Bonus selbst bleibt gleich')
+    # Schnellstart: nie höher als die Rekordwelle
+    sw=pg.evaluate("""()=>{const o=JSON.parse(JSON.stringify(save));o.dev=false;o.startPick=0;o.pr={warp:20};const r=[];for(const [b,l] of [[0,30],[10,30],[10,2],[60,30],[61,60]]){o.best=b;o.nodes.e2b=l;const S=stats(o);r.push([S.startWave,S.startMax])}o.best=10;o.nodes.e2b=30;o.startPick=40;r.push([stats(o).startWave]);return r}""")
+    check(sw==[[1,1],[10,10],[6,6],[60,60],[61,61],[10]],'Schnellstart startet nie höher als die Rekordwelle: '+str(sw))
     # im Baum kaufbar, mit Vorschau
     pg.evaluate("()=>{Object.assign(save.nodes,{b1:5,b2b:3,b3b:2,b4b:1,b5b:1,f2b:1,f3b:1,f4b:1});persist()}");pg.reload();pg.wait_for_timeout(300)
     pg.click('#bTree');pg.wait_for_timeout(300)

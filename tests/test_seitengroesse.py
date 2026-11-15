@@ -6,7 +6,7 @@ os.makedirs(os.path.join(HERE,'out'),exist_ok=True);os.chdir(os.path.join(HERE,'
 from playwright.sync_api import sync_playwright
 def check(ok,msg):
     print(('ok   ' if ok else 'Traceback FEHLER ')+msg)
-N="()=>document.querySelectorAll('*').length"
+N="()=>$$('*').length"
 with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
@@ -20,7 +20,7 @@ with sync_playwright() as p:
         pg.click(sec+' [data-back]');pg.wait_for_timeout(150);n2=pg.evaluate(N);leer=pg.evaluate("q=>$(q).children.length",probe)
         check(inn>0 and n1>n0 and leer==0 and n2<=n0+5,'%s: geöffnet %d Elemente, nach dem Verlassen wieder %d'%(sec,n1,n2))
     pg.click('#bTree');pg.wait_for_timeout(200);pg.click('#bHeroes') if False else None
-    check(pg.evaluate("()=>document.querySelectorAll('#tw *').length")>100,'Skilltree ist beim erneuten Öffnen wieder vollständig da')
+    check(pg.evaluate("()=>$$('#tw *').length")>100,'Skilltree ist beim erneuten Öffnen wieder vollständig da')
     pg.click('#tree [data-back]');pg.click('#bStart');pg.wait_for_timeout(1500)
     check(pg.evaluate("()=>run&&run.w>=1")and pg.evaluate(N)<500,'im Run: %d Elemente'%pg.evaluate(N))
     print('\n'.join(errs) or 'no errors');b.close()

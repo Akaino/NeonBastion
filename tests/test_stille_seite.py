@@ -1,4 +1,4 @@
-"""Im laufenden Run ändert sich am beobachtbaren Dokument nichts: Anzeige, Banner und Messanzeige liegen im Schattenbaum.
+"""Am beobachtbaren Dokument ändert sich nichts, weder im Run noch in den Menüs: Die gesamte Oberfläche liegt im Schattenbaum.
 Hintergrund: Ein fremdes Skript im Safari des Nutzers reagierte auf jede Änderung am Dokument mit einem Hänger pro Sekunde."""
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
@@ -27,5 +27,14 @@ with sync_playwright() as p:
             pg.evaluate("()=>{MUT.length=0}");pg.wait_for_timeout(3000)
             check(pg.evaluate("()=>MUT.length")==0 and pg.evaluate("()=>Perf.on&&$('#perf').textContent.includes('Bilder/s')"),'im Hub mit laufender Messanzeige ebenfalls keine Änderung: '+str(pg.evaluate("()=>[...new Set(MUT)].slice(0,5)")))
         if not sub:pg.screenshot(path='ss1_anzeige.png')
+        # Menüs: öffnen, kaufen, wechseln – ebenfalls ohne Änderung am beobachtbaren Dokument
+        pg.reload();pg.wait_for_timeout(400);pg.evaluate("()=>{save.cur.s=1e9;save.cur.k=1e6;persist();renderHub()}");pg.evaluate(WATCH)
+        pg.click('#bTree');pg.wait_for_timeout(200);pg.evaluate("()=>{selNode='b1';renderTree()}");[pg.click('#bBuy') for i in range(5)];pg.click('#tree [data-back]')
+        for btn,sec in (('#bHeroes','#heroes'),('#bFleet','#fleet'),('#bTowers','#towers'),('#bCodex','#codex'),('#bAchv','#achv')):
+            pg.click(btn);pg.wait_for_timeout(120);pg.click(sec+' [data-back]')
+        pg.click('#bSet');pg.wait_for_timeout(100);pg.click('#bSetClose');pg.wait_for_timeout(300)
+        mm=pg.evaluate("()=>[...new Set(MUT)]")
+        check(pg.evaluate("()=>save.nodes.b1")>=5 and mm==[],name+': Menüs öffnen, fünfmal kaufen, Einstellungen – keine Änderung am beobachtbaren Dokument: '+str(mm[:6]))
+        check(pg.evaluate("()=>document.querySelectorAll('*').length")<25 and pg.evaluate("()=>UI.querySelectorAll('*').length")>200,name+': im Dokument stehen nur noch Rahmen und Spielfeld')
         print('\n'.join(errs) or 'no errors');pg.close()
     b.close()

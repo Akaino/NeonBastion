@@ -1,4 +1,4 @@
-# Abschluss-Testliste für Welt 1 (Beta 0.30.0)
+# Abschluss-Testliste für Welt 1 (Beta 0.30.1)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.19.0.
 
@@ -8,10 +8,12 @@ Alles hier ist automatisch getestet (34 Testläufe) und mit der Simulation gemes
 
 ## 1. Ruckeln und Ton in Safari (wichtig zuerst)
 
-Die Ursache ist gefunden: Ein fremdes Skript in deinem Safari reagiert auf jede Textänderung der Seite mit einem Hänger pro Sekunde. Seit 0.30.0 liegen alle laufenden Anzeigen so, dass es ihre Änderungen nicht mehr sieht.
+Die Ursache ist gefunden: Ein fremdes Skript in deinem Safari reagiert auf jede Textänderung der Seite mit einem Hänger pro Sekunde. Seit 0.30.1 liegt die gesamte Oberfläche so, dass es ihre Änderungen nicht mehr sieht, im Run und in den Menüs.
 
-- [ ] Beta 0.30.0 laden, ein paar Runs auf 4× oder 8× spielen, zwischendurch die Seite neu laden: Bleibt es flüssig, bleibt der Ton sauber?
-- [ ] In der Konsole `Perf.live()`: Steht dort dauerhaft „Ruckler in 5 s: 0“ (einzelne Ausreißer beim Öffnen von Menüs sind normal)?
+- [ ] Beta 0.30.1 laden, ein paar Runs auf 4× oder 8× spielen, zwischendurch die Seite neu laden: Bleibt es flüssig, bleibt der Ton sauber?
+- [ ] In der Konsole `Perf.live()`: Steht dort dauerhaft „Ruckler in 5 s: 0“, auch beim Klicken durch die Menüs und beim schnellen Kaufen im Skilltree?
+- [ ] Sehen alle Menüs aus wie vorher (Hub, Skilltree, Helden, Flotte, Türme, Enzyklopädie, Erfolge, Supernova, Welten, Einstellungen, Pause, Endbildschirm)?
+- [ ] Schnellstart: Die Startwelle lässt sich nie höher stellen als deine Rekordwelle, auch mit vielen Stufen.
 - [ ] Sieht die Anzeige im Run aus wie vorher (Welle, Lebensbalken, Währungen, Bossbalken, Heldenkreise, Bauen-Knopf, Banner, Hinweise)?
 - [ ] Funktionieren Pause, Tempo, Bauen und das Turm-Menü wie vorher?
 
@@ -135,4 +137,4 @@ Karriere mit ruhendem Zeiger (4 Seeds):
 - Die Helden selbst machen spät nur etwa 14 % des Schadens. Ihr Ast bleibt trotzdem der wichtigste, weil die anderen von seinem Bonus leben.
 - Die Wirkung von Stör-Turm und Markier-Turm für einen Menschen ist nicht gemessen.
 - Welt 2 hat nichts von den Neuerungen.
-- Von wem das fremde Skript in deinem Safari stammt, ist nicht geklärt. Das Spiel umgeht es seit 0.30.0; Menüs und Käufe ändern die Seite weiterhin und können einzelne kurze Hänger auslösen.
+- Von wem das fremde Skript in deinem Safari stammt, ist nicht geklärt. Das Spiel umgeht es seit 0.30.0; Das Spiel umgeht es seit 0.30.1 vollständig.

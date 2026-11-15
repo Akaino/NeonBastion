@@ -43,7 +43,7 @@ with sync_playwright() as p:
     pg.evaluate("()=>Perf.scan(.8)");pg.wait_for_timeout(13000)
     res=pg.evaluate("()=>Perf.scanRes.map(r=>r.name)")
     check(len(res)==12 and res[0]=='alles an' and res[10]=='alles zusammen','Ursachensuche hat 12 Abschnitte: '+str(len(res)))
-    check(pg.evaluate("()=>!Perf.noDraw&&!Perf.freeze&&document.documentElement.className.trim()===''&&!!Music.timer&&!!Track.timer&&document.querySelectorAll('input').length>=3&&!!$('#volMus')"),'danach ist alles wieder an, Eingabefelder und Zeitgeber sind zurück')
+    check(pg.evaluate("()=>!Perf.noDraw&&!Perf.freeze&&document.documentElement.className.trim()===''&&!!Music.timer&&!!Track.timer&&$$('input').length>=3&&!!$('#volMus')"),'danach ist alles wieder an, Eingabefelder und Zeitgeber sind zurück')
     check(not hid(pg,'#dev') and 'Ursachensuche' in pg.evaluate("()=>Perf.report()") and 'alles zusammen' in pg.inner_text('#devBody'),'Ergebnis steht in den Testhilfen und im Bericht')
     pg.screenshot(path='th3_ursachensuche.png')
     pg.evaluate("()=>{save.dev=false}")

@@ -10,7 +10,7 @@ with sync_playwright() as p:
     b=p.chromium.launch();pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
     errs=[];pg.on('pageerror',lambda e: errs.append('PAGEERR '+str(e)))
     pg.goto(GAME);pg.wait_for_timeout(300);pg.click('#bSet');pg.wait_for_timeout(200)
-    links=pg.evaluate("()=>[...document.querySelectorAll('#settings .legal a')].map(a=>[a.textContent,a.getAttribute('href'),a.target])")
+    links=pg.evaluate("()=>[...$$('#settings .legal a')].map(a=>[a.textContent,a.getAttribute('href'),a.target])")
     check(links==[['Impressum','impressum.html','_blank'],['Datenschutz','datenschutz.html','_blank']],'Links in den Einstellungen: '+str(links))
     check(pg.is_visible('#settings .legal a'),'Links sichtbar')
     pg.screenshot(path='r1_einstellungen.png')

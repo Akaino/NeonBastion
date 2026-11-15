@@ -1,4 +1,4 @@
-const VERSION='0.30.0';
+const VERSION='0.30.1';
 'use strict';
 const PI=Math.PI,TAU=PI*2;
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -128,7 +128,7 @@ const NODE_DEFS=[
  // ---- Ertrag ----
  ['e1','e','root',1,0,'Sammler',999,'s',10,1.3,l=>`+${l*12} % Splitter`,LADDER],
  ['e2a','e','e1',2,-1,'Kernextraktion',10,'s',50,1.5,l=>`+${l*20} % Kerne`],
- ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,QUICK_G,l=>`Start bis Welle ${1+l*2} wählbar, Meilensteine werden gutgeschrieben`],
+ ['e2b','e','e1',2,1,'Schnellstart',999,'s',60,QUICK_G,l=>`Start bis Welle ${1+l*2} wählbar, aber nie höher als deine Rekordwelle. Meilensteine werden gutgeschrieben`],
  ['e3c','e','e2a',3,-1.8,'Splitterflut',30,'s',400,1.32,l=>`×${fmtD(Math.pow(1.05,l),2)} Splitter`],
  ['e3a','e','e2a',3,-.5,'Prismenschliff',8,'k',5,1.45,l=>`+${l*25} % Prismen`],
  ['e3b','e','e2b',3,1.3,'Elitejäger',4,'k',4,1.7,l=>`+${l*25} % Elite-Gegner`],
@@ -253,6 +253,8 @@ function stats(save){const L=id=>save.nodes[id]||0;const S={
   const P=id=>(save.pr&&save.pr[id])||0,pd=Math.pow(1.25,P('dmg'))*(typeof w2BonusForW1!=='undefined'?w2BonusForW1(save):1),ph=1+.4*P('hero'),pg=1+.5*P('gain');
   S.baseHp*=Math.pow(1.25,P('hp'));S.turretDmg*=pd;S.pulseDmg*=pd;S.droneDmg*=pd;S.tapDmg*=pd;S.heroDmg*=pd*ph;S.heroHp*=ph;S.drones+=2*P('drone');S.gS*=pg;S.gK*=pg;S.gP*=pg;
   S.startMax=Math.max(S.startWave,1+Math.min(5*P('warp'),Math.floor((save.best||0)/2)));
+  // Vorgabe des Nutzers: Schnellstart darf nie höher starten lassen als die höchste bisher erreichte Welle.
+  S.startMax=Math.min(S.startMax,Math.max(1,save.best||0));
   S.startWave=save.startPick?clamp(save.startPick,1,S.startMax):S.startMax;
   /*DEV{*/if(save.dev&&save.devStart){S.startMax=Math.max(S.startMax,save.devStart);S.startWave=save.devStart}/*}DEV*/   // Testhilfe: Startwelle frei wählbar
   // Verbund mit den Helden: Der Heldenschaden-Bonus wächst spät sehr stark (Knoten und Supernova). Impuls, Basis und Flotte bekommen je einen Knoten, der ihn in fünf Stufen übernimmt –

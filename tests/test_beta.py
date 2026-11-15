@@ -26,7 +26,7 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>(save.best||0)===0&&save.cur.s===0"),'Beta startet mit eigenem, leerem Spielstand')
     pg.click('#bSet');pg.wait_for_timeout(150)
     check(not pg.evaluate("()=>$('#bLiveCopy').hidden") and 'Beta' in pg.inner_text('#setVer'),'Einstellungen: Knopf sichtbar, Version mit „Beta“')
-    links=pg.evaluate("()=>[...document.querySelectorAll('#settings .legal a')].map(a=>a.getAttribute('href'))")
+    links=pg.evaluate("()=>[...$$('#settings .legal a')].map(a=>a.getAttribute('href'))")
     check(links==['../impressum.html','../datenschutz.html'] and all(os.path.isfile(os.path.join(WEB,'beta',l)) for l in links),'Impressum und Datenschutz zeigen auf die Hauptseite: '+str(links))
     pg.screenshot(path='b1_beta.png')
     # Live-Spielstand übernehmen: erst nach zweitem Tippen, danach steht die Kopie in der Beta, das Original bleibt unverändert
