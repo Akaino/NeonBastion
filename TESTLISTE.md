@@ -1,4 +1,4 @@
-# Testliste (Beta 0.38.2)
+# Testliste (Beta 0.38.3)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
@@ -18,6 +18,7 @@ Alles hier ist automatisch getestet (39 Testläufe) und mit der Simulation gemes
 - [ ] Tempo bis 8×.
 - [ ] Nahkämpfer, der zu weit hinten steht: in der Aufstellung rot mit „trifft von hier nicht“, im Lauf gedämpft mit „zu weit hinten“. Deutlich genug?
 - [ ] Reiter „Helden“ erklärt oben, woher Synchron-Staub kommt.
+- [ ] Rang mit zu wenig Kernen: Knopf und Karte sagen, dass der fehlende Kern mit Staub bezahlt wird; danach kommt eine Meldung. Soll das automatisch bleiben?
 - [ ] Reiter „Zonen“: Eine Welle auswählen schaltet „Diese Welle wiederholen“ automatisch ein; die Gruppe bleibt dort, bis du es ausschaltest.
 
 ## 0000. Neu in 0.37.0: Welt 5 „Expedition“ (Prototyp)

@@ -245,13 +245,14 @@ function heroCard(id) {
       <div><span>Angriff</span><b>${fmtN(a.atk)}${b ? ` <i>→</i> <em>${fmtN(b.atk)}</em>` : ''}</b></div>
       ${c ? `<div><span>Rang ${st.r + 1}</span><b>Leben ${fmtN(c.hp)} · Angriff ${fmtN(c.atk)}</b></div>` : ''}
       <div class="w5cores"><span>Kerne</span><b>${core5(H.rar, st.s)}${rn ? ` <i>von</i> ${rn.need} <i>für Rang ${st.r + 1}</i>` : ''}</b></div>
+      ${rn && rn.dust ? `<div><span>Fehlende Kerne</span><b>${rn.need - rn.have} <i>· ersetzbar durch</i> ${cur5('d', rn.dust + ' Staub')} <i>(du hast ${fmtN(w.cur.d)})</i></b></div>` : ''}
       ${lc && lc.ess ? `<div><span>${C.ess}</span><b>${ess5(H.cls, `<b data-ess="${H.cls}">${w.ess[H.cls]}</b> von ${lc.ess}`).replace(' ' + C.ess + '</span>', '</span>')} <i>· aus ${zoneHint(H.cls)}</i></b></div>` : ''}
     </div><div class="w5acts">`;
   h += lc
     ? `<button class="btn" data-act="lvl" data-id="${id}" style="--c:${CUR5.l.col}"><span class="price"><span>Stufe ${st.l + 1}</span>${cur5('l', lc.l)}${lc.ess ? `<span class="plus">+</span>${ess5(H.cls, lc.ess)}` : ''}</span></button>`
     : `<button class="btn" disabled>Höchste Stufe</button>`;
   h += rn
-    ? `<button class="btn" data-act="rank" data-id="${id}" style="--c:${R.col}"><span class="price"><span>Rang ${st.r + 1}</span>${core5(H.rar, `${Math.min(rn.have, rn.need)}/${rn.need} Kerne`)}${rn.dust ? `<span class="plus">+</span>${cur5('d', rn.dust)}` : ''}</span></button>`
+    ? `<button class="btn" data-act="rank" data-id="${id}" style="--c:${R.col}"><span class="price"><span>Rang ${st.r + 1}</span>${core5(H.rar, `${Math.min(rn.have, rn.need)}/${rn.need} Kerne`)}${rn.dust ? `<span class="plus">·</span><span>${rn.need - rn.have === 1 ? 'fehlender Kern' : rn.need - rn.have + ' fehlende Kerne'} für</span>${cur5('d', rn.dust + ' Staub')}` : ''}</span></button>`
     : `<button class="btn" disabled>Höchster Rang</button>`;
   if (H.rar === 'basis' && st.s > 0)
     h += `<button class="btn" data-act="sync" data-id="${id}" style="--c:${CUR5.d.col}"><span class="price"><span>Synchronisieren</span>${core5(H.rar, st.s)}<span class="plus">→</span>${cur5('d', st.s * R.sync)}</span></button>`;
@@ -388,6 +389,7 @@ $('#w5panel').addEventListener('click', e => {
       }
       Snd.play('buy');
     } else if (a === 'rank') {
+      const vor = rankNeed5(w, id);
       if (!rankUp5(w, id)) {
         Snd.play('no');
         const n = rankNeed5(w, id);
@@ -396,6 +398,11 @@ $('#w5panel').addEventListener('click', e => {
         );
       }
       Snd.play('nova');
+      // Fehlende Kerne werden mit Synchron-Staub bezahlt – das soll niemand übersehen (Rückmeldung des Nutzers: „1/2 Kerne und es ging trotzdem“)
+      if (vor.dust)
+        toast(
+          `${vor.need - vor.have === 1 ? 'Ein fehlender Kern wurde' : vor.need - vor.have + ' fehlende Kerne wurden'} mit ${vor.dust} Synchron-Staub ersetzt`,
+        );
     } else if (a === 'sync') {
       const d = sync5(w, id);
       Snd.play('buy');

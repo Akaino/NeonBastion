@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Neon Bastion Ruckeltest</title>
+<style>
+/* Messseite: startet leer und schaltet die Zutaten des Spiels einzeln dazu. Die erste Stufe mit Rucklern ist der Auslöser. */
+:root{color-scheme:dark}
+body{margin:0;background:#05051a;color:#eaf0ff;font:16px/1.5 system-ui,-apple-system,sans-serif}
+main{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:20px 16px}
+h1{font-size:22px;margin:0 0 8px}
+p{color:#a9a6d4;margin:0 0 12px}
+button{font:600 16px system-ui;padding:12px 18px;border-radius:10px;border:1px solid #3df5ff;background:#3df5ff;color:#05051a;cursor:pointer;margin:0 8px 8px 0}
+button.sec{background:none;color:#eaf0ff}
+pre{background:rgba(13,11,44,.92);border:1px solid rgba(61,245,255,.25);border-radius:10px;padding:12px;font:13px/1.45 ui-monospace,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+#cv{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:none}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<main>
+<h1>Ruckeltest</h1>
+<p>Diese Seite misst etwa zweieinhalb Minuten lang, ab welcher Zutat des Spiels dein Browser im Sekundentakt hängt. Bitte in dem Browser öffnen, in dem es ruckelt, „Start“ drücken und das Fenster in Ruhe lassen. Es wird zwischendurch Ton zu hören sein.</p>
+<button id="go">Start</button><button id="copy" class="sec" hidden>Ergebnis kopieren</button>
+<pre id="out">Noch nicht gestartet.</pre>
+</main>
+<script>
+const $=s=>document.querySelector(s),out=$('#out'),SEC=8,HITCH=28;
+let fr=[],last=0,drawFn=null,tick=null,ctx=null,bus=null,soundT=null,storeT=null,lines=[];
+function loop(n){if(last)fr.push(n-last);last=n;if(drawFn)drawFn(n);requestAnimationFrame(loop)}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function measure(name){fr=[];await wait(1000);fr=[];await wait(SEC*1000);const f=fr.slice(),h=f.filter(v=>v>HITCH&&v<5000),s=f.slice().sort((a,b)=>a-b);
+  const l=name.padEnd(44)+String(h.length).padStart(3)+' Ruckler, längstes '+String(Math.round(s[s.length-1]||0)).padStart(4)+' ms, Median '+(s[s.length>>1]||0).toFixed(0)+' ms, '+f.length+' Bilder';lines.push(l);show()}
+function show(){out.textContent='Ruckeltest · '+navigator.userAgent+'\nFenster '+innerWidth+'×'+innerHeight+', Pixelverhältnis '+(devicePixelRatio||1)+'\nJe Stufe '+SEC+' s, Ruckler = Bild über '+HITCH+' ms. Jede Stufe behält alles Vorherige bei.\n\n'+lines.join('\n')}
+function bigCanvas(){const cv=$('#cv'),d=Math.min(2,devicePixelRatio||1);cv.style.display='block';cv.width=innerWidth*d;cv.height=innerHeight*d;const c=cv.getContext('2d');let t=0;
+  drawFn=()=>{t+=.016;c.fillStyle='#05051a';c.fillRect(0,0,cv.width,cv.height);c.strokeStyle='#3df5ff';c.lineWidth=6;for(let i=0;i<40;i++){c.beginPath();c.arc(cv.width/2+Math.cos(t+i)*cv.width*.3,cv.height/2+Math.sin(t*1.3+i)*cv.height*.3,30+i,0,6.283);c.stroke()}}}
+function layers(){const cv=$('#cv'),c=cv.getContext('2d'),mk=(w,h,col)=>{const b=document.createElement('canvas');b.width=w;b.height=h;const q=b.getContext('2d'),g=q.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*.7);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=g;q.fillRect(0,0,w,h);return b};
+  const a=mk(cv.width,cv.height,'#10103a'),w=mk(2800,2800,'rgba(61,245,255,.08)'),v=mk(cv.width,cv.height,'rgba(255,79,216,.06)'),sp=Array.from({length:120},(_,i)=>mk(64,64,i%2?'#ff4fd8':'#3df5ff'));const prev=drawFn;let t=0;
+  drawFn=n=>{t+=.016;c.drawImage(a,0,0);c.drawImage(w,cv.width/2-1400,cv.height/2-1400);for(let i=0;i<300;i++)c.drawImage(sp[i%120],(Math.sin(t+i)*.5+.5)*cv.width,(Math.cos(t*1.1+i*2)*.5+.5)*cv.height);c.drawImage(v,0,0)}}
+function audio(){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});bus=ctx.createGain();bus.gain.value=.15;
+  const r=ctx.sampleRate,n=Math.floor(r*2.4),b=ctx.createBuffer(2,n,r);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)}
+  const rev=ctx.createConvolver();rev.buffer=b;const rg=ctx.createGain();rg.gain.value=.3;const dl=ctx.createDelay(1);dl.delayTime.value=.3;const fb=ctx.createGain();fb.gain.value=.3;dl.connect(fb);fb.connect(dl);
+  const ws=ctx.createWaveShaper(),cu=new Float32Array(1024);for(let i=0;i<1024;i++)cu[i]=Math.tanh((i/511.5-1)*3);ws.curve=cu;ws.oversample='4x';
+  bus.connect(ws);ws.connect(ctx.destination);bus.connect(rev);rev.connect(rg);rg.connect(ctx.destination);bus.connect(dl);dl.connect(ctx.destination)}
+function voice(clean){const t=ctx.currentTime+.02,o=ctx.createOscillator(),o2=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain();o.type='sawtooth';o2.type='square';o.frequency.value=110+Math.random()*440;o2.frequency.value=o.frequency.value*1.01;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(f);o2.connect(f);f.connect(g);g.connect(bus);o.start(t);o2.start(t);o.stop(t+.25);o2.stop(t+.25);
+  if(clean)setTimeout(()=>{for(const x of[o,o2,f,g]){try{x.disconnect()}catch(e){}}},600)}
+function session(){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+  try{const a=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=');a.setAttribute('playsinline','');a.volume=.01;window.keepA=a;return a.play().catch(()=>{})}catch(e){}}
+function bigDoc(){const sc=document.createElement('script');sc.type='text/plain';sc.textContent='/* Fülltext */'+'const x=1;function f(a,b){return a+b}\n'.repeat(7000);document.body.appendChild(sc);
+  const d=document.createElement('div');d.hidden=true;let h='';for(let i=0;i<3000;i++)h+='<section class="k"><h3>Knoten '+i+'</h3><p>Text '+i+'</p><button>Kaufen</button></section>';d.innerHTML=h;document.body.appendChild(d);return sc.textContent.length}
+async function run(){$('#go').hidden=true;lines=[];requestAnimationFrame(loop);
+  // Der Ton-Unterbau muss direkt im Tastendruck entstehen, sonst lässt Safari ihn nicht starten. Bis Stufe 6 bleibt er angehalten.
+  let tonOk='';try{audio();await Promise.race([ctx.resume(),wait(800)]);tonOk=ctx.state;await ctx.suspend()}catch(e){tonOk='Fehler: '+e}
+  lines.push('Ton beim Start: '+tonOk);
+  await measure('1 leere Seite');
+  bigCanvas();await measure('2 + große Leinwand, jedes Bild neu gezeichnet');
+  layers();await measure('3 + Hintergrundebenen und 300 Sprites');
+  tick=setInterval(()=>{let s=0;for(let i=0;i<2000;i++)s+=Math.sqrt(i)},30);await measure('4 + Zeitgeber alle 30 ms');
+  storeT=setInterval(()=>{try{localStorage.setItem('neon-bastion-ruckeltest',JSON.stringify({t:Date.now(),x:'x'.repeat(4000)}))}catch(e){}},2000);await measure('5 + Speichern alle 2 s');
+  try{await Promise.race([ctx.resume(),wait(1500)])}catch(e){lines.push('Ton ließ sich nicht starten: '+e)}
+  await measure('6 + Ton-Unterbau läuft, stumm ('+(ctx?ctx.state:'–')+')');
+  soundT=setInterval(()=>voice(false),50);await measure('7 + 20 Töne je Sekunde, ohne Aufräumen');
+  clearInterval(soundT);soundT=setInterval(()=>voice(true),50);await measure('8 dasselbe, mit Aufräumen');
+  clearInterval(soundT);await measure('9 Töne aus, Ton-Unterbau läuft weiter ('+(ctx?ctx.state:'–')+')');
+  await session();await measure('9b + Wiedergabe-Sitzung und stilles Audio-Element');
+  if(ctx){try{await ctx.suspend()}catch(e){}}await measure('10 Ton-Unterbau angehalten');
+  if(ctx){try{await ctx.close()}catch(e){}}await measure('11 Ton-Unterbau geschlossen');
+  clearInterval(storeT);clearInterval(tick);drawFn=null;$('#cv').style.display='none';await measure('12 alles wieder aus');
+  const n=bigDoc();await measure('13 + großes Dokument ('+Math.round(n/1024)+' KB Skripttext, 3000 Elemente)');
+  lines.push('\nFertig.');show();$('#copy').hidden=false}
+$('#go').onclick=run;
+$('#copy').onclick=()=>{const t=out.textContent;try{navigator.clipboard.writeText(t).then(()=>{$('#copy').textContent='Kopiert'},()=>{getSelection().selectAllChildren(out)})}catch(e){getSelection().selectAllChildren(out)}};
+</script>
+</body>
+</html>

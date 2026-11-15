@@ -114,6 +114,14 @@ with sync_playwright() as p:
     ev("()=>{const id=Object.keys(save.w5.heroes).find(h=>save.w5.team.includes(h));save.w5.heroes[id].l=10;renderW5()}");pg.wait_for_timeout(100)
     check('aus Zone' in pg.inner_text('#w5panel'),'am Durchbruch steht, aus welchen Zonen das Material kommt')
     pg.screenshot(path='w5h_karte.png')
+    # Rang mit fehlendem Kern: Staub-Ersatz steht auf Knopf und Karte, nach dem Kauf kommt eine Meldung (0.38.3)
+    hid=ev("()=>{const w=save.w5,id=w.team.find(Boolean);w.heroes[id].r=1;w.heroes[id].s=1;w.cur.d=0;renderW5();return id}");pg.wait_for_timeout(80)
+    bt='#w5panel [data-act="rank"][data-id="'+hid+'"]'
+    kost=ev("h=>rankNeed5(save.w5,h).dust",hid)
+    check('1/2 Kerne' in pg.inner_text(bt) and 'fehlender Kern für' in pg.inner_text(bt) and 'Staub' in pg.inner_text(bt) and 'poor' in ev("b=>$(b).className",bt) and 'Fehlende Kerne' in pg.inner_text('#w5panel'),'Rang-Knopf bei 1/2 Kernen nennt den Staub-Ersatz und ist ohne Staub nicht bezahlbar')
+    pg.click(bt);pg.wait_for_timeout(200);check(ev("h=>save.w5.heroes[h].r",hid)==1 and 'fehlen' in pg.inner_text('#toast'),'ohne Staub geht der Rang mit 1/2 Kernen nicht')
+    ev("k=>{save.w5.cur.d=k+2;renderW5()}",kost);pg.wait_for_timeout(350);pg.click(bt);pg.wait_for_timeout(200)
+    check(ev("h=>save.w5.heroes[h].r",hid)==2 and ev("()=>save.w5.cur.d")==2 and 'mit '+str(kost)+' Synchron-Staub ersetzt' in pg.inner_text('#toast'),'mit Staub geht er, der Staub wird abgezogen und eine Meldung sagt es')
     pg.click('#w5tabs [data-t="shop"]');pg.wait_for_timeout(80);check('❖' in pg.inner_text('#w5panel [data-act="pull"]'),'Kristall-Knopf zeigt das Kryon-Zeichen')
     # Ziehen und Ablegen in der Aufstellung
     pg.click('#w5tabs [data-t="team"]');pg.wait_for_timeout(100)
