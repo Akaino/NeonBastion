@@ -1,4 +1,4 @@
-import { gearBonus5 } from './gear.js';
+import { gearBonus5, optimize5 } from './gear.js';
 
 /* ================= WELT 5: Expedition (Arbeitstitel) – Daten =================
    Idle-Runner mit Heldensammlung (Idee des Nutzers vom 15.11.2026). Eine Gruppe von bis zu fünf Helden läuft von selbst von links
@@ -275,6 +275,18 @@ const ABIL5 = {
 for (const id in ABIL5) Object.assign(HEROES5[id], ABIL5[id]);
 // Name der Fähigkeit eines Helden (eigene oder die seiner Klasse)
 export const abilName5 = id => HEROES5[id].abil || CLASSES5[HEROES5[id].cls].abil;
+
+/* Was Ausrüstung für eine Klasse wert ist (für „Optimieren“): Wert je Prozentpunkt Leben, Angriff, Tempo, Schadensminderung
+   und je Punkt Energie pro Sekunde. Verteidiger wollen aushalten, Angreifer und Magier austeilen, Heiler und Unterstützer
+   ihre Fähigkeit oft einsetzen (Heilung wächst mit dem Angriff). */
+export const GEAR_W5 = {
+  tank: { hp: 1, dr: 1.6, atk: 0.3, haste: 0.3, en: 3 },
+  striker: { hp: 0.4, dr: 0.5, atk: 1, haste: 1, en: 3 },
+  mage: { hp: 0.3, dr: 0.3, atk: 1, haste: 0.8, en: 5 },
+  healer: { hp: 0.4, dr: 0.4, atk: 1, haste: 0.9, en: 6 },
+  support: { hp: 0.5, dr: 0.5, atk: 0.4, haste: 1, en: 8 },
+};
+export const optimizeGear5 = (w5, id) => optimize5(w5, id, GEAR_W5[HEROES5[id].cls]);
 export const START_HERO5 = 'funke'; // der Basisheld, mit dem man beginnt
 
 // Aufwerten. Stufe: Leben und Angriff ×LVL_MUL5 je Stufe, Kosten in Lumen; alle 10 Stufen ein Durchbruch, der Material der Klasse kostet.

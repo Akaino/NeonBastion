@@ -223,6 +223,44 @@ export function recycleAll5(w5, maxQ, withSets) {
   for (const it of w5.inv.filter(x => x.q <= maxQ && (withSets || !x.set))) n += recycle5(w5, it.id);
   return n;
 }
+/* „Optimieren“ (Wunsch des Nutzers): legt aus dem Inventar das an, was für diese Gewichtung am meisten bringt.
+   weights = { hp, atk, haste, dr, en } sagt, wie viel ein Prozentpunkt (bzw. ein Punkt Energie je Sekunde) dieser Wirkung wert ist;
+   die Gewichtung je Klasse steht in data.js (GEAR_W5). Bewertet wird immer die ganze Ausstattung samt Set-Boni: Platz für Platz
+   wird das Teil gesucht, mit dem die Gesamtwertung am höchsten ist, in mehreren Durchgängen, bis sich nichts mehr bessert.
+   Teile, die andere Helden tragen, bleiben unberührt. Liefert die Zahl der getauschten Plätze. */
+export function gearScore5(gear, weights) {
+  const b = gearBonus5(gear);
+  return (
+    (b.hp * weights.hp + b.atk * weights.atk + b.haste * weights.haste + b.dr * weights.dr) * 100 + b.en * weights.en
+  );
+}
+export function optimize5(w5, hero, weights) {
+  if (!w5.heroes[hero]) return 0;
+  const g = w5.gear[hero] || (w5.gear[hero] = {});
+  let changed = 0;
+  for (let pass = 0; pass < 3; pass++) {
+    let any = false;
+    for (const slot of GEAR_SLOTS5) {
+      let best = null,
+        bs = gearScore5(g, weights) + 1e-9;
+      for (const it of w5.inv) {
+        if (it.t !== slotType5(slot)) continue;
+        const sc = gearScore5({ ...g, [slot]: it }, weights);
+        if (sc > bs) {
+          bs = sc;
+          best = it;
+        }
+      }
+      if (best && equip5(w5, hero, slot, best.id)) {
+        changed++;
+        any = true;
+      }
+    }
+    if (!any) break;
+  }
+  return changed;
+}
+
 // Spielstand-Teile der Ausrüstung aus einer Datei übernehmen: nur gültige Gegenstände, fortlaufende Nummern
 export function loadGear5(o, s) {
   const ok = it => it && GEAR_TYPES5[it.t] && GEAR_Q5[it.q] && (!it.set || SETS5[it.set]);

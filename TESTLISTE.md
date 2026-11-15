@@ -1,4 +1,4 @@
-# Testliste (Beta 0.40.0)
+# Testliste (Beta 0.41.0)
 
 Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
@@ -11,6 +11,7 @@ Alles hier ist automatisch getestet (40 Testläufe) und mit der Simulation gemes
 - [ ] Besiegte Gegner lassen gelegentlich Ausrüstung fallen (der Name steigt über dem Gegner auf), Bosse immer zwei Teile.
 - [ ] Reiter „Helden“ → Knopf „Ausrüstung“ auf einer Karte: neun Plätze. Platz antippen, passendes Teil „Anlegen“ – der Knopf zeigt UP vorher → nachher.
 - [ ] Sets: Trägt ein Held Teile eines Sets, steht der Bonus mit seinen Stufen dort (z. B. Bastion bei 3, 4 und 5 Teilen). Verständlich?
+- [ ] „Optimieren“ in der Ausrüstungs-Ansicht legt für die Klasse des Helden die besten Teile an; im Reiter „Gruppe“ gibt es dasselbe für alle. Trifft die Auswahl, was du selbst wählen würdest?
 - [ ] Reiter „Inventar“: Währungen, Material, Kerne und Ausrüstung nach Art sortiert, mit Filter. Sauber genug sortiert?
 - [ ] Recyceln einzeln und „Alles Gewöhnliche recyceln“ (Set-Teile bleiben liegen) gibt Schrott.
 - [ ] Shop: Ausrüstungsbox für 30 Schrott. Preis und Chancen in Ordnung?

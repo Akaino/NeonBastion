@@ -40,6 +40,7 @@ import {
   ZONE_LEN5,
   essZone5,
   heroPower5,
+  optimizeGear5,
   heroStats5,
   stage5,
   stageName5,
@@ -331,7 +332,8 @@ function panelGear(id) {
     cur = G[gearSlot],
     now = up5(id),
     n = setCounts5(G);
-  let h = `<div class="w5acts"><button class="btn" data-act="gback" style="--c:#6dffb0">‹ Zurück zu den Helden</button></div>
+  let h = `<div class="w5acts"><button class="btn" data-act="gback" style="--c:#6dffb0">‹ Zurück zu den Helden</button><button class="btn" data-act="opt" style="--c:#ffe14f"${w.inv.length ? '' : ' disabled'}>Optimieren</button></div>
+    <p class="w5hint">„Optimieren“ legt aus dem Inventar an, was für einen ${CLASSES5[H.cls].name} am meisten bringt – Set-Boni eingerechnet. Was andere Helden tragen, bleibt bei ihnen.</p>
     <div class="w5card" style="--c:${RARITY5[H.rar].col}">${portrait(id, 22)}<div class="w5body"><h3>${H.name} ${tag(H.rar)}${upTag(id)}</h3><p>Tippe einen Platz an, um ihn zu belegen. Was du ablegst, kommt zurück ins Inventar.</p></div></div>
     <div class="w5gslots">`;
   for (const slot of GEAR_SLOTS5) {
@@ -439,7 +441,7 @@ function panelTeam() {
     h += `</div>`;
   }
   h += `</div><div class="w5acts"><button class="btn" data-act="clear" style="--c:#ff6b84"${w.team[w5Slot] && n > 1 ? '' : ' disabled'}>${w.team[w5Slot] ? HEROES5[w.team[w5Slot]].name + ' aus der Gruppe nehmen' : 'Feld ist leer'}</button></div>
-    <p class="w5hint">${n} von ${TEAM_SIZE5} Helden aufgestellt · Wertung der Gruppe: <b>UP ${fmtN(w.team.filter(Boolean).reduce((a, id) => a + up5(id), 0))}</b></p><div class="w5chips">`;
+    <div class="w5acts"><button class="btn" data-act="optall" style="--c:#ffe14f"${w.inv.length ? '' : ' disabled'}>Ausrüstung der Gruppe optimieren</button></div><p class="w5hint">${n} von ${TEAM_SIZE5} Helden aufgestellt · Wertung der Gruppe: <b>UP ${fmtN(w.team.filter(Boolean).reduce((a, id) => a + up5(id), 0))}</b></p><div class="w5chips">`;
   for (const id of ownedSorted()) {
     const H = HEROES5[id],
       at = w.team.indexOf(id),
@@ -585,6 +587,18 @@ $('#w5panel').addEventListener('click', e => {
     } else if (a === 'gback') {
       gearHero = null;
       return renderW5();
+    } else if (a === 'opt' || a === 'optall') {
+      // Optimieren: ein Held oder die ganze Gruppe, der Stärkste wählt zuerst
+      const ids = a === 'opt' ? [gearHero] : w.team.filter(Boolean).sort((x, y) => up5(y) - up5(x)),
+        vor = ids.reduce((s2, h) => s2 + up5(h), 0);
+      let n = 0;
+      for (const h of ids) n += optimizeGear5(w, h);
+      Snd.play(n ? 'buy' : 'ui');
+      toast(
+        n
+          ? `${n} ${n === 1 ? 'Teil' : 'Teile'} getauscht · UP ${fmtN(vor)} → ${fmtN(ids.reduce((s2, h) => s2 + up5(h), 0))}`
+          : 'Schon optimal ausgerüstet',
+      );
     } else if (a === 'equip') {
       if (!equip5(w, gearHero, gearSlot, +id)) return;
       Snd.play('buy');
