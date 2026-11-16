@@ -1,20 +1,32 @@
-# Testliste (Beta 0.41.1)
+# Testliste (Beta 0.42.0)
 
-Stand: 15.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
+Stand: 16.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
 Alles hier ist automatisch getestet (40 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
 
+## 00000000. Neu in 0.42.0: Welt 5 – Heldenmenü, Recycling, Zeitlimit, Set-Boni
+
+- [ ] Reiter „Helden“: Jeder Held ist eine Zeile mit Name, Klasse, Seltenheit und UP. Findest du dich jetzt zurecht?
+- [ ] Wer in der Gruppe steht, steht oben („In der Gruppe“), darunter „Weitere Helden“.
+- [ ] Sortieren nach UP, Name, Seltenheit, Klasse – sortiert wird nur, wenn du eine Sortierung antippst. Beim Aufwerten und beim Wechsel der Reiter bleibt die Reihenfolge.
+- [ ] Antippen öffnet das Heldenmenü: oben der Held mit Fähigkeit und Eigenheit, darunter „Aufwerten“ und „Ausrüstung“. „‹ Alle Helden“ führt zurück an die Stelle, an der du warst.
+- [ ] Kerne und Staub-Ersatz stehen nur noch auf dem Rang-Knopf.
+- [ ] Material am Durchbruch: erst der Bedarf, dann dein Bestand („96 von 143“).
+- [ ] Inventar: ein Knopf „Recyceln“ mit Haken je Güte; vor dem Recyceln kommt eine Bestätigung. Einzelne Teile lassen sich weiter direkt recyceln.
+- [ ] „Automatisch recyceln“: Teile der angehakten Güten werden schon beim Aufheben zu Schrott („+n Schrott“ über dem Gegner). Set-Teile nur mit dem Haken „auch Set-Teile“.
+- [ ] Zeitlimit: Jede Welle muss in 60 Sekunden geschafft sein, ein Boss in 90. Oben steht „noch n s“, am unteren Rand des Laufbilds läuft ein Balken ab (unter 15 s rot). Ist die Zeit um: „Zeit abgelaufen“, es geht wie nach einer Niederlage weiter.
+- [ ] Fünf Verteidiger kommen damit nicht mehr durch. Fühlt sich das Limit bei einer normalen Gruppe fair an?
+- [ ] Sets gehören jetzt zu einer Klasse („für Heiler“ steht am Set): Lebensquell verstärkt alle Heilungen des Trägers, Glutklinge und das neue Magier-Set „Sturmfokus“ die Fähigkeit, Wacht und Bastion schützen die ganze Gruppe, Taktgeber gibt mehr Energie.
+
 ## 0000000. Neu in 0.40.0: Welt 5 – Ausrüstung
 
 - [ ] Besiegte Gegner lassen gelegentlich Ausrüstung fallen (der Name steigt über dem Gegner auf), Bosse immer zwei Teile.
-- [ ] Reiter „Helden“ → Knopf „Ausrüstung“ auf einer Karte: neun Plätze. Platz antippen, passendes Teil „Anlegen“ – der Knopf zeigt UP vorher → nachher.
+- [ ] Reiter „Helden“ → Held antippen → „Ausrüstung“: neun Plätze. Platz antippen, passendes Teil „Anlegen“ – der Knopf zeigt UP vorher → nachher.
 - [ ] Sets: Trägt ein Held Teile eines Sets, steht der Bonus mit seinen Stufen dort (z. B. Bastion bei 3, 4 und 5 Teilen). Verständlich?
-- [ ] Heldenübersicht: Beim Aufwerten bleiben die Karten an ihrem Platz; neu sortiert wird erst beim Tippen auf „Helden“ oder beim Betreten der Welt.
 - [ ] „Optimieren“ in der Ausrüstungs-Ansicht legt für die Klasse des Helden die besten Teile an; im Reiter „Gruppe“ gibt es dasselbe für alle. Trifft die Auswahl, was du selbst wählen würdest?
 - [ ] Reiter „Inventar“: Währungen, Material, Kerne und Ausrüstung nach Art sortiert, mit Filter. Sauber genug sortiert?
-- [ ] Recyceln einzeln und „Alles Gewöhnliche recyceln“ (Set-Teile bleiben liegen) gibt Schrott.
 - [ ] Shop: Ausrüstungsbox für 30 Schrott. Preis und Chancen in Ordnung?
 - [ ] Die Wertung UP steigt mit der Ausrüstung.
 - [ ] Reiter heißen jetzt Helden, Gruppe, Inventar, Shop, Zonen – passt das auf dein iPhone?

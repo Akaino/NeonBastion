@@ -1,4 +1,4 @@
-import { GEAR_Q5, dropGear5, itemName5 } from './gear.js';
+import { GEAR_Q5, dropGear5, itemName5, recycle5 } from './gear.js';
 import {
   BOSS_CLEAVE5,
   BOSS_CLEAVE_CD5,
@@ -38,6 +38,8 @@ export const GAP5 = 56, // Abstand zwischen zwei Reihen
   WON_T5 = 0.5,
   WIPE_T5 = 1.6,
   ENGAGE5 = 3, // so viele Nahkampf-Gegner können gleichzeitig angreifen
+  WAVE_T5 = 60, // Zeitlimit je Welle in Sekunden (Vorgabe des Nutzers: Eine Gruppe, die nur aushält und kaum Schaden macht, soll
+  BOSS_T5 = 90, // nicht durchkommen – fünf Verteidiger brauchten sonst nur Geduld). Läuft die Zeit ab, zählt die Welle als verloren.
   REST5 = 1; // nach jeder gewonnenen Welle: volles Leben, Gefallene stehen wieder auf (Vorgabe des Nutzers)
 
 export class Run5 {
@@ -54,6 +56,13 @@ export class Run5 {
     this.wins = 0;
     this.loot = 0; // gefundene Ausrüstung in diesem Lauf
     this.wipes = 0;
+    this.timeouts = 0; // davon: Zeit abgelaufen
+    this.why = ''; // Grund der letzten Niederlage: 'wipe' oder 'time'
+    this.wt = 0; // Sekunden im laufenden Kampf
+    this.limit = WAVE_T5; // Zeitlimit der laufenden Welle
+    this.noLimit = false; // nur für Messungen: ohne Zeitlimit
+    this.cur = null; // Held, der gerade handelt (für die Auswertung: wem Schaden und Heilung gehören)
+    this.scrap = 0; // Schrott aus automatisch recycelter Beute in diesem Lauf
     this.guard = 0; // Bollwerk: Schaden an der Gruppe gesenkt
     this.invul = 0; // Aegis: kein Schaden
     this.haste = 0; // Ansporn, Zeitkrümmung
@@ -94,9 +103,19 @@ export class Run5 {
         tr: H.trait, // Eigenheit des Helden
         hits: 0,
         gdr: v.dr, // Schadensminderung aus der Ausrüstung
+        gheal: v.heal, // Set-Boni: Heilungen stärker, Fähigkeit stärker, Schutz für die Gruppe
+        gabil: v.abil,
+        gaura: v.aura,
         spk: 0, // Stachelpanzer (Poller) läuft noch so lange
         out: false, // Nahkämpfer, der gerade keinen Gegner erreicht (steht zu weit hinten) – nur für die Anzeige
         at: 0, // läuft ab, solange die Angriffsbewegung gezeigt wird
+        // Auswertung (Simulation): ausgeteilter Schaden, Heilung, erlittener Schaden, vom Schild geschluckt, Fähigkeiten, gefallen
+        dmg: 0,
+        healed: 0,
+        taken: 0,
+        soaked: 0,
+        casts: 0,
+        downs: 0,
       });
     });
   }
@@ -112,6 +131,9 @@ export class Run5 {
       h.reg = v.en;
       h.cd0 = v.cd;
       h.gdr = v.dr;
+      h.gheal = v.heal;
+      h.gabil = v.abil;
+      h.gaura = v.aura;
     }
   }
   begin(fresh) {
@@ -154,6 +176,8 @@ export class Run5 {
       };
     });
     this.phase = 'fight';
+    this.wt = 0;
+    this.limit = this.wave === ZONE_LEN5 ? BOSS_T5 : WAVE_T5;
   }
   /* ---------- Steuerung von außen ---------- */
   // Auf eine schon erreichte Stufe wechseln; die Welle beginnt neu
@@ -214,13 +238,20 @@ export class Run5 {
     if (h.dead || this.invul > 0) return;
     if (this.guard > 0) d *= 0.75;
     d *= (1 - (h.tr.dr || 0)) * (1 - this.auraDr) * (1 - h.gdr);
-    if (from && !from.ranged && (h.tr.thorns || h.spk > 0)) this.hit(from, d * (h.spk > 0 ? 1 : h.tr.thorns), null);
+    if (from && !from.ranged && (h.tr.thorns || h.spk > 0)) {
+      const c = this.cur;
+      this.cur = h; // zurückgeworfener Schaden gehört dem Getroffenen
+      this.hit(from, d * (h.spk > 0 ? 1 : h.tr.thorns), null);
+      this.cur = c;
+    }
     if (h.sh > 0) {
       const a = Math.min(h.sh, d);
       h.sh -= a;
       d -= a;
+      h.soaked += a;
     }
     if (d <= 0) return;
+    h.taken += Math.min(d, h.hp);
     h.hp -= d;
     h.flash = 0.12;
     if (h.hp <= 0 && this.angel && this.heroes.some(a => !a.dead && a.tr.angel)) {
@@ -232,6 +263,7 @@ export class Run5 {
     if (h.hp <= 0) {
       h.hp = 0;
       h.dead = true;
+      h.downs++;
       h.en = 0;
       h.sh = 0;
       this.h.sfx && this.h.sfx('down');
@@ -239,13 +271,16 @@ export class Run5 {
   }
   heal(h, v) {
     if (h.dead) return;
+    if (this.cur) v *= 1 + this.cur.gheal; // Lebensquell: Heilungen des Handelnden sind stärker
     const a = Math.min(h.max - h.hp, v);
     h.hp += a;
+    if (this.cur) this.cur.healed += a;
     if (a >= 1) this.note(h.x, 0, '+' + Math.round(a), '#6dffb0');
   }
   hit(e, d, col) {
     if (e.hp <= 0) return;
     if (this.mark > 0) d *= 1.25;
+    if (this.cur) this.cur.dmg += Math.min(d, e.hp);
     e.hp -= d;
     e.flash = 0.1;
     if (e.hp <= 0) {
@@ -255,6 +290,15 @@ export class Run5 {
       // Ausrüstung als Beute: landet im Inventar
       for (const it of dropGear5(this.s, this.stage, e.boss)) {
         this.loot++;
+        // Automatisch recyceln (Wunsch des Nutzers): Teile der angehakten Güten werden schon beim Aufheben zu Schrott
+        const R = this.s.recy;
+        if (R && R.auto[it.q] && (R.sets || !it.set)) {
+          const n = recycle5(this.s, it.id);
+          this.scrap += n;
+          this.note(e.x, e.lane - 1.6, '+' + n + ' Schrott', '#b9c6d6');
+          this.h.event && this.h.event('scrap', n);
+          continue;
+        }
         this.note(e.x, e.lane - 1.6, itemName5(it), GEAR_Q5[it.q].col);
         this.h.event && this.h.event('gear', it);
       }
@@ -287,10 +331,11 @@ export class Run5 {
   ability(h, foes) {
     const C = CLASSES5[h.cls],
       T = h.tr,
-      A = h.atk * this.am, // Angriff mit den Boni der Gruppe
+      A = h.atk * this.am * (1 + h.gabil), // Angriff mit den Boni der Gruppe und dem Set-Bonus auf die Fähigkeit
       col = C.col,
       near = foes.filter(e => e.x - h.x <= MELEE5 + e.r).sort((a, b) => a.x - b.x);
     const H5 = HEROES5[h.id];
+    h.casts++;
     this.say(h, H5.abil || C.abil);
     this.h.sfx && this.h.sfx('pulse');
     if (h.id === 'aegis') {
@@ -425,7 +470,7 @@ export class Run5 {
     for (const h of this.heroes)
       if (!h.dead) {
         aa = Math.max(aa, h.tr.auraAtk || 0);
-        ad = Math.max(ad, h.tr.auraDr || 0);
+        ad = Math.max(ad, h.tr.auraDr || 0, h.gaura);
       }
     this.am = 1 + aa + (this.haste > 0 ? this.hasteAtk : 0);
     this.auraDr = ad;
@@ -436,6 +481,7 @@ export class Run5 {
       if (h.spk > 0) h.spk -= dt;
       if (h.dead) continue;
       const foes = this.en.filter(e => e.hp > 0);
+      this.cur = h;
       h.en = Math.min(100, h.en + h.reg * fast * dt);
       if (h.en >= 100 && this.useful(h, foes)) {
         h.en = 0;
@@ -455,6 +501,7 @@ export class Run5 {
         }
       }
     }
+    this.cur = null;
   }
   /* ---------- Gegner ---------- */
   updEnemies(dt) {
@@ -547,14 +594,17 @@ export class Run5 {
     this.begin(false);
   }
   // Gruppe gefallen: eine Welle zurück, ohne Nachteil. Am Boss gescheitert: Die Welle davor läuft, bis der Spieler ihn herausfordert.
-  lose() {
+  // why = 'time': Die Zeit ist abgelaufen (zählt wie eine gefallene Gruppe)
+  lose(why) {
     const W = this.s;
     this.wipes++;
+    this.why = why || 'wipe';
+    if (why === 'time') this.timeouts++;
     if (this.wave === ZONE_LEN5) W.block = this.stage;
     W.pos = Math.max(1, this.stage - 1);
     this.phase = 'wipe';
     this.pt = WIPE_T5;
-    this.h.event && this.h.event('wipe', this.stage);
+    this.h.event && this.h.event('wipe', this.stage, this.why);
   }
   step(dt) {
     this.t += dt;
@@ -583,10 +633,12 @@ export class Run5 {
         this.dist += ADV5 * dt;
         for (const e of this.en) e.x -= ADV5 * dt;
       }
+      this.wt += dt;
       this.updHeroes(dt);
       this.updEnemies(dt);
       if (!this.en.some(e => e.hp > 0)) this.win();
       else if (!this.heroes.some(h => !h.dead)) this.lose();
+      else if (!this.noLimit && this.wt >= this.limit) this.lose('time');
     } else if (this.phase === 'won') {
       this.dist += ADV5 * dt;
       this.pt -= dt;

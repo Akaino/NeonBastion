@@ -3,7 +3,7 @@
 // erlaubte Gruppe auf (Verteidiger und Angreifer vorn), kauft die billigste Stufe, erhöht Ränge, sammelt Material in der passenden
 // Zone und fordert einen wartenden Boss alle zwei Minuten heraus. Kein Ersatz für eine richtige Simulation – nur ein Beleg, dass
 // der Fortschritt nicht hängt, und ein erster Blick aufs Tempo.
-// Aufruf: node sim/welt5.mjs [Minuten] [Seed] [ohne]   (ohne = ohne Ausrüstung, zum Vergleich)
+// Aufruf: node sim/welt5.mjs [Minuten] [Seed] [ohne] [ohnelimit]   (ohne = ohne Ausrüstung, ohnelimit = ohne Zeitlimit je Welle)
 import { fileURLToPath } from 'url';
 import path from 'path';
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -21,11 +21,12 @@ const m = await import(root + '/src/js/world5/data.js'),
   S = await import(root + '/src/js/world5/save.js'),
   { Run5 } = await import(root + '/src/js/world5/Run5.js');
 const G = await import(root + '/src/js/world5/gear.js'),
-  GEAR = process.argv[4] !== 'ohne'; // „ohne“ als drittes Argument: Bot legt keine Ausrüstung an (zum Vergleich)
+  GEAR = !process.argv.includes('ohne'); // „ohne“: Bot legt keine Ausrüstung an (zum Vergleich)
 let boxes = 0;
 const w5 = S.freshW5(),
   r = new Run5(w5, {});
 r.headless = true;
+r.noLimit = process.argv.includes('ohnelimit'); // „ohnelimit“: ohne die 60/90 Sekunden je Welle (zum Vergleich)
 const pow = id => m.heroPower5(id, w5.heroes[id].l, w5.heroes[id].r);
 function team() {
   // stärkste erlaubte Gruppe: Verteidiger und Angreifer vorn, Rest hinten
@@ -132,7 +133,7 @@ while (t < MIN * 60) {
 }
 const f = s => (s / 60).toFixed(0) + ' min';
 console.log(
-  `Seed ${seed}: nach ${MIN} min höchste gewonnene Stufe ${m.stageName5(Math.max(1, w5.cleared))} · Siege ${r.wins} · Niederlagen ${r.wipes} · Helden ${Object.keys(w5.heroes).length}/26 · Kristalle ${w5.pulls}`,
+  `Seed ${seed}: nach ${MIN} min höchste gewonnene Stufe ${m.stageName5(Math.max(1, w5.cleared))} · Siege ${r.wins} · Niederlagen ${r.wipes} (davon Zeit ${r.timeouts}) · Helden ${Object.keys(w5.heroes).length}/26 · Kristalle ${w5.pulls}`,
 );
 console.log(
   '  Zone erreicht nach:',

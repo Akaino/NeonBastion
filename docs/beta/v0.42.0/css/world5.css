@@ -555,3 +555,114 @@
     rgba(6, 8, 34, 0.9);
   box-shadow: 0 0 10px -3px var(--c);
 }
+
+/* Zeitlimit der Welle: Balken am unteren Rand des Laufbilds, läuft von rechts nach links ab */
+#w5Time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: #6dffb0;
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0.85;
+}
+#w5Time.low {
+  background: #ff6b84;
+}
+/* Heldenübersicht: eine Zeile je Held, Antippen öffnet das Heldenmenü */
+.w5sec {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.w5hrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--c, #9b98c8) 45%, transparent);
+  border-radius: 12px;
+  background: var(--panel2);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+}
+.w5hrow.team {
+  border-color: var(--c);
+  box-shadow: inset 3px 0 0 #6dffb0;
+}
+.w5hrow.lock {
+  opacity: 0.5;
+}
+.w5hrow .w5p {
+  flex: none;
+  width: 40px;
+  height: 46px;
+}
+.w5hn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.w5hn b {
+  font-size: 15px;
+}
+.w5hn small {
+  font-size: 12px;
+}
+.w5ht {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.w5hrow > i {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 18px;
+}
+.w5filter > span {
+  align-self: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.w5f.big {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Recyceln: Haken je Güte */
+.w5checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.w5chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--c, var(--ink));
+}
+.w5chk input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--c, #b9c6d6);
+}
+.w5ask {
+  padding: 8px 10px;
+  border: 1px solid #ff6b84;
+  border-radius: 10px;
+  background: rgba(255, 107, 132, 0.08);
+}

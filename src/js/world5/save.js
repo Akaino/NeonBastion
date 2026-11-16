@@ -49,6 +49,10 @@ export function freshW5() {
     inv: [], // Inventar: Ausrüstung, die niemand trägt
     gear: {}, // gear[Held][Platz] = angelegter Gegenstand
     uid: 1, // nächste Nummer für einen Gegenstand
+    // Recyceln: q = angehakte Güten für den Knopf im Inventar, auto = Güten, die schon beim Aufheben recycelt werden,
+    // sets = auch Set-Teile (gilt für beides)
+    recy: { q: [false, false, false, false], auto: [false, false, false, false], sets: false },
+    sort: 'up', // Sortierung der Heldenübersicht: up, name, rar, cls
   };
 }
 // Spielstand aus der Datei übernehmen; fehlende Felder bekommen ihren Startwert
@@ -76,6 +80,10 @@ export function loadW5(s) {
   if (!o.team.some(Boolean)) o.team[1] = Object.keys(o.heroes)[0];
   o.frac = Object.assign({}, s.frac || {});
   loadGear5(o, s);
+  const R = s.recy || {},
+    four = a => [0, 1, 2, 3].map(i => !!(Array.isArray(a) && a[i]));
+  o.recy = { q: four(R.q), auto: four(R.auto), sets: !!R.sets };
+  o.sort = ['up', 'name', 'rar', 'cls'].includes(s.sort) ? s.sort : 'up';
   return o;
 }
 // Der Prototyp ist vorerst nur in Beta und Bottest betretbar

@@ -52,53 +52,74 @@ export const GEAR_LVL5 = 0.02, // Zuwachs je Stufe des Gegenstands
   HASTE_CAP5 = 0.5;
 
 /* Sets. parts = Arten, die dazugehören (ein Ring zählt einmal). bonus = [[ab so vielen Teilen, { Wirkung }, Text], …];
-   die Wirkungen addieren sich. Drei 3er-Sets (Glut, Takt, Wacht) füllen zusammen alle neun Plätze. */
+   die Wirkungen addieren sich. Drei 3er-Sets (Glut, Takt, Wacht) füllen zusammen alle neun Plätze.
+   Seit 0.42.0 (Rückmeldung des Nutzers: „Die Setboni sollten bessere Boni für die Klassen geben. Bei Lebensquell vermisse ich die
+   verbesserte Heilung der Gruppe.“) gehört jedes Set zu einer Klasse (cls) und bringt etwas, das zu ihr passt. Neben den Werten
+   der Gegenstände (hp, atk, haste, dr, en) gibt es dafür drei Wirkungen nur aus Sets:
+   heal = alle Heilungen des Trägers stärker · abil = seine Fähigkeit wirkt stärker · aura = die ganze Gruppe nimmt weniger Schaden
+   (es zählt der höchste Wert in der Gruppe). Tragen darf ein Set jeder. */
 export const SETS5 = {
   glut: {
     name: 'Glutklinge',
+    cls: 'striker',
     col: '#ff6b84',
     parts: ['waffe', 'ring', 'kette'],
     bonus: [
       [2, { atk: 8 }, '+8 % Angriff'],
-      [3, { atk: 12 }, 'weitere +12 % Angriff'],
+      [3, { atk: 12, abil: 15 }, 'weitere +12 % Angriff, die Fähigkeit wirkt 15 % stärker'],
     ],
   },
   takt: {
     name: 'Taktgeber',
+    cls: 'support',
     col: '#ffe14f',
     parts: ['helm', 'schuhe', 'ring'],
     bonus: [
       [2, { haste: 5 }, '+5 % Tempo'],
-      [3, { haste: 7, en: 1 }, 'weitere +7 % Tempo und +1 Energie je Sekunde'],
+      [3, { haste: 7, en: 2 }, 'weitere +7 % Tempo und +2 Energie je Sekunde'],
     ],
   },
   wacht: {
     name: 'Wacht',
+    cls: 'tank',
     col: '#5ab8ff',
     parts: ['schild', 'brust', 'hose'],
     bonus: [
       [2, { dr: 4 }, '4 % weniger Schaden'],
-      [3, { dr: 6 }, 'weitere 6 % weniger Schaden'],
+      [3, { dr: 6, aura: 3 }, 'weitere 6 % weniger Schaden; die ganze Gruppe nimmt 3 % weniger Schaden'],
     ],
   },
   quell: {
     name: 'Lebensquell',
+    cls: 'healer',
     col: '#6dffb0',
     parts: ['brust', 'hose', 'kette', 'ring'],
     bonus: [
-      [2, { hp: 8 }, '+8 % Leben'],
-      [3, { hp: 7 }, 'weitere +7 % Leben'],
-      [4, { hp: 10, dr: 5 }, 'weitere +10 % Leben und 5 % weniger Schaden'],
+      [2, { heal: 10 }, 'alle Heilungen des Trägers sind 10 % stärker'],
+      [3, { hp: 10 }, '+10 % Leben'],
+      [4, { heal: 20, en: 1 }, 'Heilungen weitere 20 % stärker und +1 Energie je Sekunde'],
+    ],
+  },
+  fokus: {
+    name: 'Sturmfokus',
+    cls: 'mage',
+    col: '#c79bff',
+    parts: ['waffe', 'helm', 'schuhe', 'kette'],
+    bonus: [
+      [2, { atk: 8 }, '+8 % Angriff'],
+      [3, { abil: 15 }, 'die Fähigkeit wirkt 15 % stärker'],
+      [4, { abil: 20, en: 1 }, 'die Fähigkeit wirkt weitere 20 % stärker und +1 Energie je Sekunde'],
     ],
   },
   bastion: {
     name: 'Bastion',
-    col: '#c79bff',
+    cls: 'tank',
+    col: '#8fa8ff',
     parts: ['helm', 'brust', 'hose', 'schild', 'schuhe'],
     bonus: [
       [3, { hp: 12 }, '+12 % Leben'],
       [4, { dr: 8 }, '8 % weniger Schaden'],
-      [5, { hp: 18 }, 'weitere +18 % Leben'],
+      [5, { hp: 18, aura: 6 }, 'weitere +18 % Leben; die ganze Gruppe nimmt 6 % weniger Schaden'],
     ],
   },
 };
@@ -129,10 +150,10 @@ export function setCounts5(gear) {
   }
   return n;
 }
-/* Gesamtwirkung der angelegten Ausrüstung: { hp, atk, haste, dr als Anteile (0,12 = 12 %), en als Energie je Sekunde }.
+/* Gesamtwirkung der angelegten Ausrüstung: { hp, atk, haste, dr, heal, abil, aura als Anteile (0,12 = 12 %), en als Energie je Sekunde }.
    heroStats5 rechnet damit; ohne Ausrüstung ist alles 0. */
 export function gearBonus5(gear) {
-  const b = { hp: 0, atk: 0, haste: 0, dr: 0, en: 0 };
+  const b = { hp: 0, atk: 0, haste: 0, dr: 0, en: 0, heal: 0, abil: 0, aura: 0 };
   if (!gear) return b;
   for (const slot in gear) {
     const it = gear[slot];
@@ -146,6 +167,9 @@ export function gearBonus5(gear) {
     haste: Math.min(HASTE_CAP5, b.haste / 100),
     dr: Math.min(DR_CAP5, b.dr / 100),
     en: b.en,
+    heal: b.heal / 100,
+    abil: b.abil / 100,
+    aura: b.aura / 100,
   };
 }
 
@@ -223,6 +247,17 @@ export function recycleAll5(w5, maxQ, withSets) {
   for (const it of w5.inv.filter(x => x.q <= maxQ && (withSets || !x.set))) n += recycle5(w5, it.id);
   return n;
 }
+// Auswahl fürs Recyceln: alle Teile im Inventar mit einer angehakten Güte (qs[Güte] = true); Set-Teile nur mit withSets
+export const recycleList5 = (w5, qs, withSets) => w5.inv.filter(it => qs[it.q] && (withSets || !it.set));
+export function recycleSel5(w5, qs, withSets) {
+  let n = 0,
+    x = 0;
+  for (const it of recycleList5(w5, qs, withSets)) {
+    x += recycle5(w5, it.id);
+    n++;
+  }
+  return { n, x };
+}
 /* „Optimieren“ (Wunsch des Nutzers): legt aus dem Inventar das an, was für diese Gewichtung am meisten bringt.
    weights = { hp, atk, haste, dr, en } sagt, wie viel ein Prozentpunkt (bzw. ein Punkt Energie je Sekunde) dieser Wirkung wert ist;
    die Gewichtung je Klasse steht in data.js (GEAR_W5). Bewertet wird immer die ganze Ausstattung samt Set-Boni: Platz für Platz
@@ -231,7 +266,15 @@ export function recycleAll5(w5, maxQ, withSets) {
 export function gearScore5(gear, weights) {
   const b = gearBonus5(gear);
   return (
-    (b.hp * weights.hp + b.atk * weights.atk + b.haste * weights.haste + b.dr * weights.dr) * 100 + b.en * weights.en
+    (b.hp * weights.hp +
+      b.atk * weights.atk +
+      b.haste * weights.haste +
+      b.dr * weights.dr +
+      b.heal * (weights.heal || 0) +
+      b.abil * (weights.abil || 0) +
+      b.aura * (weights.aura || 0)) *
+      100 +
+    b.en * weights.en
   );
 }
 export function optimize5(w5, hero, weights) {

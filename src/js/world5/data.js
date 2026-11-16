@@ -277,14 +277,14 @@ for (const id in ABIL5) Object.assign(HEROES5[id], ABIL5[id]);
 export const abilName5 = id => HEROES5[id].abil || CLASSES5[HEROES5[id].cls].abil;
 
 /* Was Ausrüstung für eine Klasse wert ist (für „Optimieren“): Wert je Prozentpunkt Leben, Angriff, Tempo, Schadensminderung
-   und je Punkt Energie pro Sekunde. Verteidiger wollen aushalten, Angreifer und Magier austeilen, Heiler und Unterstützer
+   und je Punkt Energie pro Sekunde; dazu die Wirkungen aus Sets: heal (Heilung), abil (Fähigkeit), aura (Schutz der Gruppe). Verteidiger wollen aushalten, Angreifer und Magier austeilen, Heiler und Unterstützer
    ihre Fähigkeit oft einsetzen (Heilung wächst mit dem Angriff). */
 export const GEAR_W5 = {
-  tank: { hp: 1, dr: 1.6, atk: 0.3, haste: 0.3, en: 3 },
-  striker: { hp: 0.4, dr: 0.5, atk: 1, haste: 1, en: 3 },
-  mage: { hp: 0.3, dr: 0.3, atk: 1, haste: 0.8, en: 5 },
-  healer: { hp: 0.4, dr: 0.4, atk: 1, haste: 0.9, en: 6 },
-  support: { hp: 0.5, dr: 0.5, atk: 0.4, haste: 1, en: 8 },
+  tank: { hp: 1, dr: 1.6, atk: 0.3, haste: 0.3, en: 3, heal: 0, abil: 0.2, aura: 1.5 },
+  striker: { hp: 0.4, dr: 0.5, atk: 1, haste: 1, en: 3, heal: 0.1, abil: 0.6, aura: 1 },
+  mage: { hp: 0.3, dr: 0.3, atk: 1, haste: 0.8, en: 5, heal: 0, abil: 0.9, aura: 1 },
+  healer: { hp: 0.4, dr: 0.4, atk: 1, haste: 0.9, en: 6, heal: 1.5, abil: 0.6, aura: 1 },
+  support: { hp: 0.5, dr: 0.5, atk: 0.4, haste: 1, en: 8, heal: 0, abil: 0.2, aura: 1 },
 };
 export const optimizeGear5 = (w5, id) => optimize5(w5, id, GEAR_W5[HEROES5[id].cls]);
 export const START_HERO5 = 'funke'; // der Basisheld, mit dem man beginnt
@@ -312,6 +312,9 @@ export function heroStats5(id, l, r, gear) {
     cd: (C.cd * (T.cd || 1)) / (1 + G.haste),
     en: C.en + h.en + G.en,
     dr: G.dr, // Anteil, um den Ausrüstung den Schaden senkt
+    heal: G.heal, // Set-Boni: Heilungen stärker,
+    abil: G.abil, // Fähigkeit stärker,
+    aura: G.aura, // die Gruppe nimmt weniger Schaden
   };
 }
 /* Wertung „UP“ (Wunsch des Nutzers: eine Zahl, die sagt, wie stark ein Held insgesamt ist; danach wird die Heldenübersicht sortiert).
@@ -319,7 +322,11 @@ export function heroStats5(id, l, r, gear) {
    Fähigkeit) und für Schadensminderung. Angelegte Ausrüstung zählt mit. Die Zahl ist ein Richtwert, kein Kampfergebnis. */
 export const heroPower5 = (id, l, r, gear) => {
   const s = heroStats5(id, l, r, gear);
-  return Math.round((s.hp / (4 * (1 - s.dr)) + (s.atk / s.cd) * 6) * (1 + (s.en - 7) * 0.015));
+  return Math.round(
+    (s.hp / (4 * (1 - s.dr)) + (s.atk / s.cd) * 6) *
+      (1 + (s.en - 7) * 0.015) *
+      (1 + s.abil * 0.3 + s.aura + (HEROES5[id].cls === 'healer' ? s.heal * 0.5 : 0)),
+  );
 };
 
 // Kryo-Kristalle: Zufallspakete mit je einem Helden. p = Chancen in Prozent für Basis, Elite, Legendär, Champion.
