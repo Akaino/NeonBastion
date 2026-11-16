@@ -5,7 +5,7 @@
 //   Teil A: alle 252 Gruppen aus den zehn Basishelden × vier Aufstellungen → Rangliste, Wirkung jeder Klasse, Auswertung je Held
 //   Teil B: alle 126 Klassen-Mischungen aus dem ganzen Kader (ein Champion, zwei Legendäre), mit und ohne Zeitlimit
 //   Teil C: jeder der 26 Helden einzeln in eine feste Vergleichsgruppe eingewechselt; dazu die Vergleichsgruppe ohne je ein Mitglied
-// Aufruf: node sim/welt5_gruppen.mjs [--stufen 12,16,20,24,28,32] [--stufenB 20,30,40] [--kurz]     Bericht: sim/ergebnisse/welt5_gruppen.md
+// Aufruf: node sim/welt5_gruppen.mjs [--stufen 12,16,20,24,28,32] [--stufenB 20,30,40] [--kurz] [--nurA] [--set mage.hp=120,…]     Bericht: sim/ergebnisse/welt5_gruppen.md
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
@@ -18,7 +18,9 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
   // und die Unterschiede verschwinden im Raster der Bosswellen.
   LA = list('stufen', '12,16,20,24,28,32'),
   LB = list('stufenB', '20,30,40'),
-  KURZ = process.argv.includes('--kurz');
+  KURZ = process.argv.includes('--kurz'),
+  NURA = process.argv.includes('--nurA'), // nur Teil A (für schnelle Vergleiche von Varianten)
+  SET = process.argv.indexOf('--set'); // --set mage.hp=120,support.atk=10 ändert Klassenwerte nur für diesen Lauf
 let a = 1;
 Math.random = () => {
   a = (a + 0x6d2b79f5) >>> 0;
@@ -30,6 +32,12 @@ Math.random = () => {
 const m = await import(root + '/src/js/world5/data.js'),
   S = await import(root + '/src/js/world5/save.js'),
   { Run5 } = await import(root + '/src/js/world5/Run5.js');
+if (SET >= 0)
+  for (const kv of process.argv[SET + 1].split(',')) {
+    const [k, v] = kv.split('='),
+      [c, f] = k.split('.');
+    m.CLASSES5[c][f] = +v;
+  }
 const H = m.HEROES5,
   CN = { tank: 'Verteidiger', striker: 'Angreifer', mage: 'Magier', healer: 'Heiler', support: 'Unterstützer' },
   CK = { tank: 'V', striker: 'A', mage: 'M', healer: 'H', support: 'U' },
@@ -316,6 +324,7 @@ table(
     ]),
 );
 
+if (NURA) process.exit(0);
 /* ================= Teil B: Klassen-Mischungen aus dem ganzen Kader ================= */
 const byCls = c => m.HERO_IDS5.filter(id => H[id].cls === c),
   RO = ['champ', 'legend', 'elite', 'basis'];

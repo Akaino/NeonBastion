@@ -1,10 +1,16 @@
-# Testliste (Beta 0.42.0)
+# Testliste (Beta 0.43.0)
 
 Stand: 16.11.2026 · Adresse: https://neonbastion.de/beta/ · Das echte Spiel steht bei 0.30.1.
 
 Zum Testen: In der Beta den Entwicklermodus einschalten, dann in den Einstellungen „Testhilfen“ (Ressourcen, Rekordwelle, Startwelle, Abwurf in jeder Welle, schillernder Gegner, Leistungsmessung). „Live-Spielstand übernehmen“ holt deinen echten Spielstand in die Beta.
 
 Alles hier ist automatisch getestet (40 Testläufe) und mit der Simulation gemessen. Offen ist, wie es sich anfühlt und aussieht.
+
+## 000000000. Neu in 0.43.0: Welt 5 – Magier, Unterstützer, UP
+
+- [ ] Magier: Getroffene Gegner greifen vier Sekunden lang 25 % schwächer an (steht im Text der Klasse). Lohnt sich ein Magier jetzt in deiner Gruppe?
+- [ ] Unterstützer: „Ansporn“ macht die Gruppe um die Hälfte schneller statt um gut ein Drittel.
+- [ ] UP ist jetzt für alle Klassen gleich aufgebaut: Jeder Basisheld beginnt mit 100. Deine Zahlen sind deshalb andere als vorher – Heiler stehen nicht mehr ganz unten. Wirkt die Wertung stimmiger?
 
 ## 00000000. Neu in 0.42.0: Welt 5 – Heldenmenü, Recycling, Zeitlimit, Set-Boni
 

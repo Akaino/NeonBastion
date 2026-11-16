@@ -29,17 +29,28 @@ r.headless = true;
 r.noLimit = process.argv.includes('ohnelimit'); // „ohnelimit“: ohne die 60/90 Sekunden je Welle (zum Vergleich)
 const pow = id => m.heroPower5(id, w5.heroes[id].l, w5.heroes[id].r);
 function team() {
-  // stärkste erlaubte Gruppe: Verteidiger und Angreifer vorn, Rest hinten
+  // Gruppe nach der Mischung, die in der Gruppen-Messung am weitesten kam: ein Verteidiger, zwei Angreifer, ein Heiler, ein
+  // Unterstützer – je Platz der stärkste erlaubte Held der Klasse. Fehlt eine Klasse, rückt der stärkste übrige Held nach
+  // (Heiler zuerst). Vorher wählte der Bot nur nach UP und stand dann oft ohne Heiler da.
   const own = Object.keys(w5.heroes).sort((x, y) => pow(y) - pow(x)),
     pick = [],
     cnt = { champ: 0, legend: 0, low: 0 };
-  for (const id of own) {
-    const k = m.teamKey5(m.HEROES5[id].rar);
-    if (pick.length < 5 && cnt[k] < m.TEAM_MAX5[k]) {
-      cnt[k]++;
+  const take = ok => {
+    const id = own.find(
+      h => !pick.includes(h) && ok(h) && cnt[m.teamKey5(m.HEROES5[h].rar)] < m.TEAM_MAX5[m.teamKey5(m.HEROES5[h].rar)],
+    );
+    if (id) {
+      cnt[m.teamKey5(m.HEROES5[id].rar)]++;
       pick.push(id);
     }
-  }
+  };
+  for (const c of ['tank', 'striker', 'healer', 'support', 'striker']) take(h => m.HEROES5[h].cls === c);
+  for (const c of ['healer', 'striker', 'tank', 'mage', 'support'])
+    while (pick.length < 5 && own.some(h => !pick.includes(h) && m.HEROES5[h].cls === c)) {
+      const n = pick.length;
+      take(h => m.HEROES5[h].cls === c);
+      if (pick.length === n) break;
+    }
   // 3×3-Raster: Verteidiger und Angreifer nach vorn (dann in die Mitte), Unterstützer und Magier in die Mitte, Heiler nach hinten
   const nt = Array(9).fill(null),
     put = (id, cells) => {

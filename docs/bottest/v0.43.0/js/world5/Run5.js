@@ -40,6 +40,7 @@ export const GAP5 = 56, // Abstand zwischen zwei Reihen
   ENGAGE5 = 3, // so viele Nahkampf-Gegner können gleichzeitig angreifen
   WAVE_T5 = 60, // Zeitlimit je Welle in Sekunden (Vorgabe des Nutzers: Eine Gruppe, die nur aushält und kaum Schaden macht, soll
   BOSS_T5 = 90, // nicht durchkommen – fünf Verteidiger brauchten sonst nur Geduld). Läuft die Zeit ab, zählt die Welle als verloren.
+  WEAK_T5 = 4, // so lange greift ein vom Magier getroffener Gegner schwächer an
   REST5 = 1; // nach jeder gewonnenen Welle: volles Leben, Gefallene stehen wieder auf (Vorgabe des Nutzers)
 
 export class Run5 {
@@ -168,6 +169,7 @@ export class Run5 {
         ranged: !!T.ranged,
         boss: !!T.boss,
         stun: 0,
+        weak: 0, // geschwächt durch einen Magier: greift so lange schwächer an
         shots: i,
         cl: BOSS_CLEAVE_CD5,
         flash: 0,
@@ -458,12 +460,18 @@ export class Run5 {
         this.hit(o2, T.chain ? d : d * T.cleave, null);
       }
     }
-    if (h.cls === 'mage')
-      for (const o of foes) if (o !== e && Math.abs(o.x - e.x) < 70) this.hit(o, A * (T.splash || 0.5), null);
+    if (h.cls === 'mage') {
+      e.weak = WEAK_T5;
+      for (const o of foes)
+        if (o !== e && Math.abs(o.x - e.x) < 70) {
+          this.hit(o, A * (T.splash || 0.5), null);
+          o.weak = WEAK_T5;
+        }
+    }
     return true;
   }
   updHeroes(dt) {
-    const fast = this.haste > 0 ? 1.35 : 1;
+    const fast = this.haste > 0 ? CLASSES5.support.haste : 1;
     // Boni, die für die ganze Gruppe gelten, solange ihr Träger lebt bzw. der Ansporn läuft
     let aa = 0,
       ad = 0;
@@ -518,6 +526,7 @@ export class Run5 {
       if (e.hp <= 0) continue;
       if (e.flash > 0) e.flash -= dt;
       if (e.at > 0) e.at -= dt;
+      if (e.weak > 0) e.weak -= dt;
       const far = e.ranged && cover,
         k = far ? rg++ : m++,
         stop = far ? f.x + 215 + k * 20 : k < ENGAGE5 ? f.x + 26 + e.r + k * 9 : f.x + 70 + e.r + k * 28;
@@ -545,7 +554,7 @@ export class Run5 {
       if (!t || t.dead) continue;
       e.at = SWING5;
       this.bolt(e, t, e.col);
-      this.hurt(t, e.atk, e);
+      this.hurt(t, e.atk * (e.weak > 0 ? 1 - CLASSES5.mage.weak : 1), e);
     }
   }
   /* ---------- Ausgang einer Welle ---------- */

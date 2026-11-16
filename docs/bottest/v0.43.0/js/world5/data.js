@@ -41,10 +41,11 @@ export const CLASSES5 = {
     cd: 1.4,
     melee: false,
     en: 7,
+    weak: 0.25, // Anteil, um den ein vom Magier getroffener Gegner schwächer angreift (WEAK_T5 Sekunden lang)
     ess: 'Funkenstaub',
     col: '#c79bff',
     abil: 'Entladung',
-    text: 'Greift aus der Ferne an, jeder Treffer streut auf Gegner daneben. „Entladung“ trifft alle Gegner.',
+    text: 'Greift aus der Ferne an, jeder Treffer streut auf Gegner daneben. Getroffene Gegner greifen vier Sekunden lang 25 % schwächer an. „Entladung“ trifft alle Gegner.',
   },
   healer: {
     name: 'Heiler',
@@ -65,10 +66,11 @@ export const CLASSES5 = {
     cd: 1.2,
     melee: false,
     en: 11,
+    haste: 1.5, // Faktor auf Handeln und Energie der Gruppe, solange der „Ansporn“ läuft
     ess: 'Resonanzspule',
     col: '#ffe14f',
     abil: 'Ansporn',
-    text: 'Macht die anderen besser. „Ansporn“ lässt die Gruppe sechs Sekunden schneller handeln und Energie sammeln.',
+    text: 'Macht die anderen besser. „Ansporn“ lässt die Gruppe sechs Sekunden lang um die Hälfte schneller handeln und Energie sammeln.',
   },
 };
 export const CLASS_IDS5 = Object.keys(CLASSES5);
@@ -317,15 +319,25 @@ export function heroStats5(id, l, r, gear) {
     aura: G.aura, // die Gruppe nimmt weniger Schaden
   };
 }
-/* Wertung „UP“ (Wunsch des Nutzers: eine Zahl, die sagt, wie stark ein Held insgesamt ist; danach wird die Heldenübersicht sortiert).
-   Leben und Schaden je Sekunde, Stufe, Rang und Seltenheit stecken über heroStats5 darin; dazu ein Zuschlag für Energie (häufigere
-   Fähigkeit) und für Schadensminderung. Angelegte Ausrüstung zählt mit. Die Zahl ist ein Richtwert, kein Kampfergebnis. */
+/* Wertung „UP“ (Wunsch des Nutzers: eine Zahl, die sagt, wie stark ein Held insgesamt ist – abhängig von Stufe und Ausrüstung).
+   Seit 0.43.0 klassenneutral: Ein Basisheld auf Stufe 1 ohne Rang und Ausrüstung hat 100 UP, egal welche Klasse. Vorher steckten
+   Leben und Schaden in absoluten Zahlen darin; dadurch lagen Angreifer und Verteidiger weit vor Heilern (164 und 106 gegen 49),
+   obwohl Heiler laut Messung am meisten bringen – wer die Gruppe nach UP wählte, stellte keine Heiler auf.
+   Jetzt zählt, wie weit ein Held ausgebaut ist: Leben und Angriff im Verhältnis zum Grundwert seiner Klasse (Stufe, Rang,
+   Seltenheit, Ausrüstung), dazu Tempo, Schadensminderung, zusätzliche Energie und die Set-Wirkungen. Ein Richtwert, kein Kampfergebnis. */
 export const heroPower5 = (id, l, r, gear) => {
-  const s = heroStats5(id, l, r, gear);
+  const h = HEROES5[id],
+    C = CLASSES5[h.cls],
+    T = h.trait,
+    s = heroStats5(id, l, r, gear),
+    hp = s.hp / (C.hp * (T.hp || 1)),
+    atk = s.atk / (C.atk * (T.atk || 1)),
+    tempo = (C.cd * (T.cd || 1)) / s.cd;
   return Math.round(
-    (s.hp / (4 * (1 - s.dr)) + (s.atk / s.cd) * 6) *
-      (1 + (s.en - 7) * 0.015) *
-      (1 + s.abil * 0.3 + s.aura + (HEROES5[id].cls === 'healer' ? s.heal * 0.5 : 0)),
+    100 *
+      (0.5 * (hp / (1 - s.dr)) + 0.5 * atk * tempo) *
+      (1 + (s.en - C.en - h.en) * 0.03) *
+      (1 + s.abil * 0.3 + s.aura + (h.cls === 'healer' ? s.heal * 0.5 : 0)),
   );
 };
 

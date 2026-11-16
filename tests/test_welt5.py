@@ -70,6 +70,11 @@ with sync_playwright() as p:
     check(ev("()=>{mk(s=>{s.heroes.poller={l:1,r:0,s:0};s.team=[null,'poller',null,null,null,null,null,null,null]});r.spawn();const e=r.en[0],h=r.heroes[0];e.x=30;e.hp=e.max=1e6;r.ability(h,r.en);h.sh=0;r.hurt(h,10,e);return e.max-e.hp}")==10,'„Stachelpanzer“ (Poller) wirft den ganzen Nahkampfschaden zurück')
     # Wertung UP
     check(ev("()=>heroPower5('funke',10,0)>heroPower5('funke',1,0)&&heroPower5('funke',1,2)>heroPower5('funke',1,0)&&heroPower5('fenris',1,0)>heroPower5('funke',1,0)"),'UP steigt mit Stufe, Rang und Seltenheit')
+    check(ev("()=>HERO_IDS5.filter(h=>HEROES5[h].rar==='basis').every(h=>heroPower5(h,1,0)===100)&&heroPower5('aegis',1,0)===230"),'UP ist klassenneutral: jeder Basisheld beginnt mit 100, ein Champion mit 230 (0.43.0)')
+    # Magier schwächen Gegner, Ansporn macht um die Hälfte schneller (0.43.0)
+    o=ev("()=>{mk(s=>{s.heroes.glimmer={l:1,r:0,s:0};s.heroes.riegel={l:1,r:0,s:0};s.team=[null,'riegel',null,null,'glimmer',null,null,null,null]});r.spawn();const e=r.en[0],g=r.heroes.find(h=>h.id==='glimmer'),t=r.heroes.find(h=>h.id==='riegel');for(const x of r.en){x.x=30;x.hp=x.max=1e9;x.sp=0;x.cd=99}const hit=()=>{t.hp=t.max;t.sh=0;e.cd=0;r.updEnemies(0.01);return t.max-t.hp};const a=hit();r.act(g,r.en);const b=hit();e.weak=0;const c=hit();return [e.weak>=0,Math.round(100*b/a),Math.round(100*c/a)]}")
+    check(o==[True,75,100],'ein vom Magier getroffener Gegner greift vier Sekunden lang 25 % schwächer an '+str(o))
+    check(ev("()=>CLASSES5.support.haste")==1.5 and 'Hälfte' in ev("()=>CLASSES5.support.text") and '25 %' in ev("()=>CLASSES5.mage.text"),'„Ansporn“ macht die Gruppe um die Hälfte schneller; beides steht im Text der Klasse')
     # volle Heilung nach jeder Welle, Weiterlaufen bis zum Gegner
     check(ev("()=>{mk(s=>{s.heroes.funke.l=40});r.spawn();r.heroes[0].hp=5;for(const e of r.en)e.hp=0;st(1.2);return r.heroes[0].hp===r.heroes[0].max}"),'nach jeder gewonnenen Welle ist die Gruppe voll geheilt')
     o=ev("()=>{mk();st(0.6);const a=[r.phase,r.moving,r.en[0].x];let n=0;while(r.moving&&n++<400)r.step(0.05);return [a[0],a[1],a[2]>400,r.en[0].x-r.front().x<=121,n*0.05<4]}")
